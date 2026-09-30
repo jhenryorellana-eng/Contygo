@@ -11,7 +11,7 @@ import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
-import ServiceShowcase, { SHOWCASE_CONCEPTS, type ShowcaseConcept, type Star } from "./ServiceShowcase";
+import ServiceShowcase, { type Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
 import s from "./ContygoLanding.module.css";
@@ -28,8 +28,8 @@ const THEME_KEY = "contygo-appearance";
 // Illustration system V8 (28-09-2026, material-de-diseno/ilustraciones-v8): one paper sculpture per service, each
 // with its own meaning, drawn once for both appearances (see docs/contygo-v7-direccion-arte.md).
 const art = (name: string) => `/contygo/v8/${name}.webp`;
-// The owner's star products, the most requested (30-09-2026): they lead as «Los más solicitados», with their own
-// light. Every other service follows directly, without category filters (the categories were criticised).
+// The owner's star products, the most requested (30-09-2026): they lead on their own stage («Vitrina», chosen by
+// the owner among three concepts). Every other service follows directly, without category filters.
 const featured: Star[] = [
   { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
   { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
@@ -93,7 +93,6 @@ function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
     app: <><rect x="5" y="2" width="14" height="20" rx="4" /><path d="M10 18h4m-6-9 3 3 5-5" /></>,
     shield: <path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Zm-4 10 3 3 5-6" />,
     send: <path d="M4.5 11.2 19.6 4.4a.6.6 0 0 1 .8.8l-6.8 15.1a.6.6 0 0 1-1.1-.1l-1.9-6.3-6.3-1.9a.6.6 0 0 1-.1-1.1ZM11 13l4.5-4.5" />,
-    star: <path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" stroke="none" />,
   };
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-loop={loop || undefined}>{paths[kind] ?? paths.arrow}</svg>;
 }
@@ -105,8 +104,6 @@ export default function ContygoLanding() {
   const [headerCta, setHeaderCta] = useState(false);
   const [dock, setDock] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
-  // Three designs for the services, for the owner to choose (30-09-2026): ?concepto=vitrina|coleccion|hilo (or 1|2|3).
-  const [concept, setConcept] = useState<ShowcaseConcept>("vitrina");
   const [service, setService] = useState<ContygoService | null>(null);
   const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -118,9 +115,6 @@ export default function ContygoLanding() {
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const warm = () => { void loadCinema(); };
     const warmTimer = idle ? idle(warm, { timeout: 4000 }) : window.setTimeout(warm, 2500);
-    const asked = new URLSearchParams(location.search).get("concepto") ?? "";
-    const chosen = SHOWCASE_CONCEPTS.find((name, i) => name === asked || String(i + 1) === asked);
-    if (chosen) setConcept(chosen);
     return () => { if (!idle) clearTimeout(warmTimer); };
   }, []);
   // The other appearance's art is fetched when the person reaches for the tone button (the drop gives it time).
@@ -166,7 +160,7 @@ export default function ContygoLanding() {
     const awake = new IntersectionObserver(entries => entries.forEach(entry => entry.target.setAttribute("data-inview", String(entry.isIntersecting))), { rootMargin: "120px 0px" });
     root.current.querySelectorAll("[data-anim]").forEach(el => awake.observe(el));
     return () => { observer.disconnect(); awake.disconnect(); };
-  }, [concept]);
+  }, []);
   function open(item: ContygoService, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
     setOrigin({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
@@ -212,7 +206,7 @@ export default function ContygoLanding() {
       </section>
 
       <section className={s.services} id="servicios" data-thread="services" data-anim>
-        <ServiceShowcase concept={concept} stars={featured} others={others} open={open} />
+        <ServiceShowcase stars={featured} others={others} open={open} />
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
       </section>
 

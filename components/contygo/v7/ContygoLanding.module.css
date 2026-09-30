@@ -45,16 +45,6 @@
 .services,.journey,.platform,.faq{max-width:1440px;margin:auto;padding:128px 5%}
 .sectionHeading{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:56px}.sectionHeading h2{margin-top:20px}.sectionHeading>p{color:var(--muted);font-size:18px;line-height:1.65;max-width:380px}
 .page> :where(header,main,footer) h2{font-size:clamp(38px,4.6vw,68px);line-height:1.06;letter-spacing:-.045em}
-.featured{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;perspective:1400px}
-.serviceCard{display:flex;flex-direction:column;text-align:left;background:var(--sheet);color:var(--ink);padding:12px 12px 4px;border:1px solid var(--line);border-radius:28px;min-width:0;box-shadow:var(--paper);transition:transform .55s var(--unfold),box-shadow .55s}.serviceCard:hover{transform:translateY(-6px);box-shadow:var(--lift)}
-.serviceImage{position:relative;display:block;width:100%;aspect-ratio:1.3;overflow:hidden;border-radius:19px;background:radial-gradient(ellipse 55% 14% at 50% 87%,var(--shade),transparent 72%),var(--soft)}.serviceImage>img{object-fit:contain;padding:22px 28px 34px;transition:transform .8s var(--unfold)}.serviceCard:hover .serviceImage>img{transform:translateY(-9px) scale(1.04)}
-.fold{position:absolute;top:0;right:0;width:34px;height:34px;background:linear-gradient(225deg,var(--sheet) 50%,var(--flap) 50%);border-bottom-left-radius:9px;box-shadow:-4px 4px 9px -4px var(--shade);transition:width .5s var(--unfold),height .5s var(--unfold)}.serviceCard:hover .fold{width:52px;height:52px}
-
-.filmBadge{position:absolute;bottom:16px;left:16px;display:flex;gap:8px;align-items:center;font-size:14px;font-weight:650;background:var(--glass);border:1px solid var(--line);padding:9px 14px;border-radius:40px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}.filmBadge svg{width:14px!important;height:14px!important;color:var(--accent)}
-.serviceCopy{display:flex;flex-direction:column;gap:10px;flex:1;padding:24px 12px 0}.smallLabel{font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}.serviceCopy>strong{font:800 clamp(26px,2.2vw,32px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}.serviceDescription{font-size:16px;line-height:1.6;color:var(--muted)}
-.cardAction{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:auto;padding:18px 0 14px;border-top:1px solid var(--line);font-size:16px;font-weight:700}.price{display:flex;flex-direction:column;font:800 24px/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}.price small{font:600 13px var(--font-contygo-body),sans-serif;letter-spacing:.02em;color:var(--muted)}
-.cardGo{display:flex;align-items:center;gap:12px}.cardGo>i{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);transition:background .3s,transform .35s var(--unfold),border-color .3s}.cardAction svg{width:19px;height:19px}.serviceCard:hover .cardGo>i{background:var(--green);color:#061b3d;transform:rotate(-35deg);border-color:var(--green)}
-.catalogHeader{display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin:100px 0 26px}.catalogHeader h3{font-size:clamp(26px,2.4vw,34px);letter-spacing:-.035em}.catalogHeader>span{font-size:16px;color:var(--muted)}
 
 .help{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:40px;font-size:16px;color:var(--muted)!important}.help b{display:flex;align-items:center;gap:9px;color:var(--ink);font-weight:700}.help svg{width:18px;height:18px;color:var(--accent)}
 
@@ -98,14 +88,14 @@
 .dock{display:none}
 
 /* Motion vocabulary from the storyboards: things unfold from their fold line (never just fade). */
-.page [data-reveal]{transform-origin:50% 100%}.page [data-reveal][data-seen=true]{animation:unfold .95s var(--unfold) both}.featured [data-reveal]:nth-child(2),.scenes [data-reveal]:nth-child(2){animation-delay:.09s}.featured [data-reveal]:nth-child(3),.scenes [data-reveal]:nth-child(3){animation-delay:.18s}
+.page [data-reveal]{transform-origin:50% 100%}.page [data-reveal][data-seen=true]{animation:unfold .95s var(--unfold) both}.scenes [data-reveal]:nth-child(2){animation-delay:.09s}.scenes [data-reveal]:nth-child(3){animation-delay:.18s}
 @keyframes unfold{from{opacity:0;transform:perspective(1200px) rotateX(22deg) translateY(30px)}to{opacity:1;transform:none}}
 @keyframes thread{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes noteFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 @keyframes pulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.5);opacity:0}}
 
 @media(min-width:1600px){.heroArt{min-height:680px}}
-@media(max-width:1100px){.header nav{gap:18px;font-size:14px}.headerInner{gap:18px}.logo{width:140px}.hero h1{font-size:clamp(46px,6.2vw,64px)}.heroArt{min-height:520px}.scenes{gap:24px}.scenes h3{font-size:22px}.platform{gap:5%}.journey{margin-inline:20px}.serviceCopy>strong{font-size:25px}}
+@media(max-width:1100px){.header nav{gap:18px;font-size:14px}.headerInner{gap:18px}.logo{width:140px}.hero h1{font-size:clamp(46px,6.2vw,64px)}.heroArt{min-height:520px}.scenes{gap:24px}.scenes h3{font-size:22px}.platform{gap:5%}.journey{margin-inline:20px}}
 
 @media(max-width:900px){.header nav{display:none}}
 @media(max-width:760px){
@@ -115,9 +105,9 @@
   .heroArt{order:-1;min-height:0;aspect-ratio:1.72;margin:0 -12px 6px}.heroArt>img{mask-image:none;-webkit-mask-image:none}.artNote{display:none}
   .hero{padding-top:6px}.heroCopy .eyebrow{margin-top:10px}.artNote{top:6%;left:12px;padding:11px 14px 11px 10px;gap:10px;border-radius:14px}.noteCheck{width:34px;height:34px;border-radius:10px}.noteCheck svg{width:19px;height:19px}.artNote strong{font-size:14px}.artNote div>span{font-size:13px}
   .services,.journey,.platform,.faq{padding:72px 22px}.sectionHeading{display:block;margin-bottom:36px}.sectionHeading>p{font-size:17px;margin-top:18px}.page> :where(header,main,footer) h2{font-size:clamp(36px,9.6vw,48px);line-height:1.08}
-  .featured{position:relative;z-index:4;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-inline:-22px;padding:4px 22px 18px}.featured::-webkit-scrollbar{display:none}.featured>.serviceCard{flex:0 0 84%;scroll-snap-align:start;scroll-margin-left:22px}
-  .serviceCard{border-radius:24px;padding:10px 10px 2px}.serviceImage{aspect-ratio:1.5;border-radius:16px}.serviceCopy{padding:20px 8px 0}.serviceCopy>strong{font-size:29px}.filmBadge{font-size:13px;padding:8px 12px}
-  .catalogHeader{display:block;margin:56px 0 18px}.catalogHeader h3{margin-bottom:6px}
+  
+  
+  
   
   
   
@@ -241,37 +231,19 @@
    Celular: las filas empiezan después del hilo (nunca lo tapan). Debajo de cada una, el hilo abre
    su riel (ThreadRail): es el indicador de posición. Sin máscaras ni desenfoques sobre lo que se
    desliza: cada cuadro de deslizamiento solo mueve capas ya pintadas. */
-@media(max-width:760px){
-  .featured{padding-left:36px;scroll-padding-left:36px}
-  .featured{padding-bottom:12px}
-  
-  .featured>.serviceCard{scroll-margin-left:36px}
-  .filmBadge{backdrop-filter:none;-webkit-backdrop-filter:none}
-}
 
 /* Catálogo: cada fila se ilumina cuando pasa el hilo y su precio destaca; queda una marca verde. */
 
 @keyframes rowGlow{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
-@keyframes pricePop{0%,100%{transform:scale(1)}40%{transform:scale(1.14)}}
-
 /* Tarjetas destacadas: la guía en vídeo es la puerta principal. Cuando llega el hilo, el sello de la
    guía se vuelve verde y su botón de reproducir late; el precio destaca. */
-.main [data-react=card][data-lit=true] .filmBadge{background:var(--green);border-color:var(--green);color:#061b3d}
-.main [data-react=card][data-lit=true] .filmBadge svg{color:#061b3d!important;animation:playBeat 1.6s ease-in-out infinite}
-.main [data-react=card][data-lit=true] .price{color:var(--accent);animation:pricePop .9s var(--unfold) .2s both}
-.filmBadge,.price{transition:background .5s,color .5s,border-color .5s}
+
 /* El brillo de la tarjeta es una capa propia que solo cambia de opacidad (antes se animaba la sombra). */
-.serviceCard{position:relative}
-.serviceCard:after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 1.5px #25d366bf,0 18px 46px -12px #25d36673;opacity:0}
-.main .serviceCard[data-lit=true]:after{animation:cardGlow 1.9s ease-out both}
-@keyframes cardGlow{0%{opacity:0}28%{opacity:1}100%{opacity:.4}}
+
 /* La lámina del registro se enciende con un anillo interior (opacidad), no con una sombra animada. */
 .inkSheet:before{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;opacity:0;box-shadow:inset 0 0 0 2px #25d366cc;
   background:linear-gradient(90deg,#25d36640,transparent 90px),linear-gradient(270deg,#25d36640,transparent 90px),linear-gradient(180deg,#25d36640,transparent 90px),linear-gradient(0deg,#25d36640,transparent 90px)}
 .inkSheet[data-lit=true]:before{animation:rowGlow 1.9s ease-out both}
-@keyframes playBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
-@media(prefers-reduced-motion:reduce){.main [data-react=card][data-lit=true] .filmBadge svg{animation:none}}
-
 /* ---- 28-09-2026 · Recorrido en celular: el hilo zigzaguea y cada paso cuelga de él ----
    El número de cada paso es un medallón sobre el hilo (lados alternos); el hilo cruza al siguiente
    en el hueco entre pasos (GreenThread · route). Al llegar, el medallón se llena y suelta un anillo. */
@@ -421,81 +393,33 @@
    tonos: paleta marfil, cobalto y verde, con luz de contorno. En oscuro, una luz suave detrás las separa del marino.
    En la lista del catálogo cada servicio lleva su propia ilustración, más grande. */
 
-.page[data-contygo-theme=dark] :is(.serviceImage,.tileArt){background:radial-gradient(closest-side,#6f9dff2e,#6f9dff0d 60%,transparent),var(--soft)}
-.page[data-contygo-theme=dark] .serviceImage{background:radial-gradient(ellipse 55% 14% at 50% 87%,var(--shade),transparent 72%),radial-gradient(48% 52% at 50% 46%,#6f9dff30,#6f9dff0d 62%,transparent),var(--soft)}
-
 /* Las ilustraciones V8 son cuadradas: en la tarjeta destacada se les da casi todo el alto del recuadro. */
-.serviceImage>img{padding:6px 24px 26px}
-@media(max-width:760px){.serviceImage>img{padding:4px 18px 24px}}
 
-
-/* ---- 30-09-2026 · «Los más solicitados» y los servicios, directos ----
-   Crítica al publicar: los tres servicios estrella parecían un catálogo más, y las categorías no
-   gustaron. Los tres del dueño (los más vendidos y pedidos) se distinguen ahora con su propia luz:
-   un anillo que gira alrededor de la tarjeta (una sola capa del compositor, pausada fuera de
-   pantalla), el sello «Más solicitado» y un destello cuando llega el hilo. El resto va directo, sin
-   filtros: tarjetas ilustradas que el hilo enciende fila a fila al pasar. */
 .page{--ring-b:#3470d6}.page[data-contygo-theme=dark]{--ring-b:#6f9dff}
 .sectionHeading .eyebrow svg{width:15px;height:15px;color:var(--green);flex-shrink:0}
-.featured{background:radial-gradient(62% 60% at 50% 44%,#25d36614,transparent 72%)}
-.serviceCard{isolation:isolate;border-color:transparent;background:transparent;box-shadow:var(--paper),0 28px 60px -36px #25d36699}
-.starRing{position:absolute;inset:-1px;z-index:-1;border-radius:inherit;overflow:hidden;background:#25d36647}
-.starRing>i{position:absolute;left:50%;top:50%;width:240%;aspect-ratio:1;background:conic-gradient(from 0deg,transparent 0 56%,#25d366 72%,var(--ring-b) 85%,transparent 95%);transform:translate(-50%,-50%) rotate(0);animation:starSpin 7s linear infinite;will-change:transform}
-.starRing:after{content:"";position:absolute;inset:2px;border-radius:27px;background:var(--sheet)}
-@keyframes starSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
-.starBadge{position:absolute;z-index:2;top:-13px;left:24px;display:flex;align-items:center;gap:6px;padding:7px 12px 7px 10px;border-radius:40px;background:#061b3d;color:#fff;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 10px 22px -12px #061b3dcc}
-.starBadge svg{width:14px!important;height:14px!important;color:#25d366}
-.page[data-contygo-theme=dark] .starBadge{background:#25d366;color:#061b3d}.page[data-contygo-theme=dark] .starBadge svg{color:#061b3d}
-.shine{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
-.shine:before{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:45%;background:linear-gradient(100deg,transparent,#ffffffb8 50%,transparent);transform:translateX(-160%) skewX(-12deg);opacity:0}
-.page[data-contygo-theme=dark] .shine:before{background:linear-gradient(100deg,transparent,#ffffff47 50%,transparent)}
-.main .serviceCard[data-lit=true] .shine:before,.serviceCard:hover .shine:before{animation:shine 1.3s var(--unfold) .25s both}
-@keyframes shine{0%{transform:translateX(-160%) skewX(-12deg);opacity:0}15%{opacity:1}100%{transform:translateX(330%) skewX(-12deg);opacity:0}}
-.catalogHeader h3 em{font-style:normal;color:var(--accent)}
-.featured{padding-top:14px}
 
-.directory{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.tile{position:relative;display:flex;flex-direction:column;width:100%;text-align:left;font:inherit;cursor:pointer;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:24px;padding:10px 10px 0;box-shadow:var(--paper);transition:transform .5s var(--unfold),box-shadow .5s}
-.tile:hover{transform:translateY(-5px);box-shadow:var(--lift)}
-.tile:after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 1.5px #25d366bf,0 16px 40px -14px #25d36673;opacity:0}
-.tileArt{position:relative;display:block;width:100%;aspect-ratio:1.45;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse 50% 12% at 50% 88%,var(--shade),transparent 70%),var(--soft)}
-.tileArt>img{object-fit:contain;padding:10px 20px 18px;transition:transform .8s var(--unfold),opacity .8s}
-.tile:hover .tileArt>img{transform:translateY(-6px) scale(1.04)}
-.tileCopy{display:flex;flex-direction:column;gap:6px;flex:1;padding:16px 8px 0}
-.tileCopy>strong{font:800 20px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}
-.tileText{font-size:15px;line-height:1.5;color:var(--muted)}
-.tileFoot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 8px;border-top:1px solid var(--line)}
-.tilePrice{display:flex;flex-direction:column;font:800 20px/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em;transition:color .6s}
-.tilePrice small{font:600 12px var(--font-contygo-body),sans-serif;letter-spacing:.02em;color:var(--muted)}
-.tileFoot>i{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);transition:background .3s,transform .35s var(--unfold),border-color .3s}
-.tileFoot svg{width:17px;height:17px}
-.tile:hover .tileFoot>i{background:var(--green);color:#061b3d;border-color:var(--green);transform:rotate(-35deg)}
 /* Before the thread arrives the drawings wait lowered; as it passes, each row rises into place and glows. */
-.main[data-thread-ready=true] .directory>.tile:not([data-lit=true]) .tileArt>img{transform:translateY(16px) scale(.9);opacity:.3}
-.directory>.tile:nth-child(3n+2) .tileArt>img{transition-delay:.09s}.directory>.tile:nth-child(3n) .tileArt>img{transition-delay:.18s}
-.main .directory>.tile[data-lit=true]:after{animation:cardGlow 1.9s ease-out both}
-.main .directory>.tile[data-lit=true] .tilePrice{color:var(--accent);animation:pricePop .9s var(--unfold) .15s both}
-@media(max-width:1000px){.directory{grid-template-columns:1fr 1fr}.directory>.tile:nth-child(n) .tileArt>img{transition-delay:0s}.directory>.tile:nth-child(2n) .tileArt>img{transition-delay:.09s}}
+
 @media(max-width:760px){
-  .serviceCard{box-shadow:var(--paper),0 22px 44px -30px #25d36699}
-  .starRing:after{border-radius:23px}
-  .starBadge{top:-12px;left:20px;font-size:11px;padding:6px 10px 6px 8px}
-  .featured{padding-top:18px;margin-top:-14px}
-  .directory{gap:12px}
-  .tile{border-radius:20px;padding:8px 8px 0}
-  .tileArt{aspect-ratio:1.12;border-radius:14px}
-  .tileArt>img{padding:8px 10px 12px}
-  .tileCopy{padding:12px 4px 0}
-  .tileCopy>strong{font-size:16px;line-height:1.25}
-  .tileText{display:none}
-  .tileFoot{margin-top:10px;padding:10px 4px 12px}
-  .tilePrice{font-size:17px}
-  .tileFoot>i{width:30px;height:30px}.tileFoot svg{width:15px;height:15px}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   /* An odd last service takes the whole row: drawing beside its name. */
-  .directory>.tile:last-child:nth-child(odd){grid-column:1/-1;display:grid;grid-template-columns:46% 1fr;grid-template-rows:1fr auto;column-gap:10px;padding:8px}
-  .directory>.tile:last-child:nth-child(odd) .tileArt{grid-row:1/3;aspect-ratio:auto;min-height:150px}
-  .directory>.tile:last-child:nth-child(odd)>.tileCopy{align-self:end;padding:6px 4px 0}
-  .directory>.tile:last-child:nth-child(odd) .tileText{display:block;font-size:13.5px;line-height:1.45}
-  .directory>.tile:last-child:nth-child(odd)>.tileFoot{margin-top:8px;padding:10px 4px 4px}
+  
+  
+  
+  
+  
 }
-@media(prefers-reduced-motion:reduce){.starRing>i{animation:none}.shine{display:none}.main[data-thread-ready=true] .directory>.tile:not([data-lit=true]) .tileArt>img{transform:none;opacity:1}}
+

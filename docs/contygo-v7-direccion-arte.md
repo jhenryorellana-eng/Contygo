@@ -494,36 +494,31 @@ El clip no tiene narración (audio de −52 dB de media), así que no se present
 
 Desde el avión de papel, los hilos se retiran y entra la luz de escenario de la invitación.
 
-## 30 sep 2026 · «Los más solicitados» y los servicios, directos
+## 30 sep 2026 · «Vitrina»: los más solicitados en escena y el catálogo, directo
 
-**Por qué.** Al publicar, le dijeron al dueño dos cosas:
-- La fila de los tres servicios estrella parecía un catálogo más, cuando son los más vendidos y los más pedidos (lo dice el dueño).
+**Por qué.** Al publicar, al dueño le dijeron dos cosas:
+- La fila de los tres servicios estrella parecía un catálogo más, cuando son sus servicios más vendidos y los más pedidos.
 - Las categorías (Todos, Familia, Asilo…) no gustaron: prefieren ver los servicios directamente.
 
-**Qué cambió** (solo esa sección; el resto de la página queda igual):
+Un primer arreglo (un anillo de luz en el borde de la misma tarjeta y la cinta «Más solicitado») fue rechazado por «baja creatividad». Se construyeron entonces tres conceptos completos en la página real, para elegir en el celular:
+- **vitrina**: escenario;
+- **colección**: bandas de revista con un sello que gira;
+- **hilo**: tarjetas envueltas como regalo y una guirnalda.
 
-- **Encabezado:** «01 · Los más solicitados» y el título «Los que más familias *nos confían.*». Debajo: «Nuestros servicios insignia: guía en vídeo, precio publicado y un acompañamiento que ya conoce cada paso del camino.»
-- **Cada tarjeta estrella tiene su propia luz:**
-  - un anillo verde y azul que gira alrededor del borde. Es una sola capa del compositor, pausada fuera de pantalla y quieta con «reducir movimiento»;
-  - la cinta «★ Más solicitado», montada sobre el borde superior;
-  - un destello que cruza la ilustración cuando llega el hilo o al pasar el ratón.
-- **Textos de las tarjetas estrella**, cuidados y sin prometer resultados:
-  - Visa Juvenil: «Para el futuro de tus hijos»;
-  - Apelación: «Cuando cada día cuenta» (el texto dice «atentos a tus plazos», no «a tiempo»);
-  - Reforzamiento de Asilo: «Tu historia, con más respaldo».
-- **Servicios directos:** los 9 restantes se muestran sin filtros ni «Ver más», bajo «Más servicios, *el mismo acompañamiento.*».
-  - Cada uno es una tarjeta con su ilustración V8, su nombre, su precio y, en escritorio, su descripción.
-  - Hasta que llega el hilo, los dibujos esperan un poco más abajo y tenues; al pasar, cada fila sube a su sitio y se ilumina.
-  - Escritorio: 3 columnas. Celular: 2 columnas; el último servicio, si queda solo, ocupa la fila entera.
-- **Qué se retiró:** la fila de categorías y su riel del hilo, el filtro por `?servicio=` y las reglas CSS del catálogo anterior (68). Las ilustraciones `categoria-*` quedan sin uso en `public/contygo/v8/`.
+El dueño eligió **Vitrina**. El código de los otros dos está en el historial de git (commit «Servicios: tres conceptos para elegir»).
 
-**Afirmación.** «Más solicitado» y «los que más familias nos confían» se basan en la palabra del dueño (30-09-2026): son sus servicios más vendidos y pedidos. No se publica ninguna cifra.
+**Cómo es** (`components/contygo/v7/ServiceShowcase.tsx`):
 
-**Rendimiento.** Medido con `gesto.mjs`: deslizamiento táctil real a 390×844, CPU 4× más lenta, de «Servicios» hasta el final de la lista. Se comparó la misma compilación con el anillo y sin él (p95 del hilo principal):
+- **Escenario.** Los tres más solicitados suben a un escenario azul noche que ocupa todo el ancho y arranca justo bajo las cifras.
+  - Encabezado: laureles a los lados de «Los más solicitados», el título «Los favoritos *de nuestras familias.*» y debajo: «Los tres servicios que más nos piden. Cada uno con su guía en vídeo y su precio a la vista.»
+  - Cada favorito tiene un foco de luz, su escultura V8 flotando sobre un pedestal de papel con borde verde, la insignia «★ Más solicitado», el nombre, una línea («Para el futuro de tus hijos», «Cuando cada día cuenta», «Tu historia, con más respaldo»), el precio y «Ver la guía · duración».
+  - En el celular es un carrusel con el riel del hilo.
+- **Todo nuestro catálogo.** Los otros 9 servicios van directos, sin filtros.
+  - Cada tarjeta lleva su dibujo sobre un fondo del color de su familia de trámites: verde familia, azul asilo, azul grisáceo corte, arena impuestos y empresa. El color agrupa sin obligar a elegir.
+  - Cuando pasa el hilo, cada dibujo sube a su sitio.
+- **Movimiento.** Solo `transform`: la escultura flota y está pausada fuera de pantalla; con «reducir movimiento» queda quieta.
+- **Limpieza.** Se retiraron del CSS principal las reglas de los diseños anteriores (tarjetas, anillo, cuadrícula): pasó de 56,7 KB a 44,7 KB.
 
-| Ronda | Con anillo | Sin anillo |
-|---|---|---|
-| 1 | 34,9 ms | 41,6 ms |
-| 2 | 41,6 ms | 48,6 ms |
+**Afirmación.** «Más solicitado» y «Los favoritos de nuestras familias» se basan en la palabra del dueño (30-09-2026): son sus servicios más vendidos y pedidos. No se publica ninguna cifra.
 
-La diferencia es ruido: el anillo no añade trabajo al hilo principal.
+**Rendimiento.** Medido con `gesto.mjs`: deslizamiento táctil real a 390×844, CPU 4× más lenta, de «Servicios» al final del catálogo. p95 del hilo principal: 27,8 ms, sin cuadros de más de 50 ms. Es igual o mejor que la versión anterior en la misma prueba (35–49 ms).

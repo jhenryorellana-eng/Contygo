@@ -1,0 +1,369 @@
+/* ╔══════════════════════════════════════════════════════════╗
+   ║  PRIME — asesor virtual (chat + llamada)                 ║
+   ║  Chat inmersivo: navy profundo, aurora dorada que        ║
+   ║  respira, el mensaje de Prime como titular en serif,     ║
+   ║  píldoras de cristal y un campo con borde luminoso.      ║
+   ║  Móvil: pantalla completa · Escritorio: tarjeta flotante ║
+   ╚══════════════════════════════════════════════════════════╝ */
+
+:root {
+  --pa-navy: #061b3d;
+  --pa-navy-2: #0c2c5e;
+  --pa-navy-3: #04122b;
+  --pa-blue: #1b4fa0;
+  --pa-blue-2: #2563c4;
+  --pa-gold: #d99b2b;
+  --pa-gold-2: #efc44d;
+  --pa-gold-3: #c8901f;
+  --pa-red: #d8201f;
+  --pa-wa: #25d366;
+  --pa-serif: var(--font-serif), Georgia, serif;
+  --pa-sans: var(--font-sans), system-ui, sans-serif;
+  --pa-mono: ui-monospace, "Cascadia Mono", Menlo, monospace;
+}
+
+html.pa-lock { overflow: hidden; }
+
+/* ============================================================
+   LANZADOR
+   ============================================================ */
+.pa-launch {
+  position: fixed; right: 20px; bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 71;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--pa-navy); color: #fff;
+  border: 1px solid rgba(239, 196, 77, .35);
+  border-radius: 999px; padding: 7px 16px 7px 7px;
+  box-shadow: 0 18px 40px -16px rgba(4, 18, 43, .8);
+  font-family: var(--pa-sans);
+  transition: transform .18s ease, box-shadow .2s ease;
+  cursor: pointer;
+}
+.pa-launch:hover { transform: translateY(-2px); box-shadow: 0 24px 46px -16px rgba(4, 18, 43, .9); }
+.pa-launch__ava {
+  position: relative; width: 42px; height: 42px; border-radius: 999px;
+  background: #fff; color: var(--pa-gold); font-size: 21px;
+  display: grid; place-items: center; flex: 0 0 auto;
+}
+.pa-launch__dot {
+  position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 999px;
+  background: var(--pa-wa); border: 2px solid var(--pa-navy);
+}
+.pa-launch__txt { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.pa-launch__txt strong { font-size: 14px; font-weight: 700; }
+.pa-launch__txt small { font-size: 11px; color: rgba(255,255,255,.7); }
+
+/* ============================================================
+   PANEL (escritorio: tarjeta flotante) — fondo inmersivo
+   ============================================================ */
+.pa-panel {
+  position: fixed; right: 22px; bottom: 22px; z-index: 80;
+  width: 400px; height: min(700px, calc(100dvh - 44px));
+  color: #fff;
+  background:
+    radial-gradient(70% 50% at 100% 0%, rgba(37, 99, 196, .28), transparent 60%),
+    radial-gradient(60% 45% at 0% 8%, rgba(239, 196, 77, .10), transparent 60%),
+    linear-gradient(180deg, #071f47 0%, var(--pa-navy-3) 100%);
+  border-radius: 26px; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 40px 90px -30px rgba(4, 18, 43, .85), 0 0 0 1px rgba(239, 196, 77, .14);
+  font-family: var(--pa-sans);
+  animation: paIn .28s cubic-bezier(.2, .8, .25, 1) both;
+  isolation: isolate;
+}
+@keyframes paIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ---- Aurora: luces difuminadas que VIAJAN por todo el panel ---- */
+.pa-aurora { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.pa-aurora span {
+  position: absolute; border-radius: 50%; filter: blur(52px); opacity: .62;
+  will-change: transform; animation: paDrift 26s cubic-bezier(.45, .05, .55, .95) infinite;
+  mix-blend-mode: screen;
+}
+.pa-aurora__a { width: 78%; height: 48%; left: -20%; top: 55%;  background: radial-gradient(circle, rgba(239,196,77,.8), rgba(239,196,77,0) 68%); }
+.pa-aurora__b { width: 90%; height: 56%; left: 35%;  top: 65%;  background: radial-gradient(circle, rgba(37,99,196,.9), rgba(37,99,196,0) 68%); animation-duration: 32s; animation-delay: -9s; }
+.pa-aurora__c { width: 56%; height: 36%; left: 20%;  top: -14%; background: radial-gradient(circle, rgba(27,79,160,.75), rgba(27,79,160,0) 68%); animation-duration: 38s; animation-delay: -18s; }
+.pa-aurora__d { width: 44%; height: 30%; left: 55%;  top: 30%;  background: radial-gradient(circle, rgba(216,32,31,.32), rgba(216,32,31,0) 68%); animation-duration: 29s; animation-delay: -4s; }
+/* trayectoria larga en lazo: recorre el panel de esquina a esquina */
+@keyframes paDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  25%  { transform: translate3d(28%, -38%, 0) scale(1.15); }
+  50%  { transform: translate3d(-12%, -62%, 0) scale(.9); }
+  75%  { transform: translate3d(-30%, -20%, 0) scale(1.1); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+.pa-panel.is-thinking .pa-aurora span { opacity: .85; animation-duration: 11s; }
+
+/* ============================================================
+   CABECERA — píldora central "Prime · en línea"
+   ============================================================ */
+.pa-top {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 14px 6px;
+}
+.pa-top__x, .pa-top__call {
+  width: 44px; height: 44px; border-radius: 999px; flex: 0 0 auto;
+  display: grid; place-items: center; cursor: pointer; border: 0; font-family: inherit;
+  transition: transform .15s ease, background .15s ease;
+}
+.pa-top__x { background: rgba(255,255,255,.06); color: rgba(255,255,255,.75); border: 1px solid rgba(255,255,255,.12); }
+.pa-top__x:hover { background: rgba(255,255,255,.12); color: #fff; }
+.pa-top__x svg { width: 17px; height: 17px; }
+.pa-top__call {
+  background: var(--pa-wa); color: #06351c;
+  box-shadow: 0 0 0 6px rgba(37, 211, 102, .14), 0 10px 26px -10px rgba(37, 211, 102, .9);
+}
+.pa-top__call:hover { transform: scale(1.06); }
+.pa-top__call svg { width: 20px; height: 20px; }
+.pa-top__pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-radius: 999px; padding: 9px 16px 9px 12px;
+  font-family: var(--pa-serif); font-weight: 700; font-size: 15.5px; color: #fff;
+}
+.pa-top__star { color: var(--pa-gold-2); font-size: 15px; }
+.pa-top__dot { width: 7px; height: 7px; border-radius: 999px; background: var(--pa-wa); box-shadow: 0 0 10px var(--pa-wa); }
+.pa-top__pill small { font-family: var(--pa-sans); font-weight: 600; font-size: 11.5px; color: rgba(255,255,255,.65); }
+
+/* ============================================================
+   FLUJO — la conversación como titular + estela
+   ============================================================ */
+.pa-flow {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; touch-action: pan-y;
+  padding: 10px 22px 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 14px;
+}
+.pa-say {
+  display: flex; flex-direction: column; gap: 12px;
+  font-family: var(--pa-serif); color: #fff;
+  font-size: clamp(21px, 5.6vw, 25px); line-height: 1.32; font-weight: 600;
+  text-wrap: pretty;
+  animation: paSayIn .5s cubic-bezier(.2, .8, .25, 1) both;
+}
+@keyframes paSayIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.pa-say .pa-line { display: block; }
+.pa-say .pa-line + .pa-line { margin-top: 8px; }
+.pa-say strong { color: var(--pa-gold-2); font-weight: 700; }
+.pa-say.is-long { font-size: clamp(17px, 4.7vw, 19px); line-height: 1.45; font-weight: 500; }
+.pa-say.is-long .pa-line + .pa-line { margin-top: 6px; }
+.pa-say.is-old { font-size: 14.5px; line-height: 1.5; font-weight: 400; color: rgba(255,255,255,.55); font-family: var(--pa-sans); animation: none; }
+.pa-say.is-old .pa-line + .pa-line { margin-top: 3px; }
+.pa-say.is-old strong { color: rgba(239,196,77,.75); }
+.pa-say.is-error { color: #ffd1cf; }
+
+.pa-you {
+  align-self: flex-end; max-width: 88%; text-align: right;
+  font-size: 14.5px; line-height: 1.45; font-style: italic;
+  color: var(--pa-gold-2);
+  padding: 8px 14px; border-radius: 16px 4px 16px 16px;
+  background: rgba(239,196,77,.08); border: 1px solid rgba(239,196,77,.22);
+  white-space: pre-wrap; word-break: break-word;
+}
+.pa-you.is-old { color: rgba(239,196,77,.55); border-color: rgba(239,196,77,.12); background: transparent; font-size: 13px; }
+
+/* Revelado palabra a palabra: cada palabra nueva entra desde el desenfoque */
+.pa-w { display: inline-block; animation: paWord .55s cubic-bezier(.2, .8, .25, 1) both; }
+@keyframes paWord {
+  from { opacity: 0; filter: blur(7px); transform: translateY(5px); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+.pa-say.is-old .pa-w, .pa-say.is-old .pa-pop { animation: none; }
+.pa-pop { animation: paPop .5s cubic-bezier(.2, .8, .25, 1) both; }
+@keyframes paPop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+/* cursor luminoso mientras Prime escribe */
+.pa-caret {
+  display: inline-block; width: 9px; height: 9px; border-radius: 999px; margin-left: 6px;
+  vertical-align: baseline; background: var(--pa-gold-2); box-shadow: 0 0 14px var(--pa-gold-2);
+  animation: paPulse 1s ease-in-out infinite;
+}
+.pa-top__dot.is-busy { animation: paPulse 1s ease-in-out infinite; }
+
+.pa-think { display: inline-flex; align-items: center; gap: 9px; font-family: var(--pa-sans); font-size: 14px; font-weight: 600; color: rgba(255,255,255,.7); }
+.pa-think i { width: 9px; height: 9px; border-radius: 999px; background: var(--pa-gold-2); box-shadow: 0 0 14px var(--pa-gold-2); animation: paPulse 1.2s ease-in-out infinite; }
+@keyframes paPulse { 0%, 100% { transform: scale(.7); opacity: .6; } 50% { transform: scale(1.15); opacity: 1; } }
+
+/* Píldoras de respuesta rápida (cristal; la primera con borde dorado) */
+.pa-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.pa-chip {
+  font-family: var(--pa-sans); font-weight: 600; font-size: 13.5px; color: #fff;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-radius: 999px; padding: 10px 15px; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.pa-chip:hover { background: rgba(255,255,255,.13); transform: translateY(-1px); }
+.pa-chip.is-primary { border-color: rgba(239,196,77,.7); box-shadow: 0 0 22px -6px rgba(239,196,77,.7); }
+
+/* Tarjeta de servicio dentro de la respuesta */
+.pa-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(239,196,77,.4);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-radius: 14px; padding: 12px 14px; text-decoration: none; color: inherit;
+  font-family: var(--pa-sans);
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+.pa-card:hover { border-color: var(--pa-gold-2); background: rgba(239,196,77,.1); transform: translateY(-1px); }
+.pa-card__t { display: flex; flex-direction: column; gap: 2px; }
+.pa-card__name { font-family: var(--pa-serif); font-weight: 700; font-size: 15px; color: #fff; }
+.pa-card__sub { font-size: 11.5px; color: var(--pa-gold-2); font-weight: 600; }
+.pa-card svg { width: 18px; height: 18px; color: var(--pa-gold-2); flex: 0 0 auto; }
+
+.pa-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 999px; padding: 12px 18px; font-weight: 700; font-size: 14px;
+  text-decoration: none; cursor: pointer; border: 0; font-family: var(--pa-sans);
+}
+.pa-btn svg { width: 18px; height: 18px; }
+.pa-btn--wa { background: var(--pa-wa); color: #06351c; box-shadow: 0 12px 26px -12px rgba(37, 211, 102, .7); }
+.pa-btn--wa:hover { background: #20bd5a; }
+.pa-btn--inline { align-self: flex-start; padding: 10px 14px; font-size: 13px; }
+
+/* ============================================================
+   COMPOSER — campo de cristal con borde luminoso
+   ============================================================ */
+.pa-composer {
+  position: relative; z-index: 2; flex: 0 0 auto;
+  padding: 6px 14px calc(12px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.pa-composer__box {
+  position: relative;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(4, 18, 43, .55);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-radius: 999px; padding: 6px 6px 6px 18px;
+  box-shadow: 0 0 34px -6px rgba(239, 196, 77, .28), 0 18px 40px -20px rgba(0,0,0,.7);
+  transition: box-shadow .25s ease;
+}
+/* borde degradado (dorado → azul) que gira suavemente */
+.pa-composer__box::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px;
+  background: conic-gradient(from var(--pa-ang, 0deg), var(--pa-gold-2), rgba(255,255,255,.35), var(--pa-blue-2), rgba(239,196,77,.15), var(--pa-gold-2));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+  animation: paSpin 6s linear infinite;
+}
+@property --pa-ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes paSpin { to { --pa-ang: 360deg; } }
+.pa-composer__box:focus-within { box-shadow: 0 0 46px -4px rgba(239, 196, 77, .45), 0 18px 40px -20px rgba(0,0,0,.7); }
+.pa-composer__field {
+  flex: 1 1 auto; min-width: 0; background: transparent; border: 0; outline: none;
+  color: #fff; font-family: var(--pa-sans);
+  font-size: 16px; /* 16px: evita el zoom automático de iOS/Android al enfocar */
+  padding: 10px 0;
+}
+.pa-composer__field::placeholder { color: rgba(255,255,255,.5); }
+.pa-composer__mic, .pa-composer__send {
+  width: 44px; height: 44px; border-radius: 999px; flex: 0 0 auto;
+  display: grid; place-items: center; cursor: pointer; border: 0; font-family: inherit;
+  transition: transform .15s ease, opacity .15s ease, background .15s ease;
+}
+.pa-composer__mic { background: rgba(255,255,255,.08); color: #fff; }
+.pa-composer__mic:hover { background: rgba(255,255,255,.16); }
+.pa-composer__mic svg { width: 20px; height: 20px; }
+.pa-composer__send { background: linear-gradient(180deg, var(--pa-gold-2), var(--pa-gold-3)); color: var(--pa-navy-3); box-shadow: 0 8px 20px -8px rgba(239,196,77,.8); }
+.pa-composer__send svg { width: 20px; height: 20px; }
+.pa-composer__send:disabled { opacity: .35; cursor: default; box-shadow: none; }
+.pa-composer__send.is-stop { background: rgba(255,255,255,.14); color: #fff; box-shadow: none; }
+.pa-composer__send.is-stop svg { width: 16px; height: 16px; }
+.pa-composer__mic:hover, .pa-composer__send:not(:disabled):hover { transform: scale(1.06); }
+.pa-composer__box.is-busy::before { animation-duration: 2.2s; }
+.pa-composer__note { align-self: center; text-align: center; font-size: 11px; color: rgba(255,255,255,.45); line-height: 1.35; }
+.pa-composer__note a, .pa-composer__reset { color: rgba(239,196,77,.85); text-decoration: none; font-weight: 600; }
+.pa-composer__reset { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+.pa-composer__note a:hover, .pa-composer__reset:hover { color: var(--pa-gold-2); }
+
+/* ============================================================
+   LLAMADA — orbe de voz
+   ============================================================ */
+.pa-call {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; display: flex; flex-direction: column;
+  background: radial-gradient(70% 55% at 50% 42%, #10346b 0%, var(--pa-navy) 48%, var(--pa-navy-3) 100%);
+  color: #fff; overflow: hidden;
+}
+.pa-call__top { padding: 16px 18px 0; display: flex; align-items: center; justify-content: space-between; }
+.pa-call__pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px; padding: 6px 12px; font-size: 11.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pa-call__pill.is-live { background: rgba(37, 211, 102, .14); border-color: rgba(37, 211, 102, .45); }
+.pa-call__dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255,255,255,.5); }
+.pa-call__pill.is-live .pa-call__dot { background: var(--pa-wa); }
+.pa-call__lang { font-family: var(--pa-mono); font-size: 10px; letter-spacing: .16em; color: rgba(255,255,255,.55); }
+.pa-call__body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 4px 18px; text-align: center; min-height: 0; }
+
+.pa-orbwrap { position: relative; width: min(100%, 460px); aspect-ratio: 1; margin: 0 auto; flex: 0 1 auto; }
+.pa-orb { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pa-orb__center {
+  position: absolute; inset: 21%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  text-align: center; pointer-events: none;
+}
+.pa-orb__who { font-family: var(--pa-mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--pa-gold-2); }
+.pa-orb__who.is-prime { color: #fff6dc; }
+.pa-orb__text {
+  font-family: var(--pa-serif); font-weight: 700; font-size: clamp(18px, 5.6vw, 24px);
+  line-height: 1.25; color: #fff; text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+  text-shadow: 0 4px 30px rgba(4, 18, 43, .9);
+}
+.pa-orb__hint { font-size: 13px; line-height: 1.45; color: rgba(255,255,255,.72); max-width: 26ch; }
+
+/* Botones que Prime deja en pantalla durante la llamada */
+.pa-call.has-cards .pa-orbwrap { width: min(100%, 300px); }
+.pa-call.has-cards .pa-orb__who { font-size: 10px; }
+.pa-call__suggest { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.pa-call__suggest-k { font-family: var(--pa-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--pa-gold-2); }
+.pa-call__suggest .pa-card { background: rgba(255,255,255,.08); }
+.pa-call__suggest .pa-btn--wa { align-self: stretch; }
+.pa-orb__time { font-family: var(--pa-mono); font-size: 13px; letter-spacing: .1em; color: var(--pa-gold-2); font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+.pa-call__controls { flex: 0 0 auto; padding: 8px 22px calc(24px + env(safe-area-inset-bottom)); display: flex; align-items: flex-start; justify-content: center; gap: 22px; }
+.pa-ctl { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: 0; color: #fff; cursor: pointer; font-family: inherit; }
+.pa-ctl:disabled { opacity: .4; cursor: default; }
+.pa-ctl__btn {
+  width: 56px; height: 56px; border-radius: 999px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25);
+  display: grid; place-items: center; transition: transform .15s ease, background .15s ease;
+}
+.pa-ctl__btn svg { width: 22px; height: 22px; }
+.pa-ctl:not(:disabled):hover .pa-ctl__btn { transform: scale(1.06); background: rgba(255,255,255,.16); }
+.pa-ctl.is-on .pa-ctl__btn { background: var(--pa-gold-2); color: var(--pa-navy-3); border-color: transparent; }
+.pa-ctl__btn--end {
+  width: 70px; height: 70px; background: var(--pa-red); border-color: transparent;
+  box-shadow: 0 0 0 7px rgba(216, 32, 31, .16), 0 0 0 8px rgba(255, 255, 255, .08), 0 0 44px rgba(216, 32, 31, .55), 0 16px 34px -14px rgba(216, 32, 31, .85);
+}
+.pa-ctl__btn--end svg { width: 28px; height: 28px; transform: rotate(135deg); }
+.pa-ctl--end:hover .pa-ctl__btn { background: #b81a19; }
+.pa-ctl__lbl { font-size: 11px; color: rgba(255,255,255,.7); }
+
+/* ============================================================
+   MÓVIL — pantalla completa (el teclado se maneja de forma nativa)
+   ============================================================ */
+@media (max-width: 640px) {
+  .pa-launch { right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); padding: 6px 14px 6px 6px; }
+  .pa-launch__txt small { display: none; }
+  .pa-launch__txt strong { font-size: 13.5px; }
+  .pa-panel {
+    inset: 0; width: auto; height: 100%; border-radius: 0;
+    animation-name: paUp;
+  }
+  @keyframes paUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .pa-top { padding-top: calc(14px + env(safe-area-inset-top)); }
+  .pa-say { font-size: clamp(22px, 6.4vw, 27px); }
+  .pa-say.is-long { font-size: clamp(17px, 4.8vw, 19px); }
+  .pa-orbwrap { width: min(100%, 460px); }
+  .pa-orb__text { font-size: clamp(18px, 5.6vw, 24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-panel, .pa-say, .pa-think i, .pa-aurora span, .pa-composer__box::before, .pa-w, .pa-pop, .pa-caret, .pa-top__dot { animation: none; }
+  .pa-launch, .pa-top__call, .pa-chip, .pa-card, .pa-ctl__btn, .pa-composer__box { transition: none; }
+}

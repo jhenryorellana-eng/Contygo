@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-09-14",
+  "outputs": [
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\01-elige-mobile.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-a17f9c19-33be-42f1-b3c1-63b557c28eee.png",
+      "width": 941,
+      "id": "01-elige-mobile",
+      "height": 1672,
+      "bytes": 2148276
+    },
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\02-contrato-mobile.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-325ad14d-973e-4a19-b4f8-d184b76327cd.png",
+      "width": 941,
+      "id": "02-contrato-mobile",
+      "height": 1672,
+      "bytes": 2205447
+    },
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\03-documentos-mobile.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-a1a3ba67-3ac0-43d9-9666-1913b41c8f20.png",
+      "width": 941,
+      "id": "03-documentos-mobile",
+      "height": 1672,
+      "bytes": 1962005,
+      "beforePaperFix": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\output\\imagegen\\contygo-hero-storyboards-v2\\before-paper-fix\\03-documentos-mobile.png"
+    },
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\01-elige-desktop.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-0edc1e75-7412-4c9e-9d30-8fbc28732593.png",
+      "width": 1672,
+      "id": "01-elige-desktop",
+      "height": 941,
+      "bytes": 2093497
+    },
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\02-contrato-desktop.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-ff36a135-2a84-49be-92d3-f8a48f8c2dae.png",
+      "width": 1672,
+      "id": "02-contrato-desktop",
+      "height": 941,
+      "bytes": 2256543
+    },
+    {
+      "destination": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\public\\contygo\\hero-storyboards-v2\\03-documentos-desktop.png",
+      "original": "C:\\Users\\PepitoLee\\.codex\\generated_images\\01a0a028-095d-74c2-9bbe-950f0b092a5c\\exec-814fa47a-3c63-4865-a046-4095e4b4ab7f.png",
+      "width": 1672,
+      "id": "03-documentos-desktop",
+      "height": 941,
+      "bytes": 2045208,
+      "beforePaperFix": "D:\\Landing Page de servicios de USALATINO\\New-landing-\\output\\imagegen\\contygo-hero-storyboards-v2\\before-paper-fix\\03-documentos-desktop.png"
+    }
+  ]
+}

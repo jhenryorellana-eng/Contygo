@@ -1,0 +1,37 @@
+/* One backdrop behind every stage of the immersive dialog: above its background, below all content. */
+.backdrop{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.sparks{position:absolute;inset:0;overflow:hidden}
+
+/* Ignition: the «y» becomes the solid logo and bursts into the first volley of rockets. */
+.ignition{position:absolute;inset:0}
+.logo{position:absolute;transform-origin:46.2% 56.9%}
+.logo svg{display:block;width:100%;height:100%;overflow:visible}
+.logo path{fill:none;stroke-width:99;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1}
+.check{stroke:#25d366}
+.ignition[data-look=dark] .tail{stroke:#f6f8f7}
+.ignition[data-look=light] .tail{stroke:#061b3d}
+.ignition[data-look=dark] .logo{filter:drop-shadow(0 0 18px rgb(37 211 102 / 55%))}
+.ignition[data-look=light] .logo{filter:drop-shadow(0 14px 18px rgb(6 27 61 / 22%))}
+
+.rocket{position:absolute;left:0;top:0;width:0;height:0}
+.head{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%}
+.trail{position:absolute;right:0;top:-1.25px;width:78px;height:2.5px;border-radius:2px}
+.ignition[data-look=dark] .head{background:#f6f8f7;box-shadow:0 0 10px 3px rgb(37 211 102 / 70%)}
+.ignition[data-look=dark] .trail{background:linear-gradient(90deg,transparent,rgb(37 211 102 / 90%))}
+.ignition[data-look=light] .head{background:#061b3d;box-shadow:0 0 0 3px rgb(37 211 102 / 45%)}
+.ignition[data-look=light] .trail{background:linear-gradient(90deg,transparent,#087f46)}
+
+.burst{position:absolute;width:0;height:0}
+.bloom{position:absolute;left:-55px;top:-55px;width:110px;height:110px;border-radius:50%;opacity:0}
+.ring{position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;opacity:0}
+.spark{position:absolute;left:0;top:-1px;width:14px;height:2px;border-radius:2px;opacity:0;transform-origin:0 50%}
+.spark:nth-child(odd){width:9px}
+.ignition[data-look=dark] .bloom{background:radial-gradient(circle,rgb(246 248 247 / 16%),rgb(37 211 102 / 10%) 35%,transparent 70%)}
+.ignition[data-look=dark] .ring{border:1px solid rgb(37 211 102 / 55%)}
+.ignition[data-look=dark] .spark{background:#25d366;box-shadow:0 0 6px rgb(37 211 102 / 70%)}
+.ignition[data-look=dark] .spark:nth-child(4n){background:#f6f8f7}
+.ignition[data-look=light] .bloom{background:radial-gradient(circle,rgb(37 211 102 / 14%),transparent 65%)}
+.ignition[data-look=light] .ring{border:1px solid rgb(8 127 70 / 50%)}
+.ignition[data-look=light] .spark{background:#087f46}
+.ignition[data-look=light] .spark:nth-child(4n){background:#061b3d}

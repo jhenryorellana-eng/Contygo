@@ -1,0 +1,8 @@
+/* Color-only adapter: all interaction and animation timelines stay in the existing components. */
+.surface[data-contygo-theme=light]{--cg-stage:#fff;--cg-stage-rgb:255,255,255;--cg-text:#061b3d;--cg-text-rgb:6,27,61;--cg-accent:#087f46}
+.surface[data-contygo-theme=dark]{--cg-stage:#061b3d;--cg-stage-rgb:6,27,61;--cg-text:#f6f8f7;--cg-text-rgb:246,248,247;--cg-accent:#25d366}
+.surface[data-contygo-theme=light] :global(dialog img[src="/contygo/brand/logo-dark.png"]){content:url('/contygo/brand/logo-light.png')}
+.surface[data-contygo-theme=light] :global(dialog img[src="/contygo/brand/symbol-dark.png"]){content:url('/contygo/brand/symbol-light.png')}
+.surface[data-contygo-theme=light] :global(dialog input[type=date]){color-scheme:light}
+/* «Papel verde» light option for the service journey (see docs/contygo-v7-direccion-arte.md). */
+.surface[data-contygo-theme=light][data-contygo-dia=papel]{--cg-stage:#eaf2ed;--cg-stage-rgb:234,242,237}

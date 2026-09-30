@@ -1,0 +1,155 @@
+/* Refinements for the approved evaluation-to-Contygo concept. */
+body { font-family: "Source Sans 3", Arial, sans-serif; }
+.copy h1, .copy h2 { font-weight: 600; letter-spacing: -.042em; }
+.copy .subline { font-size: 15px; }
+.copy[data-copy="2"] { top: calc(67px + 3vh); }
+.world {
+  transform: none;
+}
+.evaluation {
+  background: linear-gradient(135deg, #fffdf8, #f8f5ee 60%, #edf1ef);
+  box-shadow: 0 34px 85px -28px #000b, 0 1px 0 #ffffff90, 0 0 0 7px #ffffff04;
+}
+.evaluation::before {
+  content: ""; position: absolute; z-index: 2; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, #fff, transparent); pointer-events: none;
+}
+.evalTop { background: #ffffff40; }
+.evalBrand { font-size: 11px; }
+.evalTop > span { font-size: 11px; }
+.evalSteps { font-size: 12px; }
+.evalForm h3 { font-size: 27px; font-weight: 600; }
+.evalLabel { font-size: 10px; }
+.answers button { font-size: 14px; min-height: 44px; transition: background .2s, border-color .2s; }
+.evalNote { font-size: 11px; }
+.evalContinue { font-size: 13px; }
+.evalContinue span { display: inline-block; transition: transform .25s; }
+.trail { inset: 0; width: 100%; height: 100%; transform: none; }
+.trail path { stroke-width: 1; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.trail .green { stroke: #9fe4ba88; }
+.morph { box-shadow: 0 26px 60px -25px #000a, 0 0 0 1px #f8f5ee35; }
+.choiceSummary { background: linear-gradient(130deg, #fffdf8, #f8f5ee 68%, #e9f1e9); border-radius: inherit; }
+.choiceLine { left: 24px; right: 24px; height: 1px; background: linear-gradient(90deg, transparent, #3b9e6c, transparent); }
+.choiceSummary .brand { font-size: 32px; }
+.choiceSummary > p:last-of-type { font-size: 15px; line-height: 1.4; }
+.routeLabel, .advisor > .routeLabel { font-size: 10px; }
+.advisor { background: linear-gradient(130deg, #ffffff12, #ffffff04 60%); }
+.advisorBrand { font-size: 16px; }
+.advisor > p:not(.routeLabel) { font-size: 15px; line-height: 1.4; }
+.choiceSummary button span, .advisor > a > span:not(.sr) { transition: background .25s, transform .25s; }
+.handoffBrand {
+  position: absolute; z-index: 4; inset: 0; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; pointer-events: none; color: var(--navy); opacity: 0; visibility: hidden;
+}
+.handoffBrand svg { width: 74px; height: 74px; filter: drop-shadow(0 4px 6px #061b3d12); }
+.handoffBrand span { margin-top: 4px; font-size: 28px; font-weight: 700; letter-spacing: -.055em; }
+.metal {
+  background: linear-gradient(125deg, #fffdf5, #b3aea5 17%, #f8f5ef 36%, #9c978d 70%, #e9e5dc);
+  box-shadow: inset 0 0 0 1px #cdc6b9, inset 2px 1px 3px #fff, inset -2px -1px 2px #cee9d855;
+}
+.phoneInterior { box-shadow: inset 0 1px 2px #ffffffb0; }
+/* The screen preview retains the type used by the actual application. */
+.phoneInterior { font-family: Arial, sans-serif; }
+.deviceRim {
+  position: absolute; z-index: 5; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  box-shadow: inset 2px 0 2px #fff8, inset -2px -1px 2px #a4e0bd88, 0 0 18px -10px #b6f5d6a0;
+}
+.studio img { translate: var(--light-x, 0px) var(--light-y, 0px); scale: 1.025; transition: translate .8s; }
+.studio::before { background: linear-gradient(112deg, transparent 39%, #c2ffdd24 49%, transparent 56%); }
+.wordmark { font-family: Arial, sans-serif; letter-spacing: -.065em; color: #d3fce715; }
+.choicesNote { font-size: 12px; }
+.cta {
+  position: relative; overflow: hidden; font-size: 15px; gap: 27px;
+  background: linear-gradient(135deg, #fffdf8, #edf3e9); border-color: #f8f5eeaa;
+  box-shadow: 0 12px 34px -18px #000b, inset 0 1px 0 #fff;
+  transition: transform .25s, box-shadow .25s;
+}
+.cta::before {
+  content: ""; position: absolute; inset: -80% -35%; pointer-events: none;
+  background: linear-gradient(110deg, transparent 40%, #fff9 50%, transparent 60%);
+  transform: translateX(-90%); transition: transform .6s;
+}
+.assistLink { font-size: 12px; }
+.closing { bottom: 63px; }
+.progress { height: 44px; gap: 42px; backdrop-filter: blur(10px); }
+.progress button { min-height: 44px; font-size: 11px; letter-spacing: .07em; transition: color .2s; }
+.progress button b { font-size: 10px; }
+.scrollPrompt { font-size: 12px; line-height: 1.4; }
+.scrollPrompt span { font-size: 22px; }
+.scene { --ambient-state: paused; }
+.scene[data-motion="running"] { --ambient-state: running; }
+.morph.is-arrived, .phoneGlass, .studio::before, .scrollPrompt span { animation-play-state: var(--ambient-state); }
+@media (hover:hover) and (pointer:fine) {
+  .answers button:hover { border-color: #d99b2b90; background: #fff8e9; }
+  .evalContinue:hover span { transform: translateX(4px); }
+  .choiceSummary button:hover span { background: #167b4b15; transform: translate(2px,-2px); }
+  .advisor > a:hover > span:not(.sr) { background: #efc44d18; transform: translate(2px,-2px); }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 15px 38px -16px #000b; }
+  .cta:hover::before { transform: translateX(90%); }
+}
+@media (min-width:761px) and (hover:hover) and (pointer:fine) {
+  .evaluation, .morph, .advisor { rotate: y var(--tilt-y, 0deg); transition: rotate .5s cubic-bezier(.2,.65,.3,1); }
+}
+@media(max-width:760px) {
+  .copy { top: 85px; }
+  .copy[data-copy="2"] { top: 85px; }
+  .copy h1, .copy h2 { font-size: 40px; line-height: 1.03; }
+  .copy .subline { font-size: 13px; max-width: 29ch; margin-top: 12px; }
+  .evalBrand, .evalTop > span { font-size: 10px; }
+  .evalSteps { font-size: 11px; }
+  .evalBody { padding-top: 17px; gap: 19px; }
+  .evalForm h3 { font-size: 26px; }
+  .evalLabel { font-size: 9px; }
+  .answers button { font-size: 13px; padding-inline: 10px; }
+  .evalNote { font-size: 10px; margin-top: 13px; }
+  .evalContinue { font-size: 12px; }
+  .choiceSummary .brand { font-size: 28px; }
+  .routeLabel, .advisor > .routeLabel { font-size: 9px; }
+  .choiceSummary > p:last-of-type, .advisor > p:not(.routeLabel) { font-size: 14px; }
+  .advisorBrand { font-size: 16px; }
+  .choicesNote { font-size: 11px; top: calc(54% + 180px); }
+  .handoffBrand svg { width: 58px; height: 58px; }
+  .handoffBrand span { font-size: 23px; }
+  .cta { font-size: 14px; min-height: 46px; }
+  .assistLink { font-size: 11px; }
+  .closing { bottom: 62px; }
+  .progress { gap: 29px; }
+  .progress button { font-size: 10px; letter-spacing: .035em; }
+  .progress button b { font-size: 9px; }
+  .scrollPrompt { font-size: 11px; width: 230px; bottom: 68px; }
+}
+@media(max-width:760px) and (max-height:740px) {
+  .copy { top: 77px; }
+  .copy[data-copy="2"] { top: 77px; }
+  .copy h1, .copy h2 { font-size: 35px; }
+  .copy .subline { font-size: 12px; margin-top: 10px; }
+  .evalBody { padding-top: 14px; gap: 14px; }
+  .evalForm h3 { font-size: 23px; }
+  .answers { margin-top: 14px; }
+  .evalContinue { bottom: 8px; }
+  .choiceSummary .brand { font-size: 26px; }
+  .choiceSummary > p:last-of-type, .advisor > p:not(.routeLabel) { font-size: 12px; }
+  .choicesNote { top: calc(54% + 160px); font-size: 10px; }
+  .closing { bottom: 55px; }
+  .cta { font-size: 13px; min-height: 44px; }
+  .assistLink { font-size: 10px; margin-top: 9px; }
+  .scrollPrompt { bottom: 65px; }
+}
+@media(max-width:360px) {
+  .copy h1, .copy h2 { font-size: 34px; }
+  .copy .subline { font-size: 12px; }
+  .answers button { font-size: 11px; padding-inline: 9px; }
+  .evalForm h3 { font-size: 23px; }
+  .evalSteps { font-size: 10px; }
+  .progress { gap: 20px; }
+  .progress button { font-size: 9px; }
+}
+@media(min-width:761px) and (max-height:800px) {
+  .closing { bottom: 55px; }
+  .copy .subline { font-size: 14px; }
+  .evalForm h3 { font-size: 25px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .world { transform: none; }
+  .studio img { translate: none; }
+}

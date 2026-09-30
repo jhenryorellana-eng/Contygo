@@ -1,0 +1,17 @@
+Desde 0:00 se ve a pantalla completa una maqueta de papel con un gran expediente azul marino y tres separadores verdes en el centro, un hombre de camisa marfil a la izquierda y un pequeño edificio abstracto de techo plano a la derecha. En primer término hay exactamente dos sobres blancos abiertos con interior verde: el izquierdo se identifica con una pestaña circular y el derecho con una pestaña cuadrada. Encima de cada boca descansa una tarjeta documental en un pequeño soporte de papel: dos líneas marinas en la izquierda y tres en la derecha.
+
+Conserva el acabado de maqueta artesanal de papel recortado y desplegable: fibras finas, pliegues visibles, azul marino #061b3d, verde ContyGo #1dcd63, papel marfil y pieles cálidas. Fondo blanco uniforme, luz suave y sombras de contacto discretas. Todas las figuras y objetos mantienen identidad, escala y material. La animación tiene gestos breves, peso y una aceleración suave; no gira toda la escena.
+
+La hoja adjunta guía cuatro estados sucesivos de una sola escena. Sus celdas nunca aparecen en el video. Cada instante ocupa toda la pantalla cuadrada. Cámara fija durante los 10 segundos, sin cortes, zoom, movimientos de cámara ni transiciones. La referencia individual, si se adjunta, sirve sólo para identidad y material; las posiciones de esta animación las determina la hoja.
+
+Invariantes de este clip: los dos sobres, sus pestañas y sus respectivas tarjetas conservan identidad y posición. Las hojas dentro del expediente grande y el pequeño portapapeles que lleva el hombre son elementos inmóviles distintos. Sólo se mueven las dos tarjetas del primer término y las solapas de sus sobres. El hombre mantiene una mano sobre el expediente.
+
+0:00–0:02.5 — Superior izquierda: los sobres permanecen abiertos y las tarjetas descansan justo encima de sus respectivas entradas. El hombre observa el orden con un gesto sutil de cabeza. Nada está sellado ni enviado.
+
+0:02.5–0:05 — Superior derecha: los soportes plegables bajan despacio. La tarjeta de dos líneas entra por la boca del sobre izquierdo; inmediatamente después, la de tres líneas entra en el derecho. Muestra el borde inferior entrando en cada ranura, con oclusión progresiva por el papel del sobre. Nunca atraviesan el frontal ni intercambian destino.
+
+0:05–0:08 — Inferior izquierda: ambas tarjetas ya están dentro. Sus solapas verdes se pliegan de arriba hacia abajo y reposan sobre los sobres. Las pestañas circular y cuadrada permanecen visibles como identificadores geométricos, sin convertirse en sellos de aprobación. Mantén el conjunto organizado; no hay envío, juez ni resultado de corte.
+
+0:08–0:10 — Inferior derecha: las dos solapas vuelven a abrirse y los pequeños soportes elevan las mismas tarjetas por las bocas hasta su altura inicial. Conserva todos los objetos restantes inmóviles y recupera la composición de 0:00.
+
+Cierre del bucle: al llegar a 10 segundos, recupera la posición, escala, orientación, manos y luz del inicio. La vuelta es el movimiento de una maqueta demostrativa. No añadas pantallas de éxito ni un desenlace administrativo. Sin personas convertidas en datos, teletransporte, objetos duplicados, partículas, texto, números, sello oficial, cuadrícula ni fundido. Video silencioso, sin música, voz ni efectos sonoros.

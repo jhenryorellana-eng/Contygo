@@ -1,0 +1,771 @@
+{
+  "title": "ContyGo: base documental de servicios y futuros vídeos",
+  "generatedAt": "2026-09-14T17:39:50.493Z",
+  "businessReviewDate": "2026-09-14",
+  "catalogObservedAt": "2026-09-10",
+  "sources": {
+    "catalog": "lib/contygo-catalog.ts",
+    "inputExamplesAndOutputs": "lib/contygo-deliverables.ts",
+    "existingMediaAssignments": "lib/contygo-presentation.ts",
+    "currentAppSourceReviewed": "C:/Users/PepitoLee/Downloads/vvvv/x-legal-main/x-legal-main/",
+    "earlierDeliverablesSource": "C:/Users/PepitoLee/Downloads/x-legal-main (1)/x-legal-main/",
+    "businessAndWorkflow": "docs/contygo-propuesta-y-mensaje.md",
+    "master": "docs/contygo-base-comercial.md"
+  },
+  "boundaries": [
+    "Exportación documental de datos locales. No consulta la base de datos ni verifica transacciones en producción.",
+    "Disponibilidad, precio total, personas adicionales, cuotas, requisitos y contrato vigentes se confirman en ContyGo.",
+    "Los ejemplos de documentos proceden de la investigación previa; no son una lista obligatoria universal.",
+    "Los planteamientos audiovisuales son propuestas de trabajo, no guiones cerrados ni medios nuevos ya producidos.",
+    "La existencia de un vídeo anterior no demuestra su adecuación a la nueva propuesta comercial."
+  ],
+  "summary": {
+    "serviceCount": 12,
+    "planCount": 14,
+    "mappedPresentations": 9,
+    "uniquePresentationFiles": 7,
+    "withoutPresentation": [
+      "evaluacion-asilo",
+      "reapertura",
+      "llc"
+    ]
+  },
+  "services": [
+    {
+      "id": "visa-juvenil",
+      "slug": "visa-juvenil-basico",
+      "legacySlug": "visa-juvenil",
+      "name": "Visa Juvenil Básico",
+      "category": "familia",
+      "description": "Organiza la custodia en corte estatal y la petición I-360 del menor en un mismo proceso.",
+      "audience": "Tutores y menores que necesitan preparar las etapas de custodia y petición SIJS.",
+      "includes": [
+        "Preparación documental de la custodia estatal.",
+        "Declaraciones del tutor y de cada menor; testigos cuando corresponda.",
+        "Preparación del formulario I-360 y sus documentos de respaldo."
+      ],
+      "exclusions": [
+        "El ajuste de estatus I-485 se contrata por separado.",
+        "Las tasas gubernamentales no forman parte de los honorarios."
+      ],
+      "price": 2500,
+      "plans": [
+        {
+          "name": "Básico",
+          "price": 2500
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/visa-juvenil-basico",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=visa-juvenil#servicios",
+      "customerInputs": {
+        "examples": [
+          "Identificación del tutor.",
+          "Acta de nacimiento de cada menor.",
+          "Pasaporte o identificación de cada menor.",
+          "Comprobantes de domicilio e ingresos del tutor.",
+          "Documentación escolar y evidencias del caso."
+        ],
+        "note": "Son ejemplos para preparar tu caso. ContyGo confirma la lista por etapa y por menor; los documentos de testigos se piden cuando participan.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Una declaración jurada del tutor y una por cada menor.",
+        "Declaraciones de testigos cuando corresponda.",
+        "Expediente documental de custodia estatal.",
+        "Formulario I-360 y expediente de respaldo por menor."
+      ],
+      "existingPresentation": {
+        "src": "/videos/visa-juvenil.mp4",
+        "caption": "Presentación de Visa Juvenil.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Entender y organizar las etapas documentales del menor con participación de su tutor.",
+        "motif": "Tutor y menor en el universo de papel; dos expedientes distintos conectados por el símbolo ContyGo.",
+        "beats": [
+          "Tutor y menor reúnen su información junto al celular: reconocer a la familia y su necesidad sin representar una aprobación.",
+          "En el espacio digital se distinguen declaraciones y documentos de la etapa de custodia estatal.",
+          "Mostrar por separado la preparación de la petición I-360 por menor. El paso entre etapas depende de lo que corresponda al caso.",
+          "Cerrar con el paquete Básico, lo que aporta la familia y el acceso a revisión/firma. Indicar en texto que I-485 es una contratación separada."
+        ],
+        "avoid": "No presentar custodia, I-360 e I-485 como tres prestaciones incluidas ni mostrar una Green Card como resultado del paquete.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "i-360",
+      "slug": "i-360",
+      "legacySlug": "peticion-i-360",
+      "name": "I-360 — Inmigrante Juvenil Especial (SIJS)",
+      "category": "familia",
+      "description": "Prepara la petición SIJS ante USCIS con la orden estatal y los documentos del menor.",
+      "audience": "Tutores y menores que ya cuentan con una orden estatal y necesitan preparar su I-360.",
+      "includes": [
+        "Formulario I-360 por menor.",
+        "Organización de la orden estatal certificada y documentos de respaldo.",
+        "Preparación del expediente de la petición."
+      ],
+      "exclusions": [
+        "La custodia y el ajuste I-485 son etapas distintas de esta petición.",
+        "Las tasas gubernamentales no forman parte de los honorarios."
+      ],
+      "price": 1000,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 1000
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/i-360",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=i-360#servicios",
+      "customerInputs": {
+        "examples": [
+          "Orden estatal certificada.",
+          "Acta de nacimiento del menor.",
+          "Fotografías tipo pasaporte.",
+          "Comprobante de domicilio."
+        ],
+        "note": "Estos ejemplos no son la lista completa. ContyGo confirma los documentos y respaldos adicionales que corresponden a cada menor.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Un formulario I-360 por menor.",
+        "Expediente con la orden estatal certificada y los documentos de respaldo."
+      ],
+      "existingPresentation": {
+        "src": "/videos/visa-juvenil.mp4",
+        "caption": "Introducción general a Visa Juvenil. Este servicio se limita a la petición I-360; revisa el alcance de tu paquete.",
+        "fileExists": true,
+        "usage": "introduccion_general_reutilizada",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Preparar la petición del menor a partir de una orden estatal que ya existe.",
+        "motif": "Orden estatal identificada y carpeta I-360; composición diferente del conjunto familiar de Visa Juvenil.",
+        "beats": [
+          "Abrir con el documento previo: la orden estatal, acompañada por el tutor desde su celular.",
+          "Reunir los documentos del menor alrededor de esa orden, con continuidad entre objetos.",
+          "Revelar el formulario I-360 y su expediente de respaldo como entregables preparados.",
+          "Cerrar con el alcance específico y la continuación al contrato del servicio I-360."
+        ],
+        "avoid": "No volver a vender la custodia como parte de este servicio ni saltar visualmente a residencia aprobada.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "i-485",
+      "slug": "i-485",
+      "legacySlug": "ajuste-de-estatus",
+      "name": "Ajuste de estatus I-485 (SIJ)",
+      "category": "familia",
+      "description": "Prepara la solicitud de residencia del menor con I-360 SIJ aprobado, según las condiciones de su caso.",
+      "audience": "Menores con I-360 SIJ aprobado que necesitan revisar las condiciones para solicitar el ajuste.",
+      "includes": [
+        "Revisión de las condiciones del trámite antes de contratar.",
+        "Formulario I-485 por menor.",
+        "Organización de un expediente de documentos y evidencias por menor."
+      ],
+      "exclusions": [
+        "La aprobación del I-360 no sustituye las condiciones del ajuste de estatus.",
+        "Las tasas gubernamentales no forman parte de los honorarios."
+      ],
+      "price": 1500,
+      "plans": [
+        {
+          "name": "Estándar",
+          "price": 1500
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/i-485",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=i-485#servicios",
+      "customerInputs": {
+        "examples": [
+          "Aviso I-797 de aprobación del I-360.",
+          "Acta de nacimiento del menor.",
+          "Identificación vigente con foto.",
+          "Fotografías tipo pasaporte.",
+          "Examen médico I-693, según las indicaciones de tu caso."
+        ],
+        "note": "La lista se confirma por menor en ContyGo. El pasaporte, el I-94 y el sello de CBP no se piden de forma universal.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Un formulario I-485 por menor.",
+        "Un expediente de documentos y evidencias por menor."
+      ],
+      "existingPresentation": {
+        "src": "/videos/ajuste-estatus.mp4",
+        "caption": "Presentación del ajuste de estatus.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Organizar el expediente de ajuste correspondiente al menor y a las condiciones de su caso.",
+        "motif": "Aviso previo I-797, documentos por menor y carpeta I-485, sin tarjetas de residencia ficticias.",
+        "beats": [
+          "Presentar una familia con I-360 aprobado como contexto previo, no como resultado generado por esta compra.",
+          "Mostrar que se revisan las condiciones aplicables antes de contratar; no sugerir acceso universal al ajuste.",
+          "La documentación aportada acompaña la preparación del I-485 y un expediente por menor.",
+          "Mostrar seguimiento desde la app y el enlace para conocer el paquete y continuar a la contratación."
+        ],
+        "avoid": "No afirmar que el I-360 aprobado basta por sí solo ni convertir el envío en una aprobación de residencia.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "asilo",
+      "slug": "asilo-politico",
+      "legacySlug": "asilo-politico",
+      "name": "Asilo Político",
+      "category": "asilo",
+      "description": "Organiza tu solicitud I-589, tu declaración y las evidencias que respaldan tu historia.",
+      "audience": "Personas que necesitan preparar una solicitud de asilo en Estados Unidos.",
+      "includes": [
+        "Preparación del formulario I-589.",
+        "Organización de declaración y evidencias.",
+        "Preparación del memorándum de Miedo Creíble y del expediente."
+      ],
+      "exclusions": [
+        "El servicio no incluye representación ante USCIS o la corte.",
+        "La decisión del trámite corresponde a las autoridades."
+      ],
+      "price": 1500,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 1500
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/asilo-politico",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=asilo#servicios",
+      "customerInputs": {
+        "examples": [
+          "Pasaporte o identificación.",
+          "Declaración sobre tu historia.",
+          "Evidencias relacionadas con tu caso.",
+          "Documentos migratorios que ya tengas."
+        ],
+        "note": "Son ejemplos de respaldo. Los documentos que debes aportar se confirman según tu historia y la situación de tu caso.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Formulario I-589 preparado con la información de tu caso.",
+        "Memorándum de Miedo Creíble.",
+        "Expediente con declaración y evidencias organizadas."
+      ],
+      "existingPresentation": {
+        "src": "/videos/asilo-politico.mp4",
+        "caption": "Presentación de Asilo Político.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Dar orden a la información, declaración y evidencias que respaldan la historia del cliente.",
+        "motif": "Una persona real como contexto; su relato pasa a hojas y evidencias táctiles organizadas en un expediente.",
+        "beats": [
+          "Una persona comparte su historia con calma desde el celular; priorizar dignidad y claridad.",
+          "Distinguir su declaración y las evidencias aportadas, sin inventar hechos ni pruebas.",
+          "Mostrar preparación del I-589, memorándum de Miedo Creíble y expediente con información del caso.",
+          "Cerrar con alcance, participación del cliente y contratación desde ContyGo."
+        ],
+        "avoid": "No usar violencia o miedo como presión comercial, ni mostrar representación en audiencia o asilo concedido.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "reforzar-asilo",
+      "slug": "reforzar-asilo",
+      "legacySlug": "reforzar-asilo",
+      "name": "Reforzar Asilo",
+      "category": "asilo",
+      "description": "Revisa y organiza el respaldo de un caso de asilo que ya tiene su I-589 presentado.",
+      "audience": "Personas con I-589 presentado que necesitan preparar el respaldo documental de su caso.",
+      "includes": [
+        "Evaluación inicial del caso.",
+        "Revisión del I-589 presentado, declaración y evidencias.",
+        "Cuestionario y preparación del memorándum de Miedo Creíble.",
+        "Un contrato para la evaluación y el reforzamiento."
+      ],
+      "exclusions": [
+        "No incluye preparar una nueva solicitud I-589.",
+        "El servicio no incluye representación ante USCIS o la corte."
+      ],
+      "price": 600,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 600
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/reforzar-asilo",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=reforzar-asilo#servicios",
+      "customerInputs": {
+        "examples": [
+          "Copia de tu I-589 presentado, con sus anexos.",
+          "Declaración jurada.",
+          "Evidencias de respaldo de tu caso."
+        ],
+        "note": "Este servicio parte de un I-589 ya presentado. ContyGo te indica qué aportar en la evaluación inicial y en la etapa de reforzamiento.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Informe de evaluación en PDF, con revisión del equipo.",
+        "Memorándum de Miedo Creíble para reforzar el caso existente.",
+        "Organización de la declaración y las evidencias de respaldo."
+      ],
+      "existingPresentation": {
+        "src": "/videos/asilo-politico.mp4",
+        "caption": "Introducción general al asilo. Reforzar Asilo corresponde a un I-589 ya presentado; revisa el alcance de tu paquete.",
+        "fileExists": true,
+        "usage": "introduccion_general_reutilizada",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Revisar y organizar el respaldo de un caso cuyo I-589 ya fue presentado.",
+        "motif": "Expediente existente reconocible al inicio; nuevas capas ordenadas de respaldo sin sustituir la solicitud original.",
+        "beats": [
+          "Mostrar el I-589 ya presentado y los documentos existentes como punto de partida.",
+          "Representar la evaluación inicial y la revisión de información: el informe no es una sentencia ni una aprobación.",
+          "Organizar declaración, evidencias y memorándum para el reforzamiento del caso.",
+          "Cerrar con evaluación y reforzamiento bajo un mismo contrato, y seguimiento de sus etapas en la app."
+        ],
+        "avoid": "No representar una nueva I-589 incluida ni exigir visualmente una compra adicional de Evaluación de Asilo.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "evaluacion-asilo",
+      "slug": "evaluacion-asilo",
+      "name": "Evaluación de Asilo",
+      "category": "asilo",
+      "description": "Obtén un informe PDF elaborado con IA a partir de los documentos que compartes.",
+      "audience": "Personas que quieren revisar la información documental de su caso de asilo.",
+      "includes": [
+        "Un intento de evaluación por pago.",
+        "Informe PDF generado con IA.",
+        "Acceso al informe desde tu cuenta."
+      ],
+      "exclusions": [
+        "No incluye preparación ni presentación de una solicitud de asilo.",
+        "El informe no sustituye asesoría legal ni garantiza un resultado."
+      ],
+      "price": 50,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 50
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/evaluacion-asilo",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=evaluacion-asilo#servicios",
+      "customerInputs": {
+        "examples": [],
+        "note": "La herramienta de evaluación te indica qué documentos de tu caso compartir. Podrás acceder a ella desde tu caso en ContyGo.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Un informe PDF generado con IA a partir de tus documentos.",
+        "Acceso al informe desde tu cuenta, con un intento de evaluación por pago."
+      ],
+      "existingPresentation": null,
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Acceder a un informe documental generado con IA y consultarlo desde la cuenta.",
+        "motif": "Documentos de entrada y un informe PDF como protagonista; escena compacta de producto digital.",
+        "beats": [
+          "Presentar la necesidad de revisar la información documental de un caso existente.",
+          "El cliente comparte los documentos indicados por la herramienta; no inventar una lista fija de cargas.",
+          "La evaluación automatizada produce un PDF accesible desde la cuenta.",
+          "Cerrar con un intento por pago y alcance limitado al informe, antes de continuar al servicio."
+        ],
+        "avoid": "No prometer revisión humana en la evaluación independiente, porcentaje de éxito, asesoría legal o preparación completa de asilo.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "apelacion",
+      "slug": "apelacion",
+      "legacySlug": "apelacion-bia",
+      "name": "Apelación (BIA)",
+      "category": "corte",
+      "description": "Prepara el paquete documental para presentar una apelación ante la BIA.",
+      "audience": "Personas que necesitan preparar una apelación de una decisión del juez de inmigración.",
+      "includes": [
+        "Preparación del formulario EOIR-26.",
+        "Statement of Reasons for Appeal: razones de la apelación.",
+        "Proof of Service: constancia de notificación.",
+        "Organización del paquete con los documentos correspondientes."
+      ],
+      "exclusions": [
+        "El servicio no incluye representación ante la BIA.",
+        "Las tasas gubernamentales no forman parte de los honorarios."
+      ],
+      "price": 700,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 700
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/apelacion",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=apelacion#servicios",
+      "customerInputs": {
+        "examples": [
+          "Pasaporte del apelante.",
+          "Decisión y orden del juez.",
+          "Documentación del asilo presentado y sus anexos."
+        ],
+        "note": "Son ejemplos de la documentación del caso que se revisa. ContyGo confirma la lista y los respaldos que correspondan a tu apelación.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Formulario EOIR-26.",
+        "Statement of Reasons for Appeal: razones de la apelación.",
+        "Proof of Service: constancia de notificación."
+      ],
+      "existingPresentation": {
+        "src": "/videos/apelacion-bia.mp4",
+        "caption": "Presentación de Apelación (BIA).",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Comprender y reunir los documentos del paquete de apelación ante la BIA.",
+        "motif": "Decisión previa, formulario y razones de apelación: tres objetos claros con etiquetas añadidas en edición.",
+        "beats": [
+          "Partir de la decisión del juez que la persona necesita recurrir; presentarla con sobriedad.",
+          "Desde el celular, el cliente aporta la información y los documentos correspondientes.",
+          "Separar visualmente EOIR-26, Statement of Reasons y Proof of Service dentro del paquete.",
+          "Mostrar alcance de preparación y enlace al contrato de Apelación (BIA), sin resolver ficticiamente el proceso."
+        ],
+        "avoid": "No confundirlo con reapertura ante la misma corte ni añadir brief o representación como entregables no confirmados.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "cambio-corte",
+      "slug": "cambio-de-corte",
+      "legacySlug": "cambio-de-corte",
+      "name": "Cambio de Corte",
+      "category": "corte",
+      "description": "Prepara la moción y los documentos para solicitar el cambio de sede de tu caso migratorio.",
+      "audience": "Personas que se mudaron y necesitan solicitar el traslado de su caso a otra corte.",
+      "includes": [
+        "Organización de documentos de domicilio y del caso.",
+        "Formulario EOIR-33 de cambio de dirección.",
+        "Moción de cambio de sede, como documento separado.",
+        "Preparación, impresión y envío del expediente a la corte y al fiscal."
+      ],
+      "exclusions": [
+        "Presentar la moción no garantiza que el juez apruebe el cambio.",
+        "El servicio no incluye representación ante la corte."
+      ],
+      "price": 250,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 250
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/cambio-de-corte",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=cambio-corte#servicios",
+      "customerInputs": {
+        "examples": [
+          "Identificación con foto o pasaporte.",
+          "Documento de ingreso: parole o NTA.",
+          "Pruebas de tu nueva dirección."
+        ],
+        "note": "ContyGo confirma los documentos de tu caso y te permite aportar varias pruebas de tu nueva dirección.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Formulario EOIR-33 de cambio de dirección.",
+        "Moción de cambio de sede, como documento separado.",
+        "Expediente preparado e impreso.",
+        "Dos envíos: uno a la corte y otro al fiscal, con seguimiento."
+      ],
+      "existingPresentation": {
+        "src": "/videos/cambio-corte.mp4",
+        "caption": "Presentación de Cambio de Corte.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Organizar la solicitud de cambio de sede después de una mudanza.",
+        "motif": "Hogar y nueva dirección, dos documentos separados y dos envíos; recorrido comprensible sin mapas decorativos complejos.",
+        "beats": [
+          "La persona comparte su nueva dirección y respaldos desde el celular.",
+          "Mostrar EOIR-33 y moción de cambio de sede como documentos distintos.",
+          "El expediente se prepara e imprime; distinguir envío a la corte y envío al fiscal con seguimiento.",
+          "Cerrar con el alcance y la continuación al contrato, sin mostrar el traslado como aprobado."
+        ],
+        "avoid": "No sugerir que actualizar la dirección cambia automáticamente la corte o que la app determina la decisión del juez.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "reapertura",
+      "slug": "reapertura-in-absentia",
+      "name": "Apelación (Re-apertura)",
+      "category": "corte",
+      "description": "Organiza una moción de reapertura ante la corte que emitió una orden por ausencia a la audiencia.",
+      "audience": "Personas con una orden de deportación in absentia que necesitan preparar una solicitud de reapertura.",
+      "includes": [
+        "Cuestionario sobre el motivo de la ausencia y sus evidencias.",
+        "Preparación de la moción de reapertura.",
+        "Proof of Service y carátula.",
+        "EOIR-26A cuando corresponda."
+      ],
+      "exclusions": [
+        "Es una moción ante la misma corte, no una apelación ante la BIA.",
+        "El servicio no incluye representación legal ni garantiza la reapertura."
+      ],
+      "price": 250,
+      "plans": [
+        {
+          "name": "Sin abogado",
+          "price": 250
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/reapertura-in-absentia",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=reapertura#servicios",
+      "customerInputs": {
+        "examples": [
+          "Orden emitida por ausencia a la audiencia.",
+          "Evidencias del motivo de la ausencia."
+        ],
+        "note": "Estos ejemplos acompañan la explicación de lo ocurrido. ContyGo confirma los documentos y los datos de la corte para tu caso.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Moción de reapertura dirigida a la misma corte.",
+        "Proof of Service y carátula del paquete.",
+        "Formulario EOIR-26A cuando corresponda."
+      ],
+      "existingPresentation": null,
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Organizar la explicación y los respaldos de una solicitud de reapertura por ausencia.",
+        "motif": "Orden previa, explicación del cliente y evidencias que convergen en una moción dirigida a la misma corte.",
+        "beats": [
+          "Situar el caso: existe una orden emitida por ausencia a la audiencia.",
+          "El cliente explica el motivo de la ausencia y aporta las evidencias correspondientes.",
+          "Mostrar preparación de la moción, Proof of Service y carátula; EOIR-26A solo cuando corresponda.",
+          "Cerrar con la identificación de la misma corte y el contrato específico de Apelación (Re-apertura)."
+        ],
+        "avoid": "Conservar el nombre comercial, pero explicar que es una moción ante la misma corte. No prometer cancelación de la orden ni confundir con BIA.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "itin",
+      "slug": "itin-number",
+      "legacySlug": "itin",
+      "name": "Número ITIN",
+      "category": "fiscal",
+      "description": "Prepara tu solicitud del número de identificación fiscal individual ante el IRS.",
+      "audience": "Personas que necesitan solicitar un ITIN para sus trámites fiscales.",
+      "includes": [
+        "Preparación de la solicitud W-7.",
+        "Organización de documentos de identidad y respaldo.",
+        "Guía para los documentos que acompañan tu solicitud."
+      ],
+      "exclusions": [
+        "La asignación del ITIN depende del IRS.",
+        "Revisa en tu contrato los trámites y documentos incluidos en el paquete."
+      ],
+      "price": 250,
+      "plans": [
+        {
+          "name": "Individual",
+          "price": 250
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/itin-number",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=itin#servicios",
+      "customerInputs": {
+        "examples": [],
+        "note": "Confirma en ContyGo qué documentos de identidad y respaldo corresponden a tu solicitud y al paquete elegido.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Preparación de la solicitud W-7.",
+        "Organización de documentos de identidad y respaldo.",
+        "Guía para los documentos que acompañan tu solicitud."
+      ],
+      "existingPresentation": {
+        "src": "/videos/itin.mp4",
+        "caption": "Presentación de Número ITIN.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Organizar la información necesaria para preparar la solicitud de un ITIN.",
+        "motif": "Identificación y solicitud W-7 en un espacio digital limpio; personas con propósito fiscal concreto.",
+        "beats": [
+          "Presentar la necesidad fiscal y el servicio Número ITIN.",
+          "Mostrar datos de identidad y respaldo aportados según las indicaciones del paquete, sin fijar una lista universal.",
+          "Representar la preparación de W-7 y la organización de documentos acompañantes.",
+          "Cerrar con alcance, honorarios en la web y continuación al contrato."
+        ],
+        "avoid": "No mostrar un número ya asignado como resultado garantizado ni mezclar esta oferta fiscal con una aprobación migratoria.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "impuestos",
+      "slug": "taxes",
+      "legacySlug": "declaracion-de-impuestos",
+      "name": "Declaración de Impuestos",
+      "category": "fiscal",
+      "description": "Organiza tus documentos de ingresos y prepara tu declaración con un paquete individual o familiar.",
+      "audience": "Personas y familias que necesitan preparar su declaración de impuestos.",
+      "includes": [
+        "Preparación de la declaración de impuestos.",
+        "Organización de identificación y documentos de ingresos.",
+        "Paquetes Individual y Familiar disponibles."
+      ],
+      "exclusions": [
+        "El servicio no garantiza un reembolso fiscal.",
+        "El alcance de tu declaración se confirma en el paquete y el contrato."
+      ],
+      "price": 100,
+      "plans": [
+        {
+          "name": "Individual",
+          "price": 100
+        },
+        {
+          "name": "Familiar",
+          "price": 150
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/taxes",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=impuestos#servicios",
+      "customerInputs": {
+        "examples": [],
+        "note": "Los documentos de identidad e ingresos se confirman según tu declaración y el paquete Individual o Familiar que elijas.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Preparación de la declaración de impuestos.",
+        "Organización de identificación y documentos de ingresos.",
+        "Paquetes Individual y Familiar disponibles."
+      ],
+      "existingPresentation": {
+        "src": "/videos/taxes.mp4",
+        "caption": "Presentación de Declaración de Impuestos.",
+        "fileExists": true,
+        "usage": "presentacion_anterior",
+        "suitabilityForNewBrief": "pendiente_de_revision_audiovisual"
+      },
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Preparar la declaración con la información de ingresos organizada y el paquete adecuado.",
+        "motif": "Comprobantes e información de una persona o familia que forman una declaración; sin lluvia de dinero.",
+        "beats": [
+          "Presentar dos contextos legibles: una persona y una familia, según el paquete elegido.",
+          "La información de ingresos e identificación se organiza desde la app.",
+          "Mostrar preparación de la declaración y los pasos que correspondan al alcance contratado.",
+          "Cerrar con Individual o Familiar, precio vigente como texto web y acceso a contratar."
+        ],
+        "avoid": "No inventar montos de devolución, ahorro fiscal, formularios universales o servicios adicionales incluidos.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    },
+    {
+      "id": "llc",
+      "slug": "llc-florida",
+      "name": "Creación de LLC",
+      "category": "empresa",
+      "description": "Prepara la constitución de tu LLC en Florida y la solicitud de su identificación fiscal EIN.",
+      "audience": "Personas que quieren constituir una LLC en Florida.",
+      "includes": [
+        "Preparación de los Articles of Organization.",
+        "Gestión del agente registrado y del EIN según el paquete.",
+        "Opción de Constitución + Identidad de Marca."
+      ],
+      "exclusions": [
+        "El servicio publicado corresponde a Florida.",
+        "La identidad de marca corresponde al paquete que la incluye.",
+        "Revisa las tasas y condiciones vigentes antes de firmar."
+      ],
+      "price": 500,
+      "plans": [
+        {
+          "name": "Constitución",
+          "price": 500
+        },
+        {
+          "name": "Constitución + Identidad de Marca",
+          "price": 1000
+        }
+      ],
+      "currency": "USD",
+      "priceStatus": "honorarios_del_catalogo_observado_no_cotizacion_actual",
+      "officialServiceUrl": "https://contygo.app/servicios/llc-florida",
+      "landingPreviewUrl": "http://127.0.0.1:3000/contygo-app?servicio=llc#servicios",
+      "customerInputs": {
+        "examples": [],
+        "note": "Revisa en ContyGo los datos y documentos que se solicitan para el paquete de constitución que elijas.",
+        "mandatoryChecklist": false
+      },
+      "documentedOutputs": [
+        "Preparación de los Articles of Organization.",
+        "Gestión del agente registrado y del EIN según el paquete.",
+        "Opción de Constitución + Identidad de Marca."
+      ],
+      "existingPresentation": null,
+      "proposedVideo": {
+        "status": "brief_propuesto_no_producido",
+        "promise": "Organizar la constitución de una LLC en Florida con un alcance de paquete claro.",
+        "motif": "Emprendedor en un entorno real y documentos táctiles de su empresa; la marca aparece solo en el paquete ampliado.",
+        "beats": [
+          "Abrir con una persona y su proyecto de negocio, manteniendo la identidad humana de ContyGo.",
+          "Mostrar datos de constitución y preparación de los Articles of Organization para Florida.",
+          "Representar agente registrado y solicitud de EIN según paquete; diferenciar la opción de Identidad de Marca.",
+          "Cerrar con la comparación de paquetes en texto web y el enlace al servicio de constitución."
+        ],
+        "avoid": "No prometer ventas, estatus migratorio, constitución en cualquier estado ni identidad de marca dentro del paquete básico.",
+        "cta": "Conoce el alcance y continúa a tu contrato en ContyGo."
+      }
+    }
+  ]
+}

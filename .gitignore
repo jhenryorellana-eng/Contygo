@@ -1,0 +1,47 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# test/preview artifacts (capturas de Playwright y respuestas temporales)
+/.playwright-mcp/
+/*.png
+/_design_response.txt
+.env*
+
+# vista previa de producción para el celular y ajustes locales de Claude Code
+/.next-movil/
+/.claude/
+# documentación interna de contygo (su guía y su OpenAPI): se queda en local, el repositorio es público
+/docs/fuentes-contygo/

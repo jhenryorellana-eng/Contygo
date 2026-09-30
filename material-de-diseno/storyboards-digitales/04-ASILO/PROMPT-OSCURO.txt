@@ -1,0 +1,17 @@
+Desde 0:00 vemos a pantalla completa la carpeta en su postura inicial, con cubierta frontal levantada, hojas y separadores visibles como en el cuadro superior izquierdo. Todo el mecanismo está guardado entre las hojas. La cámara muestra una sola escena, nunca la lámina completa.
+
+Animación de 10 segundos en un plano continuo, con inicio y final iguales para repetir en bucle. La hoja adjunta guía cuatro estados: superior izquierdo, superior derecho, inferior izquierdo e inferior derecho. Son etapas de un mismo mecanismo, no cuatro tomas separadas. La cuadrícula, los bordes de viñeta y cualquier rótulo quedan fuera del vídeo.
+
+0:00–0:00.8 · CUADRO SUPERIOR IZQUIERDO. Presenta la pieza compacta. Una leve anticipación del pliegue prepara su apertura; conserva su identidad y la composición de referencia.
+
+0:00.8–0:03.5 · DEL SUPERIOR IZQUIERDO AL SUPERIOR DERECHO. La cubierta frontal se abate hacia delante y forma una mesa pequeña. De entre las hojas se levanta el panel digital. Los pliegues presentan tres tarjetas sobre la cubierta: cronología, testimonios y anexo. Los separadores verdes definen sus recorridos hacia los espacios de la pantalla, identificados por esos mismos pictogramas. Llega al cuadro superior derecho. El movimiento tiene peso, articulaciones claras y una llegada suave.
+
+0:03.5–0:06.7 · DEL SUPERIOR DERECHO AL INFERIOR IZQUIERDO. Cada tarjeta avanza por su carril hacia la sección identificada con el mismo pictograma: cronología, testimonios y anexo. Se levanta al llegar a la pantalla y se acomoda dentro del espacio correspondiente. Termina en el cuadro inferior izquierdo, con las tres tarjetas ordenadas dentro del expediente digital y la cubierta delantera despejada. Es organización de información aportada, sin inventar documentos ni mostrar aprobación del caso. Continúa desde la apertura alcanzada: no la repitas. Mantén el estado organizado un instante antes de cerrar.
+
+0:06.7–0:09.3 · DEL INFERIOR IZQUIERDO AL INFERIOR DERECHO. El panel y sus tres tarjetas se pliegan entre las hojas originales. Los separadores vuelven a alinearse y la cubierta frontal se levanta hasta recuperar la postura de apertura. La esquina curvada de la primera hoja vuelve al mismo lugar. Las piezas se guardan físicamente por sus pliegues; no desaparecen ni se multiplican. El cierre es una acción diseñada, no un rebobinado de todo el vídeo.
+
+0:09.3–0:10.0 · CUADRO INFERIOR DERECHO. La pieza está compacta de nuevo. Recupera exactamente el tamaño, posición, orientación, colores, iluminación y sombra del inicio. Conserva un breve reposo compatible con la apertura del siguiente ciclo.
+
+Dirección visual: maqueta de papel premium, superficies mates, capas nítidas, curvas cuidadas y luz de estudio suave. Movimiento visible y elegante, con anticipación y amortiguación breve. Cámara estable para que destaque la transformación física y la acción digital. Conserva el fondo opaco azul marino de la referencia hasta los cuatro bordes, suelo continuo sin horizonte y sombras de contacto discretas. Mantén la paleta del storyboard durante todo el clip.
+
+La pantalla es una representación visual sencilla de organización documental. Conserva sus pictogramas y el emblema de ContyGo; no añadas textos, sellos oficiales ni mensajes de aprobación. Los objetos conservan cantidad e identidad. Sin cortes, fundidos, partículas, música ni voces.

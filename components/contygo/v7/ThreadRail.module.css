@@ -1,0 +1,19 @@
+/* El riel del hilo bajo una fila deslizable (solo celular). Nace en el margen, donde corre el hilo
+   (11 px del borde), y llega al borde del contenido. Mismos trazos que el hilo de la página: verde
+   donde ya estuviste, punteado lo que falta. */
+.rail{display:none}
+@media(max-width:760px){
+  .rail{position:relative;display:block;height:34px;margin:2px 0 0 -11px;width:calc(100% + 11px)}
+  .line{position:absolute;inset:50% 0 auto;height:0;transform:scaleX(0);transform-origin:0 50%;transition:transform .9s cubic-bezier(.65,0,.35,1)}
+  .track{position:absolute;left:0;right:0;top:-1px;height:2px;background:radial-gradient(circle,var(--line-strong) 1px,transparent 1.4px) 0 50%/10px 2px repeat-x}
+  .fill{position:absolute;left:0;right:0;top:-1.75px;height:3.5px;border-radius:3px;background:var(--green);transform:scaleX(0);transform-origin:0 50%;will-change:transform}
+  .knot{position:absolute;top:50%;left:0;width:34px;height:34px;margin:-17px 0 0 -17px;padding:0;border:0;background:none;cursor:pointer;opacity:0;transition:opacity .4s .5s}
+  .knot:after{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--bg);box-shadow:inset 0 0 0 2px var(--line-strong);transition:background .3s,box-shadow .3s}
+  .knot[data-on=true]:after{background:var(--green);box-shadow:inset 0 0 0 2px var(--green)}
+  .bead{position:absolute;left:0;top:50%;width:0;height:0;opacity:0;will-change:transform;transition:opacity .4s .55s}
+  .beadDot{position:absolute;left:-10px;top:-10px;width:20px;height:20px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--bg),0 0 0 9px #25d36633}
+  /* Llega el hilo: el riel crece desde el margen y aparecen la cuenta y los nudos. */
+  .rail[data-lit=true] .line,:global(main:not([data-thread-ready=true])) .line{transform:scaleX(1)}
+  .rail[data-lit=true] :is(.knot,.bead){opacity:1}
+}
+@media(prefers-reduced-motion:reduce){.line,.knot,.bead{transition:none!important}}

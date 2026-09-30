@@ -1,0 +1,17 @@
+Desde 0:00 se ve a pantalla completa una mujer de cabello corto rizado, camisa marfil y pantalón azul, junto a una calculadora grande azul marino a la izquierda y una bandeja de documentos a la derecha. Una tira verde de papel conecta visualmente ambos objetos. Hay dos hojas de ingresos activas en la bandeja y una pequeña tarjeta con retrato en primer término. La mujer tiene una mano en el borde de una de las hojas, lista para organizarla. La pantalla de la calculadora está en blanco.
+
+Conserva el acabado de maqueta artesanal de papel recortado y desplegable: fibras finas, pliegues visibles, azul marino #061b3d, verde ContyGo #1dcd63, papel marfil y pieles cálidas. Fondo blanco uniforme, luz suave y sombras de contacto discretas. Todas las figuras y objetos mantienen identidad, escala y material. La animación tiene gestos breves, peso y una aceleración suave; no gira toda la escena.
+
+La hoja adjunta guía cuatro estados sucesivos de una sola escena. Sus celdas nunca aparecen en el video. Cada instante ocupa toda la pantalla cuadrada. Cámara fija durante los 10 segundos, sin cortes, zoom, movimientos de cámara ni transiciones. La referencia individual, si se adjunta, sirve sólo para identidad y material; las posiciones de esta animación las determina la hoja.
+
+Invariantes de este clip: una mujer, la misma calculadora con nueve teclas simples, las dos hojas activas, la bandeja y la identificación del primer término. La pila de papel al fondo de la bandeja permanece quieta. La identificación nunca se mueve. No aparecen cifras, cantidades, signos monetarios ni resultados fiscales. Los reversos de las hojas pueden ser lisos, sin alterar su identidad.
+
+0:00–0:02.5 — Superior izquierda: la mujer acomoda el borde de la primera hoja y la separa ligeramente de la segunda, conservando ambas dentro de la bandeja. Mira hacia la zona de revisión junto a la calculadora. Movimiento breve y funcional.
+
+0:02.5–0:05 — Superior derecha: extrae la primera hoja con ambas manos y la desliza hacia la izquierda sobre el recorrido marcado por la tira verde. La hoja permanece plana, erguida y completa. La segunda hoja queda dentro de la bandeja; no debe seguirla ni multiplicarse.
+
+0:05–0:08 — Inferior izquierda: coloca la hoja en un pequeño soporte de papel junto a la calculadora. Apoya el borde superior con una mano y señala brevemente sus líneas con la otra. La pantalla de la calculadora continúa vacía: el clip muestra preparar y revisar información, sin inventar un cálculo, una devolución ni un pago. Sostén esta posición de lectura.
+
+0:08–0:10 — Inferior derecha: toma la misma hoja del soporte y la devuelve a su posición inicial en la bandeja por el mismo trayecto corto. Recupera la postura y las manos iniciales. Las dos hojas vuelven a estar en la bandeja y la identificación sigue delante.
+
+Cierre del bucle: al llegar a 10 segundos, recupera la posición, escala, orientación, manos y luz del inicio. La vuelta es el movimiento de una maqueta demostrativa. No añadas pantallas de éxito ni un desenlace administrativo. Sin personas convertidas en datos, teletransporte, objetos duplicados, partículas, texto, números, sello oficial, cuadrícula ni fundido. Video silencioso, sin música, voz ni efectos sonoros.

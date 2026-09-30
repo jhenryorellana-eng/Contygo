@@ -1,0 +1,17 @@
+Desde 0:00 se ve a pantalla completa una tutora de blusa marfil y pantalón azul marino junto a un joven de cabello rizado, sobrecamisa verde y pantalón marfil. Están ante la silueta de una casa. Delante hay una carpeta azul marino con dos documentos sobre un riel curvo de papel; a su derecha está la maqueta blanca de una tableta, con borde marino y un bolsillo de carpeta en la pantalla. La carpeta empieza a la izquierda del dispositivo. La tutora apoya suavemente una mano en su lateral; el joven conserva su libreta azul junto al pecho.
+
+Conserva el acabado de maqueta artesanal de papel recortado y desplegable: fibras finas, pliegues visibles, azul marino #061b3d, verde ContyGo #1dcd63, papel marfil y pieles cálidas. Fondo blanco uniforme, luz suave y sombras de contacto discretas. Todas las figuras y objetos mantienen identidad, escala y material. La animación tiene gestos breves, peso y una aceleración suave; no gira toda la escena.
+
+La hoja adjunta guía cuatro estados sucesivos de una sola escena. Sus celdas nunca aparecen en el video. Cada instante ocupa toda la pantalla cuadrada. Cámara fija durante los 10 segundos, sin cortes, zoom, movimientos de cámara ni transiciones. La referencia individual, si se adjunta, sirve sólo para identidad y material; las posiciones de esta animación las determina la hoja.
+
+Invariantes de este clip: exactamente dos personas y dos documentos móviles, uno con retrato y otro con dos siluetas familiares. La casa, el dispositivo y el riel permanecen en sus sitios. Los documentos viajan dentro de la misma carpeta y nunca se convierten en píxeles.
+
+0:00–0:02.5 — Superior izquierda: conserva la composición inicial. La tutora mira la carpeta y prepara el gesto apoyando la mano sobre su borde lateral. El joven sigue la mirada con una inclinación mínima de cabeza. La carpeta todavía permanece al inicio del riel.
+
+0:02.5–0:05 — Superior derecha: la tutora desliza la carpeta entera hacia la derecha por el riel. Su mano mantiene contacto con el mismo borde. Los dos documentos permanecen verticales dentro y avanzan con ella. El recorrido es corto y legible; la carpeta no atraviesa la pantalla ni cambia de tamaño.
+
+0:05–0:08 — Inferior izquierda: la carpeta llega delante del bolsillo del dispositivo, alineada con él y todavía apoyada en el riel. Completa el gesto antes de 0:06 y conserva esta composición hasta 0:08. La tutora relaja la mano y ambos observan el conjunto con una sonrisa discreta. Lo que se entiende es organización y acompañamiento, sin mensajes de aprobación.
+
+0:08–0:10 — Inferior derecha: la tutora vuelve a apoyar la mano y guía la misma carpeta de regreso por el riel. Los dos documentos conservan su posición. Recupera la postura inicial y la carpeta a la izquierda del dispositivo; termina con el mismo gesto de mano que al abrir el clip.
+
+Cierre del bucle: al llegar a 10 segundos, recupera la posición, escala, orientación, manos y luz del inicio. La vuelta es el movimiento de una maqueta demostrativa. No añadas pantallas de éxito ni un desenlace administrativo. Sin personas convertidas en datos, teletransporte, objetos duplicados, partículas, texto, números, sello oficial, cuadrícula ni fundido. Video silencioso, sin música, voz ni efectos sonoros.

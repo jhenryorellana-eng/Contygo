@@ -1,0 +1,95 @@
+/* «Conoce quién te acompaña» · lámina marina en los dos tonos (el momento más serio de la página).
+   Cuando llega el hilo verde (lámina data-react="sheet"): el certificado se endereza y una lupa
+   compara con la credencial el nombre, la vigencia y el número (data-stop 1-3, RegistryStage.tsx). */
+.stage{--ink:#f6f8f7;--muted:#a9b8ca;--green:#25d366;--navy:#061b3d;--card:#0b2446;
+  position:relative;isolation:isolate;overflow:hidden;padding:clamp(64px,8vw,112px) clamp(22px,6vw,88px) clamp(48px,6vw,80px);background:linear-gradient(170deg,#082552 0%,#061b3d 55%,#04142e 100%);color:var(--ink);font-family:var(--font-contygo-body),sans-serif}
+.atmosphere{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60% 70% at 78% 42%,#25d3662b,transparent 70%),radial-gradient(40% 50% at 12% 90%,#1d4a8659,transparent 70%);
+}
+.atmosphere:after{content:"";position:absolute;inset:0;opacity:.35;background-image:linear-gradient(#ffffff0d 1px,transparent 1px),linear-gradient(90deg,#ffffff0d 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(70% 70% at 70% 45%,#000,transparent 75%);-webkit-mask-image:radial-gradient(70% 70% at 70% 45%,#000,transparent 75%)}
+
+.head{max-width:760px;margin-bottom:clamp(36px,5vw,64px)}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+.eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px #25d36626}
+.head h2{margin:18px 0 18px;font:800 clamp(40px,5.2vw,76px)/1.02 var(--font-contygo-heading),sans-serif;letter-spacing:-.05em;color:var(--ink)}
+.head h2 em{font-style:normal;color:var(--green)}
+.head p{font-size:clamp(17px,1.35vw,20px);line-height:1.65;color:var(--muted);max-width:620px;margin:0}
+
+.grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.25fr);gap:clamp(28px,4vw,64px);align-items:center}
+
+/* Credencial: una tarjeta de vidrio con el símbolo, los datos del registro y las acciones. */
+.credential{position:relative;padding:clamp(22px,2.4vw,32px);border-radius:28px;background:linear-gradient(160deg,#ffffff17,#ffffff07 55%,#25d36612);box-shadow:inset 0 0 0 1px #ffffff1f,0 30px 60px -30px #000000b3}
+.credential:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(140deg,#25d36699,transparent 35%,transparent 70%,#ffffff33);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.cardTop{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.mark{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--navy);box-shadow:inset 0 0 0 1px #ffffff1f}
+.mark img{width:24px;height:auto}
+.cardKind{flex:1;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.status{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:30px;background:#25d3661f;color:var(--green);font-size:13px;font-weight:800}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.name{margin:0;font:800 clamp(26px,2.4vw,34px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em}
+.role{margin:6px 0 24px;color:var(--muted);font-size:16px}
+.data{display:grid;gap:16px;margin:0 0 26px}
+.data>div{display:grid;gap:4px;padding-top:14px;border-top:1px solid #ffffff17}
+.data dt{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.data dd{margin:0;font-size:17px;font-weight:600}
+.number dd{font:800 clamp(24px,2.2vw,30px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:.04em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dates{display:flex;align-items:center;gap:12px}
+.dates span{flex:1;max-width:90px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--green),#25d36633)}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+.primary,.secondary{display:inline-flex;align-items:center;gap:10px;min-height:50px;padding:0 20px;border-radius:40px;font-size:15px;font-weight:800;text-decoration:none;cursor:pointer;transition:transform .3s,background .3s}
+.primary{background:var(--green);color:var(--navy)!important}
+.secondary{border:1px solid #ffffff3d;background:transparent;color:var(--ink)!important;font-family:inherit}
+.primary:hover,.secondary:hover{transform:translateY(-2px)}
+.secondary:hover{background:#ffffff12}
+.primary svg,.secondary svg{width:17px;height:17px}
+
+/* Certificado bajo el visor */
+.document{margin:0;perspective:1600px}
+.viewer{position:relative;display:block;width:100%;padding:clamp(18px,2vw,28px);border:0;background:none;cursor:zoom-in;transform:rotateY(-9deg) rotateX(4deg);transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.viewer:hover,:global([data-react=sheet][data-lit=true]) .viewer{transform:none}
+.viewer:focus-visible{outline:3px solid var(--green);outline-offset:6px;border-radius:18px}
+.paper{position:relative;display:block;container-type:inline-size;border-radius:6px;background:#fff;box-shadow:0 2px 0 #ffffff26,0 40px 80px -30px #000000d9,0 0 0 1px #ffffff26}
+.paper>img{display:block;width:100%;height:auto;border-radius:6px}
+.zoom{position:absolute;left:50%;top:50%;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:30px;background:#061b3de6;color:var(--ink);font-size:14px;font-weight:800;box-shadow:0 10px 24px -10px #000;opacity:0;transform:translate(-50%,-40%);transition:opacity .3s,transform .4s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.viewer:hover .zoom,.viewer:focus-visible .zoom{opacity:1;transform:translate(-50%,-50%)}
+.zoom svg{width:15px;height:15px}
+.document figcaption{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:14px;text-align:center;font-size:14px;color:var(--muted)}
+.lensLabel{color:var(--ink);font-weight:700;transition:color .4s}
+.stage:not([data-stop="0"]) .lensLabel{color:var(--green)}
+.document figcaption a{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.document figcaption svg{width:14px;height:14px}
+
+.notice{max-width:880px;margin:clamp(36px,4vw,56px) 0 0;padding-left:16px;border-left:2px solid #ffffff26;font-size:14px;line-height:1.65;color:var(--muted)}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+  .document{order:-1}
+  .viewer{transform:none;padding:8px 0}
+}
+@media(prefers-reduced-motion:reduce){.stage *{animation:none!important;transition:none!important}.viewer{transform:none}}
+
+/* ---- La lupa: el mismo certificado ampliado dentro de un anillo verde, centrado en el dato. ----
+   --fx/--fy: punto del certificado (fracción de ancho y alto); --z: aumento. Todo se mueve con
+   transformaciones (GPU): el papel es un contenedor y cqw mide su ancho (alto = 73,47 cqw, 1296/1764).
+   La imagen de la lupa se dibuja una vez a 2× y se escala; la lupa entra desde el lado del hilo. */
+.lens{--fx:1.12;--fy:.46;--z:2.2;position:absolute;z-index:2;left:0;top:0;width:30cqw;aspect-ratio:1;border-radius:50%;overflow:hidden;background:#fff;will-change:translate,scale;
+  translate:calc(var(--fx) * 100cqw - 15cqw) calc(var(--fy) * 73.47cqw - 15cqw);scale:.55;
+  box-shadow:0 0 0 3px #25d366,0 0 0 10px #25d36638,0 22px 44px -10px #000000cc;opacity:0;
+  transition:translate 1.05s cubic-bezier(.65,0,.35,1),opacity .5s ease,scale .7s cubic-bezier(.2,.8,.2,1)}
+.lensImage{position:absolute;left:0;top:0;max-width:none;width:200cqw!important;height:auto!important;transform-origin:0 0;will-change:transform;
+  transform:translate(calc(15cqw - var(--fx) * var(--z) * 100cqw),calc(15cqw - var(--fy) * var(--z) * 73.47cqw)) scale(calc(var(--z) / 2));
+  transition:transform 1.05s cubic-bezier(.65,0,.35,1)}
+.lens:after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 28%,#ffffff66,transparent 38%);pointer-events:none}
+/* Aumento por dato: el nombre y el número se leen enteros; las dos fechas caben juntas. */
+.stage[data-stop="1"] .lens{--fx:.305;--fy:.402;--z:1.6}
+.stage[data-stop="2"] .lens{--fx:.265;--fy:.305;--z:2}
+.stage[data-stop="3"] .lens{--fx:.128;--fy:.628;--z:1.75}
+.stage:not([data-stop="0"]) .lens{opacity:1;scale:1}
+
+/* La fila de la credencial que se está comparando se ilumina (y lleva la lupa si la tocas). */
+.row{position:relative;margin:0 -14px;padding:10px 14px;border-radius:16px;cursor:pointer;outline:none;transition:background .5s,box-shadow .5s}
+.data>.row{padding-top:14px}
+.row:focus-visible{box-shadow:0 0 0 2px var(--green)}
+.stage[data-stop="1"] .row[data-row="1"],.stage[data-stop="2"] .row[data-row="2"],.stage[data-stop="3"] .row[data-row="3"]{background:#25d3661c;box-shadow:inset 3px 0 0 var(--green)}
+.stage[data-stop="3"] .number dd{color:var(--green)}
+@media(prefers-reduced-motion:reduce){.lens,.lensImage{transition:none}}

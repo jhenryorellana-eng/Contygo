@@ -1,0 +1,79 @@
+[
+  {
+    "id": "hero-familia",
+    "name": "Una nueva etapa, acompañados",
+    "kind": "Hero humano",
+    "format": "3:4 · vertical",
+    "durationSeconds": 10,
+    "master": "assets/hero/hero-familia-master.png",
+    "storyboard": "assets/hero/hero-familia-storyboard.png",
+    "prompt": "prompts/hero-familia-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "hero-empresa",
+    "name": "Tu negocio, en tus manos",
+    "kind": "Hero humano",
+    "format": "3:4 · vertical",
+    "durationSeconds": 10,
+    "master": "assets/hero/hero-empresa-master.png",
+    "storyboard": "assets/hero/hero-empresa-storyboard.png",
+    "prompt": "prompts/hero-empresa-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "familia",
+    "name": "Familia · Tu carpeta, en un mismo espacio",
+    "kind": "Producto · papel animado",
+    "format": "1:1 · cuadrado",
+    "durationSeconds": 10,
+    "master": "assets/productos/familia-master.png",
+    "storyboard": "assets/productos/familia-storyboard.png",
+    "prompt": "prompts/familia-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "asilo",
+    "name": "Asilo · Tu historia, organizada",
+    "kind": "Producto · papel animado",
+    "format": "1:1 · cuadrado",
+    "durationSeconds": 10,
+    "master": "assets/productos/asilo-master.png",
+    "storyboard": "assets/productos/asilo-storyboard.png",
+    "prompt": "prompts/asilo-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "corte",
+    "name": "Corte · Cada documento, en su lugar",
+    "kind": "Producto · papel animado",
+    "format": "1:1 · cuadrado",
+    "durationSeconds": 10,
+    "master": "assets/productos/corte-master.png",
+    "storyboard": "assets/productos/corte-storyboard.png",
+    "prompt": "prompts/corte-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "fiscal",
+    "name": "Impuestos · Información que se conecta",
+    "kind": "Producto · papel animado",
+    "format": "1:1 · cuadrado",
+    "durationSeconds": 10,
+    "master": "assets/productos/fiscal-master.png",
+    "storyboard": "assets/productos/fiscal-storyboard.png",
+    "prompt": "prompts/fiscal-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  },
+  {
+    "id": "empresa",
+    "name": "Empresa · Dale forma a tu proyecto",
+    "kind": "Producto · papel animado",
+    "format": "1:1 · cuadrado",
+    "durationSeconds": 10,
+    "master": "assets/productos/empresa-master.png",
+    "storyboard": "assets/productos/empresa-storyboard.png",
+    "prompt": "prompts/empresa-10s.txt",
+    "status": "images-and-prompts-ready-video-pending"
+  }
+]

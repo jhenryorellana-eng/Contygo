@@ -1,0 +1,17 @@
+Desde 0:00 se ve a pantalla completa una emprendedora de cabello oscuro recogido, blusa verde y pantalón marfil a la izquierda de una carpeta grande azul marino casi cerrada, sobre una base curva de papel. Una mano descansa en la cubierta de la carpeta. A la derecha hay una pequeña computadora blanca con borde marino y pictograma de carpeta; una tarjeta informativa blanca asoma en el bolsillo delantero. Dentro de la carpeta se intuyen las piezas plegadas de una pequeña tienda de papel.
+
+Conserva el acabado de maqueta artesanal de papel recortado y desplegable: fibras finas, pliegues visibles, azul marino #061b3d, verde ContyGo #1dcd63, papel marfil y pieles cálidas. Fondo blanco uniforme, luz suave y sombras de contacto discretas. Todas las figuras y objetos mantienen identidad, escala y material. La animación tiene gestos breves, peso y una aceleración suave; no gira toda la escena.
+
+La hoja adjunta guía cuatro estados sucesivos de una sola escena. Sus celdas nunca aparecen en el video. Cada instante ocupa toda la pantalla cuadrada. Cámara fija durante los 10 segundos, sin cortes, zoom, movimientos de cámara ni transiciones. La referencia individual, si se adjunta, sirve sólo para identidad y material; las posiciones de esta animación las determina la hoja.
+
+Invariantes de este clip: una mujer, una carpeta grande, una única tienda desplegable unida a ella mediante pestañas de papel, una tarjeta frontal y una computadora. La libreta pequeña que la mujer lleva contra el cuerpo permanece en su mano. La tienda es una maqueta con fachada blanca, toldo azul y puerta verde; no es un edificio real que crece ni una licencia concedida.
+
+0:00–0:02.5 — Superior izquierda: conserva la carpeta casi cerrada. La emprendedora mira hacia ella y ajusta la mano sobre el borde superior para abrirla. El resto de la escena permanece quieto.
+
+0:02.5–0:05 — Superior derecha: levanta la cubierta desde su bisagra inferior. Las pestañas plegadas que conectan el interior tiran de la fachada, que se incorpora poco a poco; el toldo azul comienza a desplegarse. Todas las piezas nacen de los pliegues que ya estaban dentro, sin objetos apareciendo de la nada.
+
+0:05–0:08 — Inferior izquierda: la cubierta llega a su posición abierta, la tienda queda erguida y el toldo termina de desplegarse. La tarjeta permanece en el bolsillo frontal; la computadora conserva el mismo pictograma sin nuevos mensajes. La emprendedora observa su proyecto con una sonrisa breve y mantiene la mano en el borde de la carpeta.
+
+0:08–0:10 — Inferior derecha: baja la cubierta lentamente. Los pliegues recogen la fachada y el toldo hacia el interior, como un libro desplegable. La tienda conserva sus piezas y se oculta al cerrarse; no desaparece. Recupera la apertura mínima, postura, manos y posición iniciales.
+
+Cierre del bucle: al llegar a 10 segundos, recupera la posición, escala, orientación, manos y luz del inicio. La vuelta es el movimiento de una maqueta demostrativa. No añadas pantallas de éxito ni un desenlace administrativo. Sin personas convertidas en datos, teletransporte, objetos duplicados, partículas, texto, números, sello oficial, cuadrícula ni fundido. Video silencioso, sin música, voz ni efectos sonoros.

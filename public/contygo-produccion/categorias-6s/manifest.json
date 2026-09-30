@@ -1,0 +1,70 @@
+{
+  "version": "categorias-6s-v2",
+  "durationSeconds": 6,
+  "aspectRatio": "1:1",
+  "status": "videos_received_and_integrated",
+  "referenceMode": "single_existing_image_continuous_loop",
+  "reason": "Corrección localizada para animar exactamente las ilustraciones ya aprobadas en bucles de seis segundos. Las antiguas hojas cambiaban la composición.",
+  "clips": [
+    {
+      "id": "familia",
+      "name": "Familia",
+      "title": "Tu historia, en una misma carpeta",
+      "action": "Los documentos se despliegan con el gesto del joven y vuelven a su posición.",
+      "image": "assets/familia.png",
+      "prompt": "prompts/familia-6s.txt",
+      "video": "assets/familia-loop.mp4",
+      "poster": "assets/familia-poster.webp",
+      "actualDurationSeconds": 6.041666666666667,
+      "webBytes": 846009
+    },
+    {
+      "id": "asilo",
+      "name": "Asilo",
+      "title": "Cada parte de tu historia tiene su lugar",
+      "action": "Las tres tarjetas se orientan en una pequeña ola mientras la mujer presenta su historia.",
+      "image": "assets/asilo.png",
+      "prompt": "prompts/asilo-6s.txt",
+      "video": "assets/asilo-loop.mp4",
+      "poster": "assets/asilo-poster.webp",
+      "actualDurationSeconds": 6.041666666666667,
+      "webBytes": 360227
+    },
+    {
+      "id": "corte",
+      "name": "Corte",
+      "title": "Un expediente que se deja revisar",
+      "action": "La cubierta abre ligeramente, revela las capas del expediente y vuelve a cerrar.",
+      "image": "assets/corte.png",
+      "prompt": "prompts/corte-6s.txt",
+      "video": "assets/corte-loop.mp4",
+      "poster": "assets/corte-poster.webp",
+      "actualDurationSeconds": 6.041666666666667,
+      "webBytes": 535920
+    },
+    {
+      "id": "fiscal",
+      "name": "Impuestos",
+      "title": "Tu información toma orden",
+      "action": "La mujer revisa las dos hojas y las devuelve con una pequeña flexión de papel.",
+      "image": "assets/fiscal.png",
+      "prompt": "prompts/fiscal-6s.txt",
+      "video": "assets/fiscal-loop.mp4",
+      "poster": "assets/fiscal-poster.webp",
+      "actualDurationSeconds": 6.041666666666667,
+      "webBytes": 556870
+    },
+    {
+      "id": "empresa",
+      "name": "Empresa",
+      "title": "Tu proyecto conecta con lo digital",
+      "action": "La emprendedora mueve el documento digital y la puerta del pequeño negocio responde.",
+      "image": "assets/empresa.png",
+      "prompt": "prompts/empresa-6s.txt",
+      "video": "assets/empresa-loop.mp4",
+      "poster": "assets/empresa-poster.webp",
+      "actualDurationSeconds": 6.041666666666667,
+      "webBytes": 385553
+    }
+  ]
+}

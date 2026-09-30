@@ -1,0 +1,86 @@
+/* El cierre: escenario marino (en los dos tonos) donde el hilo se vuelve el check de ContyGo.
+   Todo lo que se mueve al llegar el hilo es transform u opacidad (compositor): destello, luz,
+   titular y las tres guías que se reparten. Sin JavaScript todo se ve quieto y completo. */
+.finale{padding:40px 20px 24px}
+.stage{--unfold:cubic-bezier(.2,.9,.25,1.08);position:relative;isolation:isolate;overflow:hidden;max-width:1560px;margin:0 auto;padding:clamp(64px,7vw,104px) clamp(20px,5vw,72px) clamp(56px,6vw,88px);border-radius:40px;text-align:center;color:#f6f8f7;
+  background:radial-gradient(70% 48% at 50% 0%,#25d3662e,transparent 70%),radial-gradient(50% 60% at 100% 100%,#1d4a8666,transparent 70%),linear-gradient(175deg,#0a2a58 0%,#061b3d 46%,#04142e 100%);
+  box-shadow:0 0 0 1px #ffffff14,0 40px 80px -40px #061b3db3}
+.stage:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.3;mix-blend-mode:soft-light;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+
+/* Luz: rayos que se abren detrás del check y un destello cuando el hilo llega. */
+.rays,.flash{position:absolute;z-index:-1;left:50%;pointer-events:none;border-radius:50%}
+.rays{top:clamp(-260px,-18vw,-150px);width:min(980px,190vw);aspect-ratio:1;margin-left:calc(min(980px,190vw) / -2);opacity:.5;
+  background:repeating-conic-gradient(from 0deg,#25d3661f 0deg 5deg,transparent 5deg 15deg);
+  mask-image:radial-gradient(closest-side,#000 18%,transparent 72%);-webkit-mask-image:radial-gradient(closest-side,#000 18%,transparent 72%)}
+.flash{top:clamp(-40px,-2vw,0px);width:min(560px,120vw);aspect-ratio:1;margin-left:calc(min(560px,120vw) / -2);opacity:0;background:radial-gradient(closest-side,#e9fff1 0%,#25d366cc 18%,#25d36633 48%,transparent 72%)}
+
+.mark{width:clamp(128px,13vw,190px);aspect-ratio:1;margin:0 auto}
+.mark img{display:block;width:100%;height:auto;filter:drop-shadow(0 0 34px #25d36659);clip-path:polygon(100% 0,-140% 0,100% 240%);transition:clip-path 1.3s cubic-bezier(.65,0,.35,1) .1s}
+.caption{margin:10px 0 26px!important;font-size:16px;color:#a9b8ca}
+.caption b{color:#25d366;font-weight:700}
+.stage .title{max-width:21ch;margin:0 auto 20px;color:#f6f8f7;font-size:clamp(40px,4.8vw,74px);line-height:1.02}
+.title span,.title em{display:block;text-wrap:balance}
+.stage .title em{color:#25d366}
+.lead{max-width:560px;margin:0 auto 44px!important;font-size:clamp(17px,1.4vw,20px);line-height:1.6;color:#c3d0de}
+
+/* Las guías: la puerta al flujo de cada servicio. */
+.guides{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.6vw,24px);max-width:1180px;margin:0 auto;padding:0}
+.guide{position:relative;display:block;width:100%;aspect-ratio:4/5;padding:0;border:0;border-radius:26px;overflow:hidden;isolation:isolate;background:#0b2446;color:#fff;text-align:left;cursor:pointer;
+  box-shadow:0 0 0 1px #ffffff24,0 34px 60px -30px #000000cc;transition:transform .6s var(--unfold),box-shadow .6s}
+.guide:hover{transform:translateY(-6px);box-shadow:0 0 0 1px #25d36699,0 44px 70px -30px #000000e6}
+.guide:focus-visible{outline:3px solid #25d366;outline-offset:4px}
+.poster{object-fit:cover;transition:transform 1.4s var(--unfold)}
+.guide:hover .poster{transform:scale(1.06)}
+.shade{position:absolute;inset:0;background:linear-gradient(180deg,#061b3d1a 0%,transparent 30%,#061b3db3 66%,#061b3df5 100%)}
+.tag{position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:7px;padding:8px 13px 8px 11px;border-radius:30px;background:#061b3dd9;box-shadow:0 0 0 1px #ffffff26;font-size:13px;font-weight:700;letter-spacing:.01em}
+.tag svg{width:12px;height:12px;color:#25d366}
+.text{position:absolute;left:20px;right:86px;bottom:20px;display:flex;flex-direction:column;gap:3px}
+.text small{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#25d366;line-height:1.35}
+.text strong{font:800 clamp(22px,2vw,30px)/1.08 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}
+.text>span{font-size:15px;font-weight:600;color:#d6e0ea}
+.play{position:absolute;right:18px;bottom:18px;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#25d366;color:#061b3d;box-shadow:0 12px 26px -10px #000;transition:transform .45s var(--unfold)}
+.play svg{width:22px;height:22px;margin-left:3px}
+.play:before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2px #25d366;animation:ring 2.4s ease-out infinite}
+.guide:hover .play{transform:scale(1.1)}
+.guides li:not(:first-child) .play:before{animation-delay:1.2s}
+.all{display:inline-flex;align-items:center;gap:12px;margin-top:40px;min-height:48px;font-size:16px;font-weight:700;color:#f6f8f7!important;border-bottom:2px solid #25d36666}
+.all svg{width:18px;height:18px;color:#25d366;transition:translate .3s var(--unfold)}
+.all:hover svg{translate:5px 0}
+@keyframes ring{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.75);opacity:0}}
+
+/* ---- Llega el hilo (GreenThread marca la sección con data-arrived) ---- */
+:global(main[data-thread-ready=true]) .finale:not([data-arrived=true]) .mark img{clip-path:polygon(100% 0,100% 0,100% 0)}
+:global(main[data-thread-ready=true]) .finale:not([data-arrived=true]) :is(.caption,.title span,.title em,.lead,.guides li,.all){opacity:0;translate:0 34px}
+:global(main[data-thread-ready=true]) .finale:not([data-arrived=true]) .rays{opacity:0;rotate:-14deg;scale:.7}
+.caption,.title span,.title em,.lead,.guides li,.all{transition:opacity .8s ease,translate 1s var(--unfold)}
+.caption{transition-delay:.55s}.title span{transition-delay:.7s}.title em{transition-delay:.82s}.lead{transition-delay:.95s}
+.guides li:nth-child(1){transition-delay:1.05s}.guides li:nth-child(2){transition-delay:1.17s}.guides li:nth-child(3){transition-delay:1.29s}.all{transition-delay:1.45s}
+.rays{transition:opacity 2s ease .3s,rotate 5s cubic-bezier(.2,.8,.2,1) .3s,scale 2.4s cubic-bezier(.2,.8,.2,1) .3s}
+.finale[data-arrived=true] .flash{animation:flash 1.5s cubic-bezier(.2,.8,.2,1) .35s both}
+@keyframes flash{0%{opacity:0;transform:scale(.25)}22%{opacity:1}100%{opacity:0;transform:scale(1.5)}}
+/* Las guías se reparten: cada una llega girada y se endereza. */
+:global(main[data-thread-ready=true]) .finale:not([data-arrived=true]) .guides li:nth-child(1){rotate:-5deg}
+:global(main[data-thread-ready=true]) .finale:not([data-arrived=true]) .guides li:nth-child(3){rotate:5deg}
+.guides li{transition-property:opacity,translate,rotate;transition-duration:.8s,1s,1.1s;transition-timing-function:ease,var(--unfold),var(--unfold)}
+
+@media(max-width:760px){
+  .finale{padding:28px 10px 10px}
+  .stage{padding:56px 16px 44px;border-radius:28px}
+  .caption{font-size:15px;margin-bottom:20px!important}
+  .stage .title{font-size:clamp(34px,9.4vw,46px)}
+  .lead{font-size:17px;margin-bottom:30px!important}
+  /* La primera guía a lo ancho; las otras dos, lado a lado. */
+  .guides{grid-template-columns:1fr 1fr;gap:12px}
+  .guides li:first-child{grid-column:1 / -1}
+  .guides li:first-child .guide{aspect-ratio:16/12}
+  .guide{border-radius:20px;aspect-ratio:3/4.1}
+  .guides li:not(:first-child) .text{left:14px;right:14px;bottom:70px}
+  .guides li:not(:first-child) .text small{display:none}
+  .guides li:not(:first-child) .text strong{font-size:18px}
+  .guides li:not(:first-child) .text>span{font-size:14px}
+  .guides li:not(:first-child) .play{left:14px;right:auto;bottom:14px;width:46px;height:46px}
+  .guides li:not(:first-child) .tagLong{display:none}
+  .tag{top:10px;left:10px;font-size:12px;padding:7px 11px 7px 9px}
+  .all{margin-top:28px;font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){.stage *{animation:none!important;transition:none!important}}

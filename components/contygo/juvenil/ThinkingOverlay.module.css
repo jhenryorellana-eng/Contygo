@@ -1,0 +1,222 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: inherit;
+  color: #f6f8f7;
+  pointer-events: auto;
+}
+
+.overlay[data-variant="input-only"] {
+  pointer-events: none;
+  overflow: visible;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(6 27 61 / 50%);
+  backdrop-filter: blur(32px) saturate(1.35);
+  -webkit-backdrop-filter: blur(32px) saturate(1.35);
+}
+
+.status {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: max-content;
+  max-width: calc(100% - 40px);
+  transform: translate(-50%, -50%);
+  font-family: inherit;
+  font-size: clamp(14px, 1.05vw, 16px);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: .005em;
+  text-align: center;
+  text-shadow: 0 1px 12px rgb(6 27 61 / 45%);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  animation: spinnerTurn 1.05s linear infinite;
+}
+
+.liquidGlow {
+  position: absolute;
+  left: -5%;
+  bottom: 0;
+  width: 110%;
+  height: 40%;
+  min-height: 128px;
+  pointer-events: none;
+  isolation: isolate;
+  opacity: clamp(0, var(--glow-gain, 1), 1);
+  mask-image: linear-gradient(to top, #000 0%, #000 46%, rgb(0 0 0 / 80%) 68%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 46%, rgb(0 0 0 / 80%) 68%, transparent 100%);
+}
+
+.glowEnvelope {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+  transform: scale(var(--voice-scale, 1));
+  opacity: var(--voice-light, .86);
+  transition: transform 150ms ease-out, opacity 150ms ease-out;
+}
+
+.glowEnvelope > i {
+  position: absolute;
+  display: block;
+  border: 0;
+  border-radius: 50%;
+  transform-origin: 50% 80%;
+  animation: cloudBreathe 5.8s ease-in-out infinite alternate;
+  opacity: clamp(0, calc(var(--glow-gain, 1) * .92), 1);
+}
+
+.navyCloud {
+  left: -7%;
+  bottom: -30%;
+  width: 76%;
+  height: 127%;
+  background: radial-gradient(ellipse at 46% 70%, rgb(246 248 247 / 78%) 0%, rgb(246 248 247 / 40%) 18%, #061b3d 50%, transparent 76%);
+  filter: blur(65px);
+  animation-duration: 6.7s!important;
+}
+
+.forestCloud {
+  left: 17%;
+  bottom: -36%;
+  width: 83%;
+  height: 126%;
+  background: radial-gradient(ellipse at 52% 68%, #087f46 0%, rgb(8 127 70 / 82%) 30%, rgb(6 27 61 / 42%) 54%, transparent 78%);
+  filter: blur(80px);
+  animation-delay: -2.2s!important;
+  animation-duration: 5.3s!important;
+}
+
+.ivoryCloud {
+  left: 10%;
+  bottom: -24%;
+  width: 77%;
+  height: 116%;
+  background: radial-gradient(ellipse at 49% 73%, #f6f8f7 0%, rgb(246 248 247 / 93%) 19%, rgb(246 248 247 / 48%) 37%, rgb(37 211 102 / 18%) 55%, transparent 78%);
+  filter: blur(55px);
+  animation-delay: -1.1s!important;
+  animation-duration: 4.8s!important;
+}
+
+.greenCloud {
+  right: -15%;
+  bottom: -33%;
+  width: 72%;
+  height: 126%;
+  background: radial-gradient(ellipse at 48% 69%, #25d366 0%, rgb(37 211 102 / 95%) 25%, rgb(8 127 70 / 72%) 49%, transparent 77%);
+  filter: blur(70px);
+  animation-delay: -3.3s!important;
+  animation-duration: 6.2s!important;
+}
+
+.overlay[data-phase="entering"] { animation: overlayEnter 320ms ease-out both; }
+.overlay[data-phase="entering"] .glowEnvelope { animation: glowEnter 320ms ease-out both; }
+.overlay[data-phase="exiting"] { animation: overlayExit 400ms ease-in both; }
+.overlay[data-phase="exiting"] .glowEnvelope { animation: glowExit 400ms cubic-bezier(.2, .7, .3, 1) both; }
+
+.overlay[data-motion="paused"],
+.overlay[data-motion="paused"] *,
+.liquidGlow[data-motion="paused"] * {
+  animation-play-state: paused!important;
+}
+
+.overlay[data-motion="reduced"] .spinner,
+.liquidGlow[data-motion="reduced"] .glowEnvelope > i {
+  animation: none!important;
+}
+
+.liquidGlow[data-motion="reduced"] .glowEnvelope {
+  transform: none;
+  transition: none;
+}
+
+.overlay[data-motion="reduced"] .glowEnvelope { animation: none; }
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes cloudBreathe {
+  from { transform: translate3d(-2%, 4%, 0) scale(.95, 1); }
+  to { transform: translate3d(3%, -4%, 0) scale(1.08, 1.14); }
+}
+
+@keyframes spinnerTurn { to { transform: rotate(360deg); } }
+@keyframes overlayEnter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlayExit { from { opacity: 1; } to { opacity: 0; } }
+@keyframes glowEnter { from { opacity: 0; transform: translateY(9%) scale(.94); } to { opacity: var(--voice-light, .86); transform: none; } }
+@keyframes glowExit { 0% { opacity: .86; transform: none; } 35% { opacity: 1; transform: translateY(-7%) scale(1.12, 1.26); } 100% { opacity: 0; transform: translateY(-13%) scale(1.18, 1.42); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .glowEnvelope > i,
+  .spinner { animation: none!important; }
+  .glowEnvelope { transform: none; transition: none; }
+  .overlay[data-phase] .glowEnvelope { animation: none; }
+}
+
+/* CONTYGO LIGHT APPEARANCE: color-only overrides */
+:global([data-contygo-theme=light]) .overlay {
+    color: rgba(6,27,61,1)
+}
+:global([data-contygo-theme=light]) .scrim {
+    background: rgb(255 255 255 / 50%)
+}
+:global([data-contygo-theme=light]) .navyCloud {
+    background: radial-gradient(ellipse at 46% 70%, rgb(246 248 247 / 78%) 0%, rgb(246 248 247 / 40%) 18%, rgba(255,255,255,1) 50%, transparent 76%)
+}
+:global([data-contygo-theme=light]) .forestCloud {
+    background: radial-gradient(ellipse at 52% 68%, #087f46 0%, rgb(8 127 70 / 82%) 30%, rgb(255 255 255 / 42%) 54%, transparent 78%)
+}
+
+/* CONTYGO DÍA: hand-tuned light appearance */
+/* By night the glow emits light; by day it is ink on paper. The generated block turned the navy
+   cloud white, leaving only pale layers. Blurs of 55–80px also thinned the colour into mint haze,
+   so by day the clouds are half as soft and fully saturated: a green mass that reads on white.
+   Low-alpha navy over white turns grey, so navy only deepens the core. */
+:global([data-contygo-theme=light]) .glowEnvelope > i { mix-blend-mode: multiply; }
+:global([data-contygo-theme=light]) .navyCloud {
+  filter: blur(38px);
+  background: radial-gradient(ellipse at 46% 70%, rgb(6 27 61 / 62%) 0%, rgb(8 127 70 / 55%) 30%, rgb(8 127 70 / 16%) 55%, transparent 74%);
+}
+:global([data-contygo-theme=light]) .forestCloud {
+  filter: blur(42px);
+  background: radial-gradient(ellipse at 52% 68%, #087f46 0%, rgb(8 127 70 / 95%) 34%, rgb(8 127 70 / 36%) 58%, transparent 78%);
+}
+:global([data-contygo-theme=light]) .ivoryCloud {
+  mix-blend-mode: normal;
+  filter: blur(26px);
+  background: radial-gradient(ellipse at 49% 73%, rgb(255 255 255 / 70%) 0%, rgb(255 255 255 / 35%) 20%, transparent 46%);
+}
+:global([data-contygo-theme=light]) .greenCloud {
+  filter: blur(36px);
+  background: radial-gradient(ellipse at 48% 69%, #25d366 0%, #25d366 30%, rgb(8 127 70 / 85%) 54%, transparent 77%);
+}
+:global([data-contygo-theme=light]) .status { text-shadow: 0 1px 14px rgb(255 255 255 / 90%); }
+
+/* JOURNEY BACKDROP: inside the dialog the thread field is the only atmosphere. */
+:global(dialog[data-journey-backdrop=on]) .liquidGlow { display: none; }

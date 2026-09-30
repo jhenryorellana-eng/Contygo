@@ -1,0 +1,114 @@
+/* La app en código. Todas las medidas en cqw (1cqw = 1 % del ancho del teléfono): se ve igual de nítida
+   a 240 px que a 340 px. Colores de marca; sigue el tono de la página ([data-contygo-theme]). */
+.frame{width:100%;container-type:inline-size}
+.device{
+  --a-bg:#f3f7f5;--a-card:#fff;--a-ink:#061b3d;--a-muted:#5a6a80;--a-line:#061b3d14;--a-green:#25d366;--a-deep:#087f46;--a-soft:#25d3661f;
+  position:relative;width:100%;aspect-ratio:300/640;padding:3.2cqw;border-radius:15cqw;
+  background:linear-gradient(150deg,#3a4b63 0%,#101b2c 30%,#060d18 62%,#26364d 100%);
+  box-shadow:inset 0 0 0 .5cqw #56677f,inset 0 0 0 1.2cqw #0a1322,0 12cqw 22cqw -10cqw #061b3d8c,0 3cqw 6cqw -2cqw #061b3d40;
+}
+:global([data-contygo-theme=dark]) .device{--a-bg:#071f45;--a-card:#0e2b55;--a-ink:#f6f8f7;--a-muted:#9fb2c8;--a-line:#ffffff17;--a-deep:#25d366;--a-soft:#25d36624;box-shadow:inset 0 0 0 .5cqw #56677f,inset 0 0 0 1.2cqw #0a1322,0 12cqw 26cqw -8cqw #000000b3,0 0 18cqw -6cqw #25d36640}
+.buttons{position:absolute;right:-.9cqw;top:24cqw;width:1.2cqw;height:17cqw;border-radius:1cqw;background:#1a2638;box-shadow:0 -1px 0 #56677f}
+.buttons:before,.buttons:after{content:"";position:absolute;left:-98.4cqw;width:1.2cqw;border-radius:1cqw;background:#1a2638}
+.buttons:before{top:-4cqw;height:8cqw}.buttons:after{top:7cqw;height:13cqw}
+.screen{position:relative;height:100%;overflow:hidden;border-radius:12cqw;background:var(--a-bg);color:var(--a-ink);font-family:var(--font-contygo-body),sans-serif;font-size:4cqw;line-height:1.35;padding:0 5cqw}
+.glare{position:absolute;inset:3.2cqw;border-radius:12cqw;pointer-events:none;background:linear-gradient(115deg,#ffffff2e 0%,#ffffff0a 22%,transparent 38%)}
+
+/* Barra de estado e isla */
+.status{display:flex;align-items:center;justify-content:space-between;height:13cqw;padding:0 2cqw;font-size:4.3cqw}
+.status b{font-weight:700;letter-spacing:.02em}
+.island{position:absolute;left:50%;top:2.6cqw;width:31cqw;height:8.6cqw;border-radius:6cqw;background:#050a12;transform:translateX(-50%)}
+.statusIcons{display:flex;align-items:flex-end;gap:.8cqw}
+.statusIcons i{display:block;width:1.2cqw;border-radius:.4cqw;background:var(--a-ink)}
+.statusIcons i:nth-child(1){height:1.6cqw}.statusIcons i:nth-child(2){height:2.4cqw}.statusIcons i:nth-child(3){height:3.2cqw}
+.statusIcons em{display:block;width:7.4cqw;height:3.6cqw;margin-left:1.4cqw;border:.45cqw solid var(--a-ink);border-radius:1.2cqw;background:linear-gradient(90deg,var(--a-ink) 72%,transparent 72%) content-box;padding:.4cqw}
+
+/* Cabecera de la app */
+.bar{display:flex;align-items:center;gap:2.6cqw;height:13cqw}
+.logo{flex:1;display:flex}
+.logo img{height:7cqw;width:auto}
+.logoDark{display:none}
+:global([data-contygo-theme=dark]) .logoLight{display:none}
+:global([data-contygo-theme=dark]) .logoDark{display:block}
+.bell{position:relative;display:grid;place-items:center;width:9.5cqw;height:9.5cqw;border-radius:50%;background:var(--a-card);box-shadow:0 0 0 .3cqw var(--a-line)}
+.bell svg{width:5cqw;height:5cqw}
+.bell i{position:absolute;top:1.8cqw;right:2cqw;width:2cqw;height:2cqw;border-radius:50%;background:var(--a-green);box-shadow:0 0 0 .6cqw var(--a-card)}
+.avatar{display:grid;place-items:center;width:9.5cqw;height:9.5cqw;border-radius:50%;background:#061b3d;color:#fff;font:800 4.2cqw var(--font-contygo-heading),sans-serif}
+:global([data-contygo-theme=dark]) .avatar{background:var(--a-green);color:#061b3d}
+.hello{margin:3cqw 0 0;font:800 7.4cqw/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em}
+.sub{margin:.8cqw 0 4cqw;color:var(--a-muted);font-size:4.1cqw}
+
+/* Tarjeta del caso */
+.case{padding:4.4cqw;border-radius:6cqw;background:var(--a-card);box-shadow:0 .4cqw 0 var(--a-line),0 5cqw 10cqw -6cqw #061b3d33}
+.caseTop{display:flex;align-items:center;justify-content:space-between}
+.tag{padding:1.2cqw 3cqw;border-radius:5cqw;background:#061b3d;color:#fff;font-size:3.4cqw;font-weight:700}
+:global([data-contygo-theme=dark]) .tag{background:#ffffff1f}
+.state{display:flex;align-items:center;gap:1.4cqw;font-size:3.3cqw;font-weight:700;color:var(--a-deep)}
+.state i{position:relative;width:2cqw;height:2cqw;border-radius:50%;background:var(--a-green)}
+.progress{display:flex;align-items:center;gap:3.6cqw;margin:4cqw 0 3.4cqw}
+.ring{width:15cqw;height:15cqw;transform:rotate(-90deg)}
+.ringTrack,.ringValue{fill:none;stroke-width:5}
+.ringTrack{stroke:var(--a-line)}
+.ringValue{stroke:var(--a-green);stroke-linecap:round;stroke-dasharray:100 100;stroke-dashoffset:60;transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1) .3s}
+.progress strong{display:block;font:800 5.2cqw/1.15 var(--font-contygo-heading),sans-serif}
+.progress span{font-size:3.6cqw;color:var(--a-muted)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:1.6cqw}
+.steps li{display:flex;align-items:center;gap:2.4cqw;font-size:3.6cqw;color:var(--a-muted)}
+.steps i{display:grid;place-items:center;flex:none;width:4.6cqw;height:4.6cqw;border-radius:50%;border:.5cqw solid var(--a-line)}
+.steps i svg{width:3.4cqw;height:3.4cqw;stroke-width:3}
+.steps li[data-state=done]{color:var(--a-ink)}
+.steps li[data-state=done] i{background:var(--a-green);border-color:var(--a-green);color:#061b3d}
+.steps li[data-state=current]{color:var(--a-ink);font-weight:700}
+.steps li[data-state=current] i{position:relative;border-color:var(--a-green);box-shadow:inset 0 0 0 1.1cqw var(--a-card),inset 0 0 0 3cqw var(--a-green)}
+/* The "live" pulse is a ring that grows and fades (transform and opacity: compositor, no repaint). */
+.state i:after,.steps li[data-state=current] i:after{content:"";position:absolute;inset:-.5cqw;border-radius:50%;box-shadow:0 0 0 .5cqw #25d366;opacity:0;animation:liveRing 1.8s ease-out infinite}
+
+/* Documentos */
+.docs{margin-top:4cqw;padding:4cqw 4.4cqw 3cqw;border-radius:6cqw;background:var(--a-card);box-shadow:0 .4cqw 0 var(--a-line)}
+.docsHead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.6cqw}
+.docsHead strong{font:800 4.3cqw var(--font-contygo-heading),sans-serif}
+.count{display:inline-flex;font-size:3.5cqw;color:var(--a-muted)}
+.count b{font-weight:800;color:var(--a-deep)}
+/* Pares que se cruzan en la misma celda cuando termina la subida. */
+.swap{display:inline-grid;align-items:center;justify-items:end}
+.swap>*{grid-area:1/1}
+.after{opacity:0}
+.doc{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:2.6cqw;padding:2.3cqw 0;border-top:.3cqw solid var(--a-line);font-size:3.7cqw}
+.doc:first-of-type{border-top:0}
+.doc>i{display:grid;place-items:center;width:7cqw;height:7cqw;border-radius:2.2cqw;background:var(--a-soft);color:var(--a-deep)}
+.doc>i svg{width:4.2cqw;height:4.2cqw}
+.doc>i.swap{justify-items:center}
+.doc>i.swap>span{display:grid;place-items:center}
+.doc em{font-style:normal;font-size:3.2cqw;font-weight:700;color:var(--a-deep)}
+.sending{color:var(--a-muted)!important}
+.bar2{grid-column:2/4;height:1.2cqw;border-radius:1cqw;background:var(--a-line);overflow:hidden;margin-top:.4cqw}
+.bar2 span{display:block;height:100%;width:0;border-radius:inherit;background:var(--a-green);transition:width 1.3s cubic-bezier(.4,0,.2,1) .6s}
+
+/* Aviso de Soporte: llega desde arriba */
+.toast{position:absolute;left:3.4cqw;right:3.4cqw;top:3cqw;z-index:3;display:flex;gap:2.8cqw;align-items:center;padding:3cqw 3.4cqw;border-radius:5cqw;background:color-mix(in srgb,var(--a-card) 88%,transparent);backdrop-filter:blur(3cqw);-webkit-backdrop-filter:blur(3cqw);box-shadow:0 5cqw 12cqw -4cqw #061b3d59,0 0 0 .3cqw var(--a-line);transform:translateY(-140%);opacity:0;transition:transform .7s cubic-bezier(.2,.9,.25,1.15) 2.3s,opacity .3s 2.3s}
+/* Sin desenfoque de fondo: debajo solo hay la app, y el desenfoque se recalculaba en cada cuadro. */
+.toast{background:color-mix(in srgb,var(--a-card) 97%,transparent);backdrop-filter:none;-webkit-backdrop-filter:none}
+.toastMark{display:grid;place-items:center;flex:none;width:10cqw;height:10cqw;border-radius:3cqw;background:#061b3d}
+.toastMark img{width:6.4cqw;height:6.4cqw}
+.toast strong{display:block;font-size:3.6cqw}
+.toast span{display:block;font-size:3.3cqw;color:var(--a-muted);line-height:1.3}
+
+/* Barra de pestañas */
+.tabs{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);padding:2.6cqw 3cqw 7cqw;background:var(--a-card);box-shadow:0 -.3cqw 0 var(--a-line)}
+.tabs span{display:grid;justify-items:center;gap:.8cqw;font-size:2.9cqw;color:var(--a-muted)}
+.tabs svg{width:5.4cqw;height:5.4cqw}
+.tabs [data-active=true]{color:var(--a-deep);font-weight:700}
+.homeBar{position:absolute;left:50%;bottom:2.2cqw;width:34cqw;height:1.3cqw;border-radius:1cqw;background:var(--a-ink);opacity:.8;transform:translateX(-50%)}
+
+/* Cuando llega el hilo: el anillo avanza, el documento termina de subir y escribe Soporte. */
+:global([data-react=phone][data-lit=true]) .ringValue{stroke-dashoffset:40}
+:global([data-react=phone][data-lit=true]) .bar2 span{width:100%}
+:global([data-react=phone][data-lit=true]) .before{animation:leave .3s 1.9s both}
+:global([data-react=phone][data-lit=true]) .after{animation:arrive .5s 1.9s both}
+:global([data-react=phone][data-lit=true]) .bar2{animation:fold .4s 1.95s forwards}
+:global([data-react=phone][data-lit=true]) .toast{transform:none;opacity:1}
+@keyframes liveRing{0%{transform:scale(.7);opacity:.85}100%{transform:scale(2.3);opacity:0}}
+@keyframes leave{to{opacity:0;transform:scale(.6)}}
+@keyframes arrive{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes fold{to{height:0;margin-top:0;opacity:0}}
+@media(prefers-reduced-motion:reduce){.device *{animation:none!important;transition:none!important}}

@@ -1,0 +1,151 @@
+.page {
+  min-height: 100dvh;
+  padding: 30px clamp(22px, 4.4vw, 72px) 24px;
+  background: #F6F8F7;
+  color: #061B3D;
+  font-family: var(--font-contygo-body), sans-serif;
+}
+.page *, .contractPage * { box-sizing: border-box; }
+.page button, .contractPage button { font: inherit; cursor: pointer; }
+.page button:focus-visible, .contractPage button:focus-visible { outline: 3px solid #087F46; outline-offset: 5px; }
+.header, .experiencePreview, .footer { width: min(100%, 1380px); margin-inline: auto; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 26px; border-bottom: 1px solid #061B3D21; }
+.brand { display: block; width: 148px; height: auto; }
+.previewLabel { display: inline-flex; align-items: center; gap: 9px; color: #061B3D99; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+.previewLabel i { width: 6px; height: 6px; border-radius: 50%; background: #25D366; }
+.experiencePreview { display: grid; grid-template-columns: minmax(300px, .82fr) minmax(0, 1.35fr); align-items: center; gap: clamp(35px, 5.2vw, 82px); padding-block: clamp(44px, 6.2vw, 86px) 54px; }
+.copy { padding-block: 8px 24px; }
+.eyebrow { margin: 0 0 20px; color: #087F46; font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.copy h1 { margin: 0; font-family: var(--font-contygo-heading), sans-serif; font-size: clamp(39px, 4.1vw, 59px); font-weight: 800; line-height: 1.04; letter-spacing: -.055em; text-wrap: balance; }
+.copy h1 > span { color: #087F46; }
+.description { max-width: 370px; margin: 25px 0 0; color: #061B3DB3; font-size: 15px; line-height: 1.75; }
+.designNotes { display: grid; gap: 19px; margin-block: 29px 34px; }
+.designNotes > div { display: flex; align-items: flex-start; gap: 13px; }
+.designNotes > div > span { padding-top: 2px; color: #087F46; font-size: 9px; font-variant-numeric: tabular-nums; }
+.designNotes p { margin: 0; font-size: 12px; line-height: 1.7; color: #061B3D99; }
+.designNotes strong { color: #061B3D; font-weight: 600; }
+.actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.responseButton { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; max-width: 100%; min-height: 52px; padding: 15px 20px; border: 1px solid #061B3D; border-radius: 14px; background: #061B3D; color: #F6F8F7; font-size: 12px; font-weight: 600; text-align: left; transition: background .2s; }
+.responseButton svg { width: 19px; height: 19px; flex-shrink: 0; color: #25D366; }
+.responseButton:hover { background: #087F46; }
+.primaryButton { display: inline-flex; align-items: center; justify-content: space-between; gap: 38px; min-height: 53px; padding: 16px 21px; border: 1px solid #25D366; border-radius: 14px; background: #25D366; color: #061B3D; font-size: 13px; font-weight: 750; box-shadow: 0 3px 0 #087F46; transition: transform .2s, box-shadow .2s; }
+.primaryButton svg { width: 19px; height: 19px; }
+.primaryButton:hover { transform: translateY(-2px); box-shadow: 0 5px 0 #087F46; }
+.primaryButton:active { transform: translateY(1px); box-shadow: 0 2px 0 #087F46; }
+.fullFilmButton { display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 49px; max-width: 100%; margin-top: 5px; padding: 13px 17px; border: 1px solid #061B3D33; border-radius: 14px; background: transparent; color: #061B3D; font-size: 11px; font-weight: 600; line-height: 1.5; text-align: left; transition: background .2s, border-color .2s; }
+.fullFilmButton svg { width: 17px; height: 17px; flex-shrink: 0; }
+.fullFilmButton:hover { background: #061B3D08; border-color: #061B3D80; }
+.completedButton { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 49px; max-width: 100%; padding: 13px 17px; border: 1px solid #087F4666; border-radius: 14px; background: #25D3660D; color: #087F46; font-size: 12px; font-weight: 650; line-height: 1.5; text-align: left; transition: background .2s, border-color .2s; }
+.completedButton svg { width: 17px; height: 17px; flex-shrink: 0; }
+.completedButton:hover { background: #25D36621; border-color: #087F46; }
+.contractButton { display: inline-flex; align-items: center; gap: 11px; min-height: 41px; padding: 8px 0; border: 0; background: transparent; color: #061B3DB3; font-size: 11px; }
+.contractButton:hover { color: #087F46; }
+.previewNote { margin: 19px 0 0; color: #061B3D99; font-size: 10px; line-height: 1.75; }
+.previewNote strong { font-weight: 650; color: #061B3DBF; }
+.previewFigure { min-width: 0; margin: 0; }
+.scene { position: relative; isolation: isolate; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; border: 1px solid #061B3D; border-radius: 28px; background: #061B3D; color: #F6F8F7; box-shadow: 0 26px 60px -37px #061B3D80; }
+.liquidSurface { position: absolute !important; inset: 20% -10% -15%; width: 120%; height: 95%; z-index: 0; pointer-events: none; }
+.sceneContents { position: absolute; inset: 0 0 14%; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: clamp(26px, 3vw, 43px) clamp(24px, 3.3vw, 48px) 0; }
+.sceneBrand { display: block; width: clamp(134px, 13vw, 187px); max-width: 43%; height: auto; flex-shrink: 0; }
+.conversation { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 0; width: min(100%, 480px); padding: 20px 3px 18px; }
+.message { text-align: center; animation: messageIn .55s cubic-bezier(.16, 1, .3, 1) both; }
+.assistantMessage { margin: 0; color: #F6F8F7; font-size: clamp(18px, 1.85vw, 27px); font-weight: 500; line-height: 1.5; letter-spacing: -.025em; text-wrap: balance; }
+.userMessage { margin: 20px 0 0; color: #25D366; font-size: clamp(11px, 1.03vw, 15px); line-height: 1.55; }
+.composer { position: relative; isolation: isolate; display: flex; align-items: center; gap: 11px; width: min(100%, 485px); min-height: 57px; flex-shrink: 0; padding: 8px 9px 8px 21px; overflow: hidden; border: 1px solid #F6F8F759; border-radius: 30px; background: #F6F8F709; box-shadow: inset 0 1px 1px #F6F8F766, 0 12px 30px #061B3D33; }
+.composer > :not([data-liquid-glass]) { position: relative; z-index: 1; }
+.composer > [data-liquid-glass] { position: absolute; z-index: 0; }
+.placeholder { flex: 1; min-width: 0; font-size: 11px; color: #F6F8F799; }
+.microphone { display: grid; place-items: center; color: #F6F8F7A6; }
+.microphone svg { width: 17px; height: 17px; }
+.sendButton { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; padding: 0; border: 0; border-radius: 50%; background: #25D366; color: #061B3D; transition: transform .2s; }
+.sendButton svg { width: 17px; height: 17px; }
+.sendButton:hover { transform: scale(1.07); }
+.scene .sendButton:focus-visible { outline: 2px solid #F6F8F7; outline-offset: 3px; }
+.sceneSignoff { margin-top: 17px; color: #F6F8F780; font-size: 6px; line-height: 1.4; letter-spacing: .18em; }
+.demoControls { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 17px 5px 0; }
+.demoControls > button { display: inline-flex; align-items: center; gap: 7px; min-height: 35px; padding: 5px 0; border: 0; background: transparent; color: #087F46; font-size: 11px; font-weight: 600; }
+.demoControls > button svg { width: 16px; height: 16px; transition: transform .25s; }
+.demoControls > button:hover svg { transform: rotate(35deg); }
+.demoControls > span { color: #061B3D99; font-size: 9px; line-height: 1.6; }
+.demoControls > span i { margin-left: 9px; color: #061B3D; font-style: normal; font-variant-numeric: tabular-nums; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid #061B3D21; padding-top: 20px; }
+.footer > span { color: #061B3D99; font-size: 8px; letter-spacing: .14em; }
+.footer p { margin: 0; color: #061B3D99; font-size: 9px; }
+.contractPage { --closing-preview-offset:67px; min-height: 100dvh; color: #061B3D; background: #F6F8F7; font-family: var(--font-contygo-body), sans-serif; }
+.contractToolbar { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 25px; border-bottom: 1px solid #061B3D26; background: #F6F8F7; }
+.contractToolbar > span { font-size: 10px; color: #061B3D99; }
+.backButton { display: flex; align-items: center; gap: 9px; min-height: 36px; padding: 5px 0; border: 0; color: #061B3D; background: transparent; font-size: 11px; }
+.backButton > span { font-size: 20px; }
+
+@keyframes messageIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1000px) and (min-width: 761px) {
+  .page { padding-inline: 28px; }
+  .experiencePreview { grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); gap: 28px; }
+  .copy h1 { font-size: 39px; }
+  .eyebrow { font-size: 8px; letter-spacing: .09em; }
+  .description { font-size: 13px; }
+  .designNotes { gap: 13px; margin-block: 23px 26px; }
+  .designNotes p { font-size: 11px; }
+  .sceneContents { bottom: 12%; padding: 22px 22px 0; }
+  .conversation { padding-block: 12px; }
+  .assistantMessage { font-size: 16px; line-height: 1.45; }
+  .userMessage { margin-top: 13px; font-size: 10px; }
+  .composer { min-height: 47px; padding: 6px 7px 6px 16px; }
+  .sendButton { width: 33px; height: 33px; }
+  .sceneSignoff { margin-top: 13px; font-size: 5px; }
+  .demoControls { gap: 6px; }
+  .demoControls > button { font-size: 10px; gap: 5px; }
+  .demoControls > span { font-size: 8px; }
+  .demoControls > span i { margin-left: 4px; }
+}
+@media (max-width: 760px) {
+  .page { padding: 24px 22px; }
+  .header { padding-bottom: 22px; }
+  .brand { width: 128px; }
+  .previewLabel { font-size: 7px; letter-spacing: .12em; gap: 7px; }
+  .experiencePreview { grid-template-columns: minmax(0, 1fr); gap: 31px; padding-block: 38px 34px; max-width: 580px; }
+  .copy { padding: 0; }
+  .copy h1 { font-size: clamp(40px, 9vw, 59px); }
+  .eyebrow { font-size: 8px; margin-bottom: 17px; }
+  .description { margin-top: 21px; max-width: 430px; font-size: 14px; }
+  .designNotes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-block: 23px 28px; }
+  .designNotes > div { gap: 8px; }
+  .designNotes p { font-size: 10px; }
+  .designNotes > div > span { font-size: 8px; }
+  .actions { align-items: stretch; }
+  .primaryButton { min-height: 53px; font-size: 13px; }
+  .fullFilmButton { min-height: 51px; font-size: 12px; }
+  .contractButton { justify-content: center; min-height: 42px; font-size: 11px; }
+  .previewNote { margin-top: 13px; font-size: 10px; text-align: center; }
+  .scene { aspect-ratio: 3 / 4; max-height: 670px; border-radius: 24px; }
+  .sceneContents { inset: 0 0 16%; padding: 33px 25px 0; }
+  .sceneBrand { width: 164px; max-width: 56%; }
+  .conversation { padding: 20px 0; }
+  .assistantMessage { font-size: clamp(21px, 5.1vw, 27px); line-height: 1.52; }
+  .userMessage { margin-top: 23px; font-size: 13px; }
+  .composer { min-height: 57px; padding-left: 18px; gap: 10px; }
+  .placeholder { font-size: 12px; }
+  .sendButton { width: 38px; height: 38px; }
+  .sceneSignoff { margin-top: 21px; font-size: 6px; }
+  .demoControls { padding-top: 13px; gap: 9px; }
+  .demoControls > button { min-height: 40px; font-size: 11px; }
+  .demoControls > span { font-size: 8px; text-align: right; }
+  .demoControls > span i { display: block; margin-left: 0; font-size: 9px; }
+  .footer { flex-direction: column; align-items: flex-start; gap: 9px; padding-top: 18px; }
+  .contractToolbar { align-items: flex-start; flex-direction: column; gap: 5px; padding: 12px 20px; }
+}
+@media (max-width: 370px) {
+  .page { padding-inline: 16px; }
+  .designNotes { grid-template-columns: 1fr; gap: 12px; }
+  .designNotes p br { display: none; }
+  .designNotes strong { margin-left: 4px; }
+  .sceneContents { padding-inline: 21px; padding-top: 33px; }
+  .assistantMessage { font-size: 20px; }
+  .userMessage { font-size: 12px; }
+  .composer { padding-left: 15px; gap: 8px; }
+  .microphone svg { width: 15px; height: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; }
+}

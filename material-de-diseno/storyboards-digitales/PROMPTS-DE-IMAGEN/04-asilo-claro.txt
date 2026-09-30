@@ -1,0 +1,15 @@
+Create ONE refined four-panel storyboard, 2x2 grid, landscape 4:3 overall canvas. SAME near-frontal three-quarter product camera across four states of a 10-second loop. Fully opaque white #FFFFFF seamless floor/background in every cell, subtle short contact shadows, no horizon. Thin light-grey separators only. No titles, labels or numbers. Keep the product large, readable and comfortably within each panel.
+
+REFERENCE ROLES: Image1 service-3-light-background.png defines the navy file folder with white sheets and green dividers. Image2 storyboard-02-visa-claro.png supplies the series' matte paper engineering and clean symbolic digital interface. Image3 brand-mark.png supplies the small real ContyGo emblem. No house or arch in this scene.
+
+Premium matte paper, precise folds, gently layered edges, soft studio illumination. Navy #061B3D, green #25D366 and white/ivory. Show organization of a person's narrative and supporting documents, not a claim of asylum approval or AI inventing evidence. Minimal geometric pictograms instead of readable text.
+
+TOP LEFT (0s): navy folder in its reference resting pose, slightly open enough to see the layered white sheets and green divider tabs. Front cover upright and the curled top corner of the first white sheet visible. No external display or loose cards.
+
+TOP RIGHT (3.5s): SAME folder and camera. The navy front cover is now folded forward nearly flat, forming a small desk surface physically attached to the folder. The BACK cover has opened and reveals an embedded upright white digital panel with navy border. A small ContyGo emblem sits at its top, and three large empty clean section slots appear below. On the opened front cover lie exactly THREE tactile white document cards: one with a simple chronological line of three dots (narrative), one with two portrait circles (testimony), and one with a small attachment/photo pictogram (supporting document). Green divider tabs form three short paper guide lanes between these cards and the screen. The original sheet stack remains behind the panel, never duplicated.
+
+BOTTOM LEFT (6.5s): EXACT SAME open geometry. Each of the three cards has moved into its corresponding section slot on the screen: chronology, portraits, attachment. The front platform is clear. Green section dividers visibly organize the three groups. This is a designed illustration of an organized digital case file. No checkmarks of approval, no legal seals or successful-result message. No newly created evidence.
+
+BOTTOM RIGHT (10s): the panel and cards fold back between the original sheets; front and back covers return to the reference resting pose. Match TOP LEFT in position, scale, folder opening, sheet count, divider arrangement, curled corner, contact shadow and color. Everything is back inside. First and last state identical.
+
+Create a plausible physical pop-up sequence, not a collage of unrelated products. Middle panels must show both the digital workspace and the before/after card movement. No human characters, particle effects, glossy holograms or floating decoration. Deliver one storyboard image only.

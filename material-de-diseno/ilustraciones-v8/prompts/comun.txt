@@ -1,0 +1,8 @@
+Each image is ONE handcrafted paper-sculpture miniature that expresses the meaning of one service or category of ContyGo, a Spanish-language platform that prepares immigration, tax and business paperwork. Follow EXACTLY the art direction of the attached reference images (they are finished members of this same family): same materials, palette, light, camera, scale and level of detail. Art direction, identical for the whole family:
+- Material: matte handmade cardstock with crisp folds, visible paper thickness at cut edges and a very subtle paper grain. Tabletop-miniature scale. Refined and premium, detailed, but with a bold silhouette that is instantly readable even when shown at 48 pixels.
+- DUAL-THEME PALETTE: the SAME image is shown on a white page and on a deep navy (#061B3D) page, so it must read on both. Main masses in warm ivory paper (#F4EEE3) and cobalt blue paper (lit faces #3470D6, shadow faces #1F4FA3). Accents in vivid green (#25D366) and deep green (#0B8F4D). Never use very dark navy or black for any large area (dark masses disappear on the navy page); thin dark edges are fine.
+- Light: soft studio key light from the upper left, plus a gentle warm-white rim light along the top and right edges of the silhouette, so the object separates cleanly from both a white and a deep navy background.
+- Camera: three-quarter view from about 30 degrees above; the object centered and filling about 72% of the square.
+- Background: genuinely TRANSPARENT (keep the alpha channel). No floor, no backdrop, no cast shadow outside the object.
+- Absolutely no text, letters, numbers, logos, flags, faces or people.
+- Square 1024x1024, one separate image per subject, all consistent as one family.

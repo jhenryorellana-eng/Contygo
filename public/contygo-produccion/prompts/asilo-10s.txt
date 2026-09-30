@@ -1,0 +1,17 @@
+Desde 0:00 se ve a pantalla completa una mujer de cabello oscuro recogido, cárdigan verde y pantalón marfil, sentada ante una mesa curva azul marino. Delante de ella están tres tarjetas de papel en arco: persona, casa y documento, en ese orden de izquierda a derecha. Una tableta pequeña con pictograma de carpeta está a la izquierda y una carpeta azul con separadores verdes a la derecha. La mujer mantiene una palma abierta hacia las tres tarjetas, con actitud tranquila y segura.
+
+Conserva el acabado de maqueta artesanal de papel recortado y desplegable: fibras finas, pliegues visibles, azul marino #061b3d, verde ContyGo #1dcd63, papel marfil y pieles cálidas. Fondo blanco uniforme, luz suave y sombras de contacto discretas. Todas las figuras y objetos mantienen identidad, escala y material. La animación tiene gestos breves, peso y una aceleración suave; no gira toda la escena.
+
+La hoja adjunta guía cuatro estados sucesivos de una sola escena. Sus celdas nunca aparecen en el video. Cada instante ocupa toda la pantalla cuadrada. Cámara fija durante los 10 segundos, sin cortes, zoom, movimientos de cámara ni transiciones. La referencia individual, si se adjunta, sirve sólo para identidad y material; las posiciones de esta animación las determina la hoja.
+
+Invariantes de este clip: una mujer, tres tarjetas activas con los mismos pictogramas y una carpeta receptora. Las tarjetas conservan su tamaño físico; lo que deja de verse queda oculto dentro de la carpeta. Sus bases están unidas mediante una tira plegable de papel en acordeón. La tableta y los muebles permanecen quietos.
+
+0:00–0:02.5 — Superior izquierda: la mujer presenta las tres tarjetas con un pequeño movimiento de su palma, como quien organiza los elementos de su historia. Todavía están abiertas en arco. No hay tristeza exagerada, llanto ni diálogo.
+
+0:02.5–0:05 — Superior derecha: toma el extremo de la tira de papel junto a la tarjeta del documento y lo acerca a la carpeta de la derecha. Los pliegues del acordeón se recogen uno tras otro. Primero llega la tarjeta del documento, luego la casa y finalmente la persona, sin intercambiarse ni atravesarse.
+
+0:05–0:08 — Inferior izquierda: las tres tarjetas quedan alineadas dentro de la carpeta, con los pictogramas todavía visibles sobre su borde en el orden persona, casa, documento. No se encogen. La mujer suelta la tira y descansa sus manos sobre la mesa. Mantén la organización resultante durante un momento.
+
+0:08–0:10 — Inferior derecha: el mecanismo de acordeón se despliega suavemente de nuevo. Las tres tarjetas salen de la misma carpeta y vuelven al arco inicial sobre la mesa, sin multiplicarse. La mujer recupera el gesto de palma abierta. Mismo encuadre y distancias que en 0:00.
+
+Cierre del bucle: al llegar a 10 segundos, recupera la posición, escala, orientación, manos y luz del inicio. La vuelta es el movimiento de una maqueta demostrativa. No añadas pantallas de éxito ni un desenlace administrativo. Sin personas convertidas en datos, teletransporte, objetos duplicados, partículas, texto, números, sello oficial, cuadrícula ni fundido. Video silencioso, sin música, voz ni efectos sonoros.

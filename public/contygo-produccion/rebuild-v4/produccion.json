@@ -1,0 +1,75 @@
+{
+  "title": "ContyGo, desde tu celular.",
+  "subtitle": "Nueva dirección visual · prueba de Visa Juvenil",
+  "status": "Imágenes listas. Piloto visual y guiones para revisar. Los vídeos finales se producirán en Grok por el usuario.",
+  "landing": "/contygo-app?servicio=visa-juvenil#servicios",
+  "previous": "/contygo-app/anterior#inicio",
+  "assets": [
+    {
+      "id": "hero",
+      "label": "01 / El lado humano",
+      "title": "Tu vida sigue. Tu proceso también.",
+      "image": "/contygo/rebuild-v4/hero.png",
+      "ratio": "4 / 5",
+      "format": "Imagen 4:5 · animación sugerida de 6 s",
+      "description": "Nuevo protagonista en un entorno cotidiano. La cámara ve el protector del teléfono; nunca una pantalla inventada. La imagen conserva un encuadre adaptable a móvil y escritorio.",
+      "prompt": "Usa la imagen adjunta como primer fotograma y referencia exacta. Genera un único plano continuo de 6 segundos, vertical 4:5, preparado para un bucle suave. Fotografía cinematográfica natural: el mismo hombre de unos 36 años, cabello rizado corto, barba cuidada, sobrecamisa azul marino y camiseta marfil, sentado a la mesa de su casa. Conserva rostro, manos, proporciones, mobiliario, carpeta y luz de ventana. El teléfono siempre tiene la pantalla orientada hacia él: nosotros vemos únicamente la parte trasera de la funda navy con el pequeño check verde.\n\n0:00–0:02: el hombre mira el teléfono con atención tranquila. Respiración sutil, sin mover los labios. Un leve cambio de presión de los dedos, manteniendo intacta la geometría del teléfono.\n0:02–0:04: inclina el teléfono apenas unos grados hacia sí mismo y aparece una sonrisa mínima, natural. La otra mano sigue descansando junto a la carpeta. La cortina se mueve suavemente.\n0:04–0:06: vuelve lentamente a la postura inicial; la inclinación del teléfono, manos, cabeza y cortina coinciden con el comienzo. Cierra el ciclo con movimiento continuo, sin congelar el final.\n\nCámara fija, sin cortes, zoom, paneo ni cambio de foco. Mantén al rostro y el teléfono nítidos. Luz diurna constante, piel real, verdes y navy de ContyGo discretos. Sin texto, interfaces flotantes, hologramas, firmas, pasaportes legibles, aprobación migratoria ni objetos nuevos. No girar el teléfono hacia la cámara, no deformar sus bordes, no duplicar dedos. Sin música, diálogo ni narración; la pieza irá silenciada como apoyo del hero. El primer y último fotograma deben permitir repetición sin salto perceptible."
+    },
+    {
+      "id": "familia",
+      "label": "02 / El lenguaje del producto",
+      "title": "Preparar el siguiente paso, juntos.",
+      "image": "/contygo/rebuild-v4/familia.png",
+      "ratio": "1 / 1",
+      "format": "Imagen 1:1 · animación sugerida de 6 s",
+      "description": "Personajes y objetos de papel con profundidad real, blanco limpio, verde y navy. Una metáfora visual de preparación documental; la interfaz real se presenta por separado.",
+      "prompt": "Anima la imagen adjunta como un único plano de 6 segundos, cuadrado 1:1 y en bucle continuo. Conserva exactamente a la mujer tutora, al joven, sus rostros, ropa, proporciones y posiciones. Mismo teléfono azul marino, carpetas marfil y símbolos de casa y documento. Diorama editorial de papel grueso y superficies mate, microtextura de cartulina, iluminación de estudio suave desde arriba a la izquierda y sombras de contacto delicadas. Fondo blanco puro que se integre en una web blanca.\n\n0:00–0:02: la tutora mira al joven y señala suavemente la carpeta más cercana sin separarla de la mesa. El joven asiente apenas una vez. El movimiento nace de hombros, codos y muñecas de forma físicamente coherente.\n0:02–0:04: una pequeña luz verde recorre una vez el trayecto ya existente en el teléfono, como indicación de organización. No cambia símbolos, no añade texto ni transforma la pantalla. La tutora retira la mano lentamente.\n0:04–0:06: ambos recuperan su mirada y postura inicial con suavidad. La luz vuelve a su intensidad inicial. Teléfono, carpetas y hojas conservan su posición, volumen y cantidad durante toda la toma.\n\nCámara bloqueada, sin cortes ni zoom. Sin nuevos elementos, confeti, sellos, tarjetas de residencia o celebración de aprobación. No convertir la escena en una interfaz real ni generar texto. No deformar manos o teléfono, ni hacer levitar a las personas. Sin fundido final. Sin música ni narración: bucle decorativo que se reproducirá silenciado. El final debe enlazar exactamente con la composición y pose del inicio."
+    },
+    {
+      "id": "piloto",
+      "label": "03 / Piloto de la historia",
+      "title": "De conocer el servicio a decidir cómo empezar.",
+      "image": "/contygo/rebuild-v4/visa-piloto.png",
+      "ratio": "1 / 1",
+      "format": "Seis viñetas · prueba de continuidad",
+      "description": "Este tablero representa el recorrido completo. Sirve para revisar personajes, materiales y narrativa. No es la interfaz real ni un storyboard definitivo para generar los 65 segundos en una sola petición. Los bloques finales tendrán sus propias referencias tras revisar este piloto."
+    }
+  ],
+  "films": [
+    {
+      "title": "Vídeo del servicio · 20 segundos",
+      "format": "Dos bloques de 10 s · guion propuesto",
+      "beats": [
+        ["00–05", "La tutora y el joven revisan una carpeta junto al teléfono. Presentación humana y clara del servicio."],
+        ["05–10", "Dos carpetas distintas: custodia estatal y petición I-360. El vídeo diferencia las etapas sin representarlas como aprobadas."],
+        ["10–16", "Documentos se ordenan con ayuda del equipo. Reforzar preparación y acompañamiento, con materiales de ContyGo."],
+        ["16–20", "El teléfono y la carpeta preparada ocupan el centro. Puente hacia el recorrido de la plataforma dentro del mismo modal."]
+      ],
+      "voice": "El siguiente paso de tu familia merece claridad. Visa Juvenil Básico reúne la preparación documental de la custodia estatal y la petición I-360. Tú compartes tu información; ContyGo organiza la preparación y te acompaña. Conoce ahora cómo empezar desde tu celular.",
+      "note": "No presenta la I-485 como incluida. No promete elegibilidad, representación legal ni aprobación. La duración de la locución debe comprobarse con el audio final."
+    },
+    {
+      "title": "Vídeo de cierre · 45 segundos",
+      "format": "Tres bloques de 15 s · guion propuesto",
+      "beats": [
+        ["00–15", "La ficha del servicio y el registro real presentan el inicio. Revisión del contrato, alcance y plan antes de firmar; el precio se mantiene en la UI de la landing para poder actualizarlo."],
+        ["15–30", "Firma y pago inicial confirmado activan el caso. El portal solicita información, respuestas y documentos. Mostrar capturas seguras; las pantallas que no estén disponibles se representan como conceptos, sin inventar una UI."],
+        ["30–40", "Organización de la preparación, estado del servicio y ayuda del equipo. No mostrar una entrega o aprobación oficial que no haya sido verificada."],
+        ["40–45", "Cierre limpio con el check de ContyGo. Al terminar, el modal presenta dos decisiones reales: «Hablar con un agente» e «Ir a mi contrato»."]
+      ],
+      "voice": "Tu proceso empieza con información clara. En ContyGo eliges tu servicio, creas tu cuenta y revisas el alcance, el contrato y las opciones de pago antes de firmar. Con la firma y el pago inicial confirmado, tu caso se activa. Desde tu celular compartes los documentos y respondes lo que requiere cada etapa. La app organiza tus siguientes pasos y el equipo te acompaña en la preparación. Puedes consultar el estado de tu servicio y pedir ayuda desde Soporte. Cuando estés listo, revisa tu contrato en ContyGo. Y si tienes una duda, habla primero con un agente.",
+      "note": "Montar las capturas reales como capas nítidas en edición: no pedir a Grok que reescriba o reconstruya textos de la app. Nunca utilizar datos privados, identificadores, tokens de firma ni pantallas del administrador."
+    }
+  ],
+  "screens": [
+    ["Crea tu cuenta", "/contygo/rebuild-v4/ui/registro.png"],
+    ["Conoce tu servicio", "/contygo/rebuild-v4/ui/servicio.png"],
+    ["Organiza documentos", "/contygo/rebuild-v4/ui/documentos.png"]
+  ],
+  "workflow": [
+    "La nueva UI ya permite recorrer servicio → plataforma → contratación o WhatsApp.",
+    "Las imágenes y el piloto se revisan aquí. El usuario genera y entrega los vídeos en Grok.",
+    "Los MP4 del servicio y del cierre se integrarán tras revisar duración, texto, continuidad e información. No se simula su reproducción mientras falten.",
+    "Las otras cuatro categorías conservan temporalmente su arte anterior. El primer ejemplo audiovisual completo es Visa Juvenil."
+  ]
+}

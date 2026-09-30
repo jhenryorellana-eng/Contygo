@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ContyGo · Propuesta del modal de vídeo</title>
+  <link rel="stylesheet" href="./proposal.css">
+</head>
+<body>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 44 44"><path d="M20 26c-3 8-6 11-12 11"/><path d="m10 18 11 12L37 8" class="green-stroke"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7Z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="4"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="muted" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5ZM16 9l6 6m0-6-6 6"/></symbol>
+  <symbol id="full" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M7 5H2V0m1 5a10 10 0 1 1-1 10"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Zm-4 9 3 3 5-6"/></symbol>
+</svg>
+
+<header class="review-header">
+  <a class="review-brand" href="/contygo-app/v5?servicio=visa-juvenil#inicio"><svg><use href="#mark"/></svg>ContyGo <span>/ Estudio de interfaz</span></a>
+  <nav aria-label="Revisión de diseño">
+    <button data-view="proposal" aria-pressed="true">Propuesta</button>
+    <button data-view="references" aria-pressed="false">Referencias <span>↗</span></button>
+  </nav>
+</header>
+
+<main>
+<section id="proposal-view">
+  <div class="review-intro"><div><span class="eyebrow">DIRECCIÓN PROPUESTA · 01</span><h1>Un espacio para entender y avanzar.</h1></div><span class="review-tag">Vista para revisión</span></div>
+
+  <section class="cinema" id="cinema" aria-label="Propuesta del modal ContyGo">
+    <header class="cinema-header">
+      <span class="brand"><svg><use href="#mark"/></svg>ContyGo</span>
+      <span class="header-caption"><i></i> A tu ritmo, contigo.</span>
+      <button class="icon-button close" id="close-preview" aria-label="Cerrar vista del modal"><svg><use href="#close"/></svg></button>
+    </header>
+    <div class="cinema-grid">
+      <div class="watch-area">
+        <div class="film-heading"><div><span class="eyebrow">VÍDEO 01 · ENTIENDE EL PROCESO</span><h2>Visa juvenil, paso a paso.</h2></div><span class="duration">2:05 <span>min</span></span></div>
+        <div class="player" id="player">
+          <div class="screen">
+            <video id="video" playsinline preload="none" poster="./portada.webp" aria-label="Guía en vídeo: proceso de visa juvenil"><source src="/contygo/films/visa-juvenil-v1-720p.mp4" type="video/mp4"></video>
+            <div class="poster-cover" id="poster-cover">
+              <span class="film-label">UNA GUÍA DE CONTYGO</span>
+              <button id="big-play" class="big-play" aria-label="Reproducir la guía de visa juvenil"><svg><use href="#play"/></svg><span>Ver la guía</span></button>
+              <div class="poster-title"><span>Primero, entender.</span><strong>Después, avanzar.</strong></div>
+              <span class="poster-count">01 <span>/ 02</span></span>
+            </div>
+            <div class="video-state" id="video-state" role="status" hidden></div>
+          </div>
+          <div class="player-controls">
+            <label class="sr-only" for="seek">Posición del vídeo</label><input id="seek" class="seek" type="range" min="0" max="125" step="0.1" value="0" aria-valuetext="0:00 de 2:05">
+            <div class="control-row">
+              <button class="icon-button control-play" id="play-toggle" aria-label="Reproducir"><svg><use href="#play"/></svg></button>
+              <button class="icon-button rewind" id="rewind" aria-label="Retroceder 10 segundos"><svg><use href="#back"/></svg><span>10</span></button>
+              <span class="time"><span id="elapsed">0:00</span><span class="time-divider"> / </span><span id="total">2:05</span></span>
+              <div class="control-spacer"></div>
+              <span class="quality">HD</span>
+              <button class="icon-button" id="sound" aria-label="Silenciar"><svg><use href="#volume"/></svg></button>
+              <button class="icon-button" id="fullscreen" aria-label="Pantalla completa"><svg><use href="#full"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="film-foot"><span><i></i> Tú decides cuándo dar el siguiente paso.</span><span>Español · 720p</span></div>
+        <div class="topics"><span>EN ESTE VÍDEO</span><p>Orden estatal <b>→</b> Petición I-360 <b>→</b> Residencia</p></div>
+      </div>
+
+      <aside class="guide" aria-label="Recorrido de la presentación">
+        <div class="guide-label"><span>TU RECORRIDO</span><span>01 / 03</span></div>
+        <h3>Todo claro. <br>Un paso a la vez.</h3>
+        <ol class="journey">
+          <li class="current" aria-current="step"><span class="step-number">01</span><div><strong>Entiende el proceso</strong><p>Sus etapas y lo que debes conocer antes de empezar.</p><span class="now"><i></i> ESTÁS AQUÍ</span></div></li>
+          <li><span class="step-number">02</span><div><strong>Conoce ContyGo</strong><p>La app y el equipo que te acompañan.</p></div></li>
+          <li><span class="step-number">03</span><div><strong>Revisa tu plan</strong><p>Alcance, entregables y condiciones.</p></div></li>
+        </ol>
+        <div class="guide-bottom"><div class="next-label"><span>A CONTINUACIÓN</span><span>02</span></div><button id="next-preview" class="next-button"><span>Cómo te ayuda <br><strong>ContyGo</strong></span><svg><use href="#arrow"/></svg></button><p>Puedes continuar cuando quieras.</p></div>
+      </aside>
+    </div>
+    <footer class="cinema-footer"><span><svg><use href="#shield"/></svg>Preparación documental con acompañamiento humano.</span><span>Información general · Cada caso es diferente.</span></footer>
+  </section>
+
+  <div class="reopen" id="reopen" hidden><span class="eyebrow">PROPUESTA DEL MODAL</span><h2>Tu próximo paso,<br>con más claridad.</h2><button class="open-button" id="open-preview">Abrir propuesta <svg><use href="#arrow"/></svg></button></div>
+
+  <div class="proposal-notes"><p><strong>La propuesta:</strong> vídeo protagonista, azul marino de marca, una guía cálida y controles propios.</p><p>Prototipo visual independiente. El vídeo reproduce el archivo actual; el siguiente paso muestra su composición propuesta.</p></div>
+</section>
+
+<section id="references-view" hidden>
+  <div class="review-intro"><div><span class="eyebrow">REFERENCIAS OBSERVADAS</span><h1>Tres decisiones, una identidad.</h1></div><button class="text-button" data-view="proposal">Ver propuesta →</button></div>
+  <div class="reference-grid">
+    <article class="reference"><a class="pattern pattern-sutro" href="https://player.style/themes/sutro" target="_blank" rel="noreferrer" aria-label="Abrir referencia Sutro de Mux"><span class="pattern-label">SUTRO / MUX</span><span class="mountain"></span><div class="pattern-controls"><b>▶</b><span>0:00</span><i></i><i></i><i></i><span>⚙</span><span>⛶</span></div><small>Esquema del patrón observado</small></a><div class="reference-copy"><span class="eyebrow">01 / CONTROLES</span><h2>Sutro, de Mux</h2><p>Controles discretos y una barra dividida que orienta la reproducción. Revisado en escritorio y a 390 px.</p><p class="takeaway"><strong>Para ContyGo:</strong> una barra amplia y legible, con los controles en una segunda fila en móvil.</p><a href="https://player.style/themes/sutro" target="_blank" rel="noreferrer">Ver referencia funcional ↗</a></div></article>
+    <article class="reference"><a class="pattern pattern-vimeo" href="https://player.style/themes/vimeonova" target="_blank" rel="noreferrer" aria-label="Abrir referencia Vimeonova de luwes"><span class="pattern-label">VIMEONOVA / LUWES</span><span class="mountain"></span><div class="vimeo-controls"><b>▶</b><div><i></i><span>1×</span><span>HD</span><span>⛶</span></div></div><small>Esquema del patrón observado</small></a><div class="reference-copy"><span class="eyebrow">02 / JERARQUÍA</span><h2>Vimeonova, de luwes</h2><p>El botón de reproducción se distingue del resto de los controles. En móvil pasa al centro del vídeo.</p><p class="takeaway"><strong>Para ContyGo:</strong> un inicio claro con «Ver la guía» y controles de marca al reproducir.</p><a href="https://player.style/themes/vimeonova" target="_blank" rel="noreferrer">Ver referencia funcional ↗</a></div></article>
+    <article class="reference"><a class="reference-image" href="https://dribbble.com/shots/24524180-Course-Video-Interface-Dashboard-design" target="_blank" rel="noreferrer"><img loading="lazy" src="https://cdn.dribbble.com/userupload/15606230/file/original-1e94240c1099c86aa737dbaa91de96fa.jpg?resize=752x&vertical=center" alt="Diseño de Istiak Ahmed: vídeo central con una lista de módulos a la derecha"></a><div class="reference-copy"><span class="eyebrow">03 / RECORRIDO</span><h2>Course Video, de Istiak Ahmed</h2><p>Un vídeo principal acompañado de una ruta lateral. Referencia visual estática; no es una app probada.</p><p class="takeaway"><strong>Para ContyGo:</strong> tres pasos del recorrido de venta, con una guía breve junto al vídeo.</p><a href="https://dribbble.com/shots/24524180-Course-Video-Interface-Dashboard-design" target="_blank" rel="noreferrer">Ver diseño original ↗</a></div></article>
+  </div>
+  <div class="adaptation"><div><span class="eyebrow">LA ADAPTACIÓN A CONTYGO</span><h2>El vídeo explica.<br>La interfaz acompaña.</h2></div><p>En escritorio: vídeo a la izquierda y recorrido a la derecha. En móvil: vídeo arriba, guía debajo y botones con espacio. El verde identifica la acción; los tonos claros equilibran el marco azul marino. Al terminar, el siguiente paso queda disponible sin cambiar de pantalla automáticamente.</p></div>
+</section>
+</main>
+
+<dialog id="next-dialog" aria-labelledby="next-title"><div class="next-dialog-top"><span class="eyebrow">COMPOSICIÓN PROPUESTA · PASO 02</span><button class="light-close" id="next-close" aria-label="Cerrar vista del siguiente paso"><svg><use href="#close"/></svg></button></div><div class="next-dialog-body"><div><span class="brand"><svg><use href="#mark"/></svg>ContyGo</span><h2 id="next-title">La app organiza.<br>El equipo te acompaña.</h2><p>Aquí continúa el segundo vídeo: cómo ContyGo ayuda a preparar la información, organizar documentos y dar seguimiento al proceso.</p><p class="prototype-note">Vista de composición para revisión. El segundo vídeo se integraría al aplicar la dirección.</p><button class="open-button" id="back-preview">Volver a la guía <svg><use href="#arrow"/></svg></button></div><div class="phone"><img src="/contygo/rebuild-v4/ui/servicio.png" alt="Captura real de la ficha de servicio en ContyGo"></div></div></dialog>
+
+<script src="./proposal.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+/* La burbuja de la guía. Hereda el tono del recorrido (--cg-text-rgb). Palabras grandes y claras:
+   las lee gente de 40 a 60 años, muchas veces sin lentes. */
+.caption{--ink-rgb:var(--cg-text-rgb,6,27,61);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 12px 12px 12px;border-radius:22px;
+  background:rgba(var(--ink-rgb),.06);box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.12);color:rgb(var(--ink-rgb));text-align:left}
+.avatar{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#061b3d;flex:none}
+.avatar img{width:24px;height:24px;object-fit:contain}
+/* While the guide speaks, a ring breathes around its avatar. */
+.avatar i{position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 0 2px #25d366;opacity:0}
+.caption[data-speaking] .avatar i{animation:talk 1.4s ease-out infinite}
+@keyframes talk{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+.text{margin:0;font-size:17px;line-height:1.45;font-weight:600}
+.text [aria-hidden] span{opacity:.38;transition:opacity .25s}
+.text [aria-hidden] span[data-lit]{opacity:1}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tools{display:flex;gap:6px}
+.tools button{display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:44px;justify-content:center;padding:0 10px;border:0;border-radius:14px;background:rgba(var(--ink-rgb),.08);color:inherit;font:700 14px var(--font-contygo-body),sans-serif;cursor:pointer}
+.tools button:hover{background:rgba(var(--ink-rgb),.14)}
+.tools svg{width:20px;height:20px}
+.caption[data-compact] .tools button span{display:none}
+@media(max-width:520px){.tools button span{display:none}.text{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.caption[data-speaking] .avatar i{animation:none;opacity:1}}

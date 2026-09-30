@@ -56,6 +56,25 @@ function wav(pcm: Buffer): ArrayBuffer {
   return output;
 }
 
+/**
+ * gemini-3.8-flash-tts no devuelve PCM crudo sino un WAV completo (comprobado el 30-09-2026): PCM16 mono
+ * a 24 kHz en su bloque `data`, más un bloque `C2PA` con las credenciales del contenido. Se toma solo el
+ * PCM y se entrega con la misma cabecera de siempre; cualquier otro formato se rechaza.
+ */
+function pcmFromWav(bytes: Buffer): Buffer | null {
+  if (bytes.length < 44 || bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WAVE") return null;
+  let pcm16Mono24k = false;
+  for (let offset = 12; offset + 8 <= bytes.length;) {
+    const id = bytes.toString("ascii", offset, offset + 4), size = bytes.readUInt32LE(offset + 4), start = offset + 8;
+    if (start + size > bytes.length) return null;
+    if (id === "fmt ") pcm16Mono24k = size >= 16 && bytes.readUInt16LE(start) === 1 && bytes.readUInt16LE(start + 2) === 1 &&
+      bytes.readUInt32LE(start + 4) === 24000 && bytes.readUInt16LE(start + 14) === 16;
+    if (id === "data") return pcm16Mono24k ? bytes.subarray(start, start + size) : null;
+    offset = start + size + (size % 2);
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   if (!isSameOriginIntakeRequest(req)) return error("forbidden_origin", 403);
   if (req.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return error("json_required", 415);
@@ -97,12 +116,18 @@ export async function POST(req: NextRequest) {
       },
     });
     const inline = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData?.data)?.inlineData;
-    if (!inline?.data || inline.data.length > Math.ceil(MAX_PCM_BYTES / 3) * 4 || inline.data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(inline.data)) return error("invalid_audio", 502);
+    // Room for the WAV header and its C2PA block on top of two minutes of PCM.
+    if (!inline?.data || inline.data.length > Math.ceil((MAX_PCM_BYTES + 64 * 1024) / 3) * 4 || inline.data.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(inline.data)) return error("invalid_audio", 502);
     const mime = inline.mimeType?.toLowerCase().replace(/\s/g, "") ?? "";
-    if (!/^audio\/(?:l16|pcm)(?:;|$)/.test(mime) || !/(?:^|;)rate=24000(?:;|$)/.test(mime) ||
-      /(?:^|;)channels=(?!1(?:;|$))/.test(mime) || /(?:^|;)codec=(?!pcm(?:;|$))/.test(mime)) return error("unsupported_audio_format", 502);
-    const pcm = Buffer.from(inline.data, "base64");
-    if (pcm.length === 0 || pcm.length % 2 !== 0 || pcm.length > MAX_PCM_BYTES || pcm.toString("base64") !== inline.data) return error("invalid_audio", 502);
+    const raw = Buffer.from(inline.data, "base64");
+    if (raw.toString("base64") !== inline.data) return error("invalid_audio", 502);
+    let pcm: Buffer | null;
+    if (/^audio\/(?:wav|x-wav|wave)(?:;|$)/.test(mime)) pcm = pcmFromWav(raw);
+    else if (/^audio\/(?:l16|pcm)(?:;|$)/.test(mime) && /(?:^|;)rate=24000(?:;|$)/.test(mime) &&
+      !/(?:^|;)channels=(?!1(?:;|$))/.test(mime) && !/(?:^|;)codec=(?!pcm(?:;|$))/.test(mime)) pcm = raw;
+    else pcm = null;
+    if (!pcm) return error("unsupported_audio_format", 502);
+    if (pcm.length === 0 || pcm.length % 2 !== 0 || pcm.length > MAX_PCM_BYTES) return error("invalid_audio", 502);
     return audioResponse(wav(pcm));
   } catch {
     // The UI keeps the text available; provider errors can contain sensitive data.

@@ -257,6 +257,29 @@ test('TTS devuelve WAV PCM16 mono de 24kHz y conserva exactamente los bytes', as
   assert.deepEqual(bytes.subarray(44), pcm);
 });
 
+test('TTS 3.8: del WAV completo (con su bloque C2PA) se entrega solo el PCM16 mono de 24kHz; otro WAV se rechaza', async () => {
+  const pcm = Buffer.from([0, 0, 1, 0, 255, 255, 0, 0]);
+  const riff = (rate, channels, extra = Buffer.alloc(0)) => {
+    const fmt = Buffer.alloc(24); fmt.write('fmt ', 0); fmt.writeUInt32LE(16, 4); fmt.writeUInt16LE(1, 8); fmt.writeUInt16LE(channels, 10);
+    fmt.writeUInt32LE(rate, 12); fmt.writeUInt32LE(rate * 2 * channels, 16); fmt.writeUInt16LE(2 * channels, 20); fmt.writeUInt16LE(16, 22);
+    const data = Buffer.alloc(8); data.write('data', 0); data.writeUInt32LE(pcm.length, 4);
+    const body = Buffer.concat([Buffer.from('WAVE'), fmt, data, pcm, extra]);
+    const head = Buffer.alloc(8); head.write('RIFF', 0); head.writeUInt32LE(body.length, 4);
+    return Buffer.concat([head, body]);
+  };
+  const c2pa = Buffer.concat([Buffer.from('C2PA'), Buffer.from([6, 0, 0, 0]), Buffer.from('manif.')]);
+  provider = async () => ({ candidates: [{ content: { parts: [{ inlineData: { data: riff(24000, 1, c2pa).toString('base64'), mimeType: 'audio/wav' } }] } }] });
+  const response = await speechRoute.POST(request({ text: 'Gracias por compartirlo.' }, { speech: true }));
+  assert.equal(response.status, 200);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  assert.equal(bytes.readUInt32LE(40), pcm.length);
+  assert.deepEqual(bytes.subarray(44), pcm, 'el mismo PCM, con la cabecera de siempre');
+  for (const other of [riff(16000, 1), riff(24000, 2), Buffer.from('RIFF0000WAVEnada')]) {
+    provider = async () => ({ candidates: [{ content: { parts: [{ inlineData: { data: other.toString('base64'), mimeType: 'audio/wav' } }] } }] });
+    assert.equal((await speechRoute.POST(request({ text: 'Hola.' }, { speech: true }))).status, 502);
+  }
+});
+
 test('TTS rechaza formato incompatible y no convierte errores en audio falso', async () => {
   for (const mimeType of ['audio/mpeg', 'audio/L16;rate=16000', 'audio/L16;rate=24000;channels=2', 'audio/L16;rate=24000;codec=mp3']) {
     provider = async () => ({ candidates: [{ content: { parts: [{ inlineData: { data: 'AAAA', mimeType } }] } }] });

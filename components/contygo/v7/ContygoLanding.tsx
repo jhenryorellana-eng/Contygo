@@ -5,15 +5,13 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
-import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
-import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
 import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
-import ThreadRail from "./ThreadRail";
+import ServiceShowcase, { SHOWCASE_CONCEPTS, type ShowcaseConcept, type Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
 import s from "./ContygoLanding.module.css";
@@ -32,7 +30,7 @@ const THEME_KEY = "contygo-appearance";
 const art = (name: string) => `/contygo/v8/${name}.webp`;
 // The owner's star products, the most requested (30-09-2026): they lead as «Los más solicitados», with their own
 // light. Every other service follows directly, without category filters (the categories were criticised).
-const featured = [
+const featured: Star[] = [
   { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
   { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
@@ -107,7 +105,8 @@ export default function ContygoLanding() {
   const [headerCta, setHeaderCta] = useState(false);
   const [dock, setDock] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
-  const carousel = useRef<HTMLDivElement>(null);
+  // Three designs for the services, for the owner to choose (30-09-2026): ?concepto=vitrina|coleccion|hilo (or 1|2|3).
+  const [concept, setConcept] = useState<ShowcaseConcept>("vitrina");
   const [service, setService] = useState<ContygoService | null>(null);
   const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -119,6 +118,9 @@ export default function ContygoLanding() {
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const warm = () => { void loadCinema(); };
     const warmTimer = idle ? idle(warm, { timeout: 4000 }) : window.setTimeout(warm, 2500);
+    const asked = new URLSearchParams(location.search).get("concepto") ?? "";
+    const chosen = SHOWCASE_CONCEPTS.find((name, i) => name === asked || String(i + 1) === asked);
+    if (chosen) setConcept(chosen);
     return () => { if (!idle) clearTimeout(warmTimer); };
   }, []);
   // The other appearance's art is fetched when the person reaches for the tone button (the drop gives it time).
@@ -164,7 +166,7 @@ export default function ContygoLanding() {
     const awake = new IntersectionObserver(entries => entries.forEach(entry => entry.target.setAttribute("data-inview", String(entry.isIntersecting))), { rootMargin: "120px 0px" });
     root.current.querySelectorAll("[data-anim]").forEach(el => awake.observe(el));
     return () => { observer.disconnect(); awake.disconnect(); };
-  }, []);
+  }, [concept]);
   function open(item: ContygoService, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
     setOrigin({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
@@ -210,26 +212,7 @@ export default function ContygoLanding() {
       </section>
 
       <section className={s.services} id="servicios" data-thread="services" data-anim>
-        <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}><Icon kind="star" /> 01 · Los más solicitados</span><h2>Los que más familias<br /><em>nos confían.</em></h2></div><p>Nuestros servicios insignia: guía en vídeo, precio publicado y un acompañamiento que ya conoce cada paso del camino.</p></div>
-        <div ref={carousel} className={s.featured}>{featured.map(item => {
-          const selected = CONTYGO_SERVICES.find(entry => entry.id === item.id)!;
-          const film = getRebuildServiceFilm(item.id);
-          return <button key={item.id} className={s.serviceCard} onClick={e => open(selected, e.currentTarget)} aria-label={`Conocer ${item.name}, uno de los más solicitados, desde ${money.format(lowest(selected))}`} data-service={item.id} data-reveal data-react="card">
-            {/* Its own light: a ring that turns around the card (one compositor layer, paused off screen). */}
-            <span className={s.starRing} aria-hidden="true"><i data-loop /></span>
-            <span className={s.starBadge}><Icon kind="star" />Más solicitado</span>
-            <span className={s.serviceImage}><Image src={art(`servicio-${item.id}`)} alt="" fill sizes="(max-width:760px) 84vw, 30vw" /><span className={s.shine} aria-hidden="true" /><span className={s.fold} aria-hidden="true" /><span className={s.filmBadge}><Icon kind="play" loop />Guía en vídeo · {formatVideoDuration(film.duration)}</span></span>
-            <span className={s.serviceCopy}><span className={s.smallLabel}>{item.label}</span><strong>{item.name}</strong><span className={s.serviceDescription}>{item.copy}</span><span className={s.cardAction}><span className={s.price}><small>Desde</small>{money.format(lowest(selected))}</span><span className={s.cardGo}>Ver la guía <i><Icon /></i></span></span></span>
-          </button>;
-        })}</div>
-        <ThreadRail track={carousel} labels={featured.map(item => item.name)} />
-        <div className={s.catalogHeader} data-reveal><h3>Más servicios, <em>el mismo acompañamiento.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
-        {/* Every other service, directly. The thread lights them row by row as it passes. */}
-        <div className={s.directory}>{others.map(item => <button key={item.id} className={s.tile} data-react="tile" onClick={e => open(item, e.currentTarget)} aria-label={`Conocer ${item.name}, desde ${money.format(lowest(item))}`}>
-          <span className={s.tileArt}><Image src={art(`servicio-${item.id}`)} alt="" fill sizes="(max-width:760px) 44vw, (max-width:1000px) 44vw, 28vw" /></span>
-          <span className={s.tileCopy}><strong>{item.name}</strong><span className={s.tileText}>{item.description}</span></span>
-          <span className={s.tileFoot}><span className={s.tilePrice}><small>Desde</small>{money.format(lowest(item))}</span><i><Icon /></i></span>
-        </button>)}</div>
+        <ServiceShowcase concept={concept} stars={featured} others={others} open={open} />
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
       </section>
 

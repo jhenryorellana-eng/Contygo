@@ -4,8 +4,8 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { CONTYGO_SERVICES, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
-import { getRebuildServiceFilm, REBUILD_CATEGORIES } from "@/lib/contygo-rebuild-media";
+import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
@@ -27,18 +27,17 @@ const ServiceCinemaDialog = dynamic(loadCinema, { ssr: false });
 // Copy is kept from V6 unless the direction document says otherwise.
 type Theme = "light" | "dark";
 const THEME_KEY = "contygo-appearance";
-const areas = Object.keys(REBUILD_CATEGORIES) as ContygoCategory[];
-// Illustration system V8 (28-09-2026, material-de-diseno/ilustraciones-v8): one paper sculpture per category and
-// one per service, each with its own meaning, drawn once for both appearances (see docs/contygo-v7-direccion-arte.md).
-const areaImage: Record<ContygoCategory, string> = { familia: "familia", asilo: "asilo", corte: "corte", fiscal: "impuestos", empresa: "empresa" };
+// Illustration system V8 (28-09-2026, material-de-diseno/ilustraciones-v8): one paper sculpture per service, each
+// with its own meaning, drawn once for both appearances (see docs/contygo-v7-direccion-arte.md).
 const art = (name: string) => `/contygo/v8/${name}.webp`;
-// On phones the catalog starts short; the rest is one tap away.
-const CATALOG_PREVIEW = 5;
+// The owner's star products, the most requested (30-09-2026): they lead as «Los más solicitados», with their own
+// light. Every other service follows directly, without category filters (the categories were criticised).
 const featured = [
-  { id: "visa-juvenil", name: "Visa Juvenil", label: "El siguiente paso de tu familia", copy: "Comprende sus etapas. Descubre cómo acompañamos la preparación de tu expediente." },
-  { id: "apelacion", name: "Apelación", label: "Entiende tus siguientes pasos", copy: "Conoce el proceso ante la BIA y cómo se organiza la documentación de una apelación." },
-  { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, bien organizada", copy: "Conoce cómo revisar y complementar el respaldo documental de tu caso." },
+  { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
+  { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
+  { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
 ];
+const others = CONTYGO_SERVICES.filter(item => !featured.some(star => star.id === item.id));
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const lowest = (service: ContygoService) => Math.min(service.price, ...service.plans.map(plan => plan.price));
 const fromPrice = Math.min(...CONTYGO_SERVICES.map(lowest));
@@ -96,6 +95,7 @@ function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
     app: <><rect x="5" y="2" width="14" height="20" rx="4" /><path d="M10 18h4m-6-9 3 3 5-5" /></>,
     shield: <path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Zm-4 10 3 3 5-6" />,
     send: <path d="M4.5 11.2 19.6 4.4a.6.6 0 0 1 .8.8l-6.8 15.1a.6.6 0 0 1-1.1-.1l-1.9-6.3-6.3-1.9a.6.6 0 0 1-.1-1.1ZM11 13l4.5-4.5" />,
+    star: <path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" stroke="none" />,
   };
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-loop={loop || undefined}>{paths[kind] ?? paths.arrow}</svg>;
 }
@@ -105,12 +105,9 @@ export default function ContygoLanding() {
   const [ready, setReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [headerCta, setHeaderCta] = useState(false);
-  const [area, setArea] = useState<ContygoCategory | "all">("all");
   const [dock, setDock] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
-  const [showAll, setShowAll] = useState(false);
   const carousel = useRef<HTMLDivElement>(null);
-  const categoryRow = useRef<HTMLDivElement>(null);
   const [service, setService] = useState<ContygoService | null>(null);
   const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -122,9 +119,6 @@ export default function ContygoLanding() {
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const warm = () => { void loadCinema(); };
     const warmTimer = idle ? idle(warm, { timeout: 4000 }) : window.setTimeout(warm, 2500);
-    const id = new URLSearchParams(location.search).get("servicio");
-    const selected = CONTYGO_SERVICES.find(item => item.id === id);
-    if (selected) setArea(selected.category);
     return () => { if (!idle) clearTimeout(warmTimer); };
   }, []);
   // The other appearance's art is fetched when the person reaches for the tone button (the drop gives it time).
@@ -178,8 +172,6 @@ export default function ContygoLanding() {
     const url = new URL(location.href); url.searchParams.set("servicio", item.id); history.replaceState({}, "", url);
   }
   const logo = `/contygo/brand/logo-${theme}.png`;
-  const catalog = area === "all" ? CONTYGO_SERVICES : CONTYGO_SERVICES.filter(item => item.category === area);
-  const collapsed = !showAll && catalog.length > CATALOG_PREVIEW;
   return <div ref={root} className={`${s.page} ${themeStyles.surface}`} data-contygo-theme={theme} data-theme-ready={ready}>
     <script dangerouslySetInnerHTML={{ __html: INTRO }} />
     <a className={s.skip} href="#servicios">Saltar a servicios</a>
@@ -218,24 +210,26 @@ export default function ContygoLanding() {
       </section>
 
       <section className={s.services} id="servicios" data-thread="services" data-anim>
-        <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}>01 · Encuentra tu camino</span><h2>Un servicio.<br /><em>Tu siguiente paso.</em></h2></div><p>Primero, comprende tu proceso. Después, conoce cómo podemos acompañarte.</p></div>
-        <div ref={carousel} className={s.featured}>{featured.map((item, i) => {
+        <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}><Icon kind="star" /> 01 · Los más solicitados</span><h2>Los que más familias<br /><em>nos confían.</em></h2></div><p>Nuestros servicios insignia: guía en vídeo, precio publicado y un acompañamiento que ya conoce cada paso del camino.</p></div>
+        <div ref={carousel} className={s.featured}>{featured.map(item => {
           const selected = CONTYGO_SERVICES.find(entry => entry.id === item.id)!;
           const film = getRebuildServiceFilm(item.id);
-          return <button key={item.id} className={s.serviceCard} onClick={e => open(selected, e.currentTarget)} aria-label={`Conocer ${item.name}, desde ${money.format(lowest(selected))}`} data-service={item.id} data-reveal data-react="card">
-            <span className={s.serviceImage}><Image src={art(`servicio-${item.id}`)} alt="" fill sizes="(max-width:760px) 84vw, 30vw" /><span className={s.fold} aria-hidden="true" /><span className={s.serviceNumber}>0{i + 1}</span><span className={s.filmBadge}><Icon kind="play" loop />Guía en vídeo · {formatVideoDuration(film.duration)}</span></span>
+          return <button key={item.id} className={s.serviceCard} onClick={e => open(selected, e.currentTarget)} aria-label={`Conocer ${item.name}, uno de los más solicitados, desde ${money.format(lowest(selected))}`} data-service={item.id} data-reveal data-react="card">
+            {/* Its own light: a ring that turns around the card (one compositor layer, paused off screen). */}
+            <span className={s.starRing} aria-hidden="true"><i data-loop /></span>
+            <span className={s.starBadge}><Icon kind="star" />Más solicitado</span>
+            <span className={s.serviceImage}><Image src={art(`servicio-${item.id}`)} alt="" fill sizes="(max-width:760px) 84vw, 30vw" /><span className={s.shine} aria-hidden="true" /><span className={s.fold} aria-hidden="true" /><span className={s.filmBadge}><Icon kind="play" loop />Guía en vídeo · {formatVideoDuration(film.duration)}</span></span>
             <span className={s.serviceCopy}><span className={s.smallLabel}>{item.label}</span><strong>{item.name}</strong><span className={s.serviceDescription}>{item.copy}</span><span className={s.cardAction}><span className={s.price}><small>Desde</small>{money.format(lowest(selected))}</span><span className={s.cardGo}>Ver la guía <i><Icon /></i></span></span></span>
           </button>;
         })}</div>
         <ThreadRail track={carousel} labels={featured.map(item => item.name)} />
-        <div className={s.catalogHeader} data-reveal><h3>Más caminos para avanzar.</h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
-        <div ref={categoryRow} className={s.categories} aria-label="Filtrar servicios por categoría">
-          <button aria-pressed={area === "all"} onClick={() => { setArea("all"); setShowAll(false); }}><span className={s.tileImage}><Image src={art("categoria-todos")} alt="" fill sizes="120px" /></span><strong>Todos</strong><small>{CONTYGO_SERVICES.length} servicios</small></button>
-          {areas.map(item => { const count = CONTYGO_SERVICES.filter(entry => entry.category === item).length; return <button key={item} aria-pressed={area === item} onClick={() => { setArea(item); setShowAll(false); }}><span className={s.tileImage}><Image src={art(`categoria-${areaImage[item]}`)} alt="" fill sizes="120px" /></span><strong>{REBUILD_CATEGORIES[item].label}</strong><small>{count} {count === 1 ? "servicio" : "servicios"}</small></button>; })}
-        </div>
-        <ThreadRail track={categoryRow} />
-        <div className={s.catalog} aria-live="polite" data-collapsed={collapsed}>{catalog.map((item, index) => <button key={item.id} data-react="row" data-extra={index >= CATALOG_PREVIEW || undefined} onClick={e => open(item, e.currentTarget)} aria-label={`Explorar ${item.name}, desde ${money.format(lowest(item))}`}><span className={s.catalogIcon}><Image src={art(`servicio-${item.id}`)} alt="" width={128} height={128} /></span><span><span className={s.catalogArea}>{REBUILD_CATEGORIES[item.category].label}</span><strong>{item.name}</strong><span>{item.description}</span></span><span className={s.catalogPrice}><small>desde</small>{money.format(lowest(item))}</span><Icon /></button>)}</div>
-        {collapsed && <button type="button" className={s.showAll} onClick={() => setShowAll(true)}>Ver los {catalog.length} servicios <Icon /></button>}
+        <div className={s.catalogHeader} data-reveal><h3>Más servicios, <em>el mismo acompañamiento.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
+        {/* Every other service, directly. The thread lights them row by row as it passes. */}
+        <div className={s.directory}>{others.map(item => <button key={item.id} className={s.tile} data-react="tile" onClick={e => open(item, e.currentTarget)} aria-label={`Conocer ${item.name}, desde ${money.format(lowest(item))}`}>
+          <span className={s.tileArt}><Image src={art(`servicio-${item.id}`)} alt="" fill sizes="(max-width:760px) 44vw, (max-width:1000px) 44vw, 28vw" /></span>
+          <span className={s.tileCopy}><strong>{item.name}</strong><span className={s.tileText}>{item.description}</span></span>
+          <span className={s.tileFoot}><span className={s.tilePrice}><small>Desde</small>{money.format(lowest(item))}</span><i><Icon /></i></span>
+        </button>)}</div>
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
       </section>
 

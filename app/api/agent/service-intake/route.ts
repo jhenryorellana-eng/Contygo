@@ -10,6 +10,7 @@ import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { loadCatalog } from "@/lib/contygo-api/catalog";
 import { isConfigFailure, normalizeAnswer, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
+import { logConfig } from "@/lib/contygo-api/log";
 import type { CatalogService, EligibilityResult } from "@/lib/contygo-api/types";
 
 // Las preguntas son las eligibilityQuestions de GET /catalog (contygo), no una lista local, y
@@ -56,7 +57,7 @@ async function finish(remote: CatalogService, answers: ServiceAnswers) {
     else if (isConfigFailure(response.status, response.error?.code ?? "")) {
       // 401/403: la clave o el canal están mal; no es un problema de conexión de la persona.
       unavailableOnline = true;
-      console.error(`[contygo:config] eligibility ${(response.error?.code ?? `HTTP_${response.status}`).replace(/[^A-Za-z0-9_]/g, "").slice(0, 60)}`);
+      logConfig("eligibility", response.error?.code ?? `HTTP_${response.status}`);
     }
   } catch { /* Sin evaluación, la ficha la repite antes de contratar. */ }
   return { eligible: result ? result.eligible : null, guidance: eligibilityGuidance(result, remote.eligibilityQuestions), ...(unavailableOnline ? { unavailableOnline: true } : {}) };

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { isConfigFailure, isIdempotencyKey, isTrustedSigningUrl } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
+import { logConfig } from "@/lib/contygo-api/log";
 import { checkLimits, clientIp, fail, guarded, json, readBrowserJson } from "@/lib/contygo-api/server";
 import { readContractToken } from "@/lib/contygo-api/tokens";
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     // La misma clave se está procesando: el próximo intento repite la MISMA clave.
     if (code === "IN_PROGRESS" || code === "REQUEST_IN_PROGRESS") return json({ ok: true, outcome: { step: "IN_PROGRESS", retryAfter: response.retryAfter ?? 1 } }, 200, { "Retry-After": String(response.retryAfter ?? 1) });
     if (isConfigFailure(response.status, code)) {
-      console.error(`[contygo:config] resend ${code.replace(/[^A-Za-z0-9_]/g, "").slice(0, 60)}`);
+      logConfig("resend", code);
       return json({ ok: true, outcome: { step: "UNAVAILABLE_ONLINE", code } });
     }
     if (response.status === 429 || response.status === 503 || response.status === 0) {

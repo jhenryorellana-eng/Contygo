@@ -25,7 +25,7 @@ export interface CatalogPlan {
 }
 
 /** Una opción de una pregunta us_state: la respuesta es el código de 2 letras ("TX"). */
-export interface QuestionOption { code: string; label?: I18nText | string | null; [extra: string]: unknown }
+export interface QuestionOption { code: string; /** El rótulo real de contygo: {es, en}. */ name?: I18nText | string | null; /** Respaldo de catálogos antiguos. */ label?: I18nText | string | null; [extra: string]: unknown }
 
 /**
  * kind dice cómo se responde: yes_no → booleano; date → "YYYY-MM-DD"; us_state → código de 2 letras

@@ -9,6 +9,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
 import { CatalogUnavailableError } from "./catalog";
+import { limitKeyForIp } from "./ip";
+import { resetConfigLog } from "./log";
 import { ContygoNotConfiguredError } from "./client";
 import { LandingSecretMissingError } from "./tokens";
 import type { ContractStatus } from "./types";
@@ -34,10 +36,11 @@ export async function guarded(handler: () => Promise<NextResponse>): Promise<Nex
   }
 }
 
+/** La IP del cliente para los límites: IPv4 tal cual, IPv6 agrupada por /64 (ver ip.ts). */
 export function clientIp(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim().slice(0, 64);
-  return (req.headers.get("x-real-ip") ?? "local").slice(0, 64);
+  if (forwarded) return limitKeyForIp(forwarded.split(",")[0]!);
+  return limitKeyForIp(req.headers.get("x-real-ip") ?? "local");
 }
 
 // ---------------- Peticiones del navegador ----------------
@@ -77,22 +80,40 @@ export async function readBrowserJson(req: NextRequest): Promise<{ body: Record<
 // delante (CAPTCHA en cada envío de código) y detrás (los límites de contygo, guía §8).
 // En desarrollo Next compila cada ruta por separado: se anclan a globalThis.
 
-type Memory = { hits: Map<string, { start: number; count: number }>; status: Map<string, { at: number; value: ContractStatus }> };
+type Memory = { hits: Map<string, { start: number; count: number; expires: number }>; lastSweep: number; status: Map<string, { at: number; value: ContractStatus }> };
 const holder = globalThis as typeof globalThis & { __contygoProxyMemory?: Memory };
-const memory = (): Memory => (holder.__contygoProxyMemory ??= { hits: new Map(), status: new Map() });
+const memory = (): Memory => (holder.__contygoProxyMemory ??= { hits: new Map(), lastSweep: 0, status: new Map() });
+
+/** Techo de claves vivas por instancia; al pasarlo se descartan las más antiguas. */
+const MAX_LIMIT_KEYS = 10_000;
+/** Cada cuánto, como máximo, se recorre el mapa en busca de ventanas vencidas. */
+const SWEEP_EVERY_MS = 30_000;
 
 /** Solo tests. */
-export function resetProxyMemory() { holder.__contygoProxyMemory = undefined; }
+export function resetProxyMemory() { holder.__contygoProxyMemory = undefined; resetConfigLog(); }
+/** Solo tests: cuántas claves de límite hay vivas. */
+export function limitsSize() { return memory().hits.size; }
 
 /** Nuestros propios techos, por debajo de los de contygo. Todos deben pasar. Ventana fija. */
 export function checkLimits(rules: { key: string; windowSeconds: number; max: number }[]): NextResponse | null {
-  const { hits } = memory();
+  const memo = memory();
+  const { hits } = memo;
   const now = Date.now();
-  if (hits.size > 5000) hits.forEach((entry, key) => { if (now - entry.start > 86_400_000) hits.delete(key); });
+  // Se purga por ventana vencida (no por 24 h) y el mapa tiene techo: un barrido de IPs no hace crecer la memoria.
+  if (now - memo.lastSweep >= SWEEP_EVERY_MS) {
+    memo.lastSweep = now;
+    hits.forEach((entry, key) => { if (entry.expires <= now) hits.delete(key); });
+  }
   for (const rule of rules) {
     const windowMs = rule.windowSeconds * 1000;
     const entry = hits.get(rule.key);
-    if (!entry || now - entry.start >= windowMs) { hits.set(rule.key, { start: now, count: 1 }); continue; }
+    if (!entry || now - entry.start >= windowMs) {
+      // Ventana nueva: se reinserta al final, así el primero del mapa es siempre el más antiguo.
+      hits.delete(rule.key);
+      hits.set(rule.key, { start: now, count: 1, expires: now + windowMs });
+      while (hits.size > MAX_LIMIT_KEYS) { const oldest = hits.keys().next(); if (oldest.done) break; hits.delete(oldest.value); }
+      continue;
+    }
     if (entry.count >= rule.max) {
       const retryAfter = Math.max(1, Math.ceil((entry.start + windowMs - now) / 1000));
       return fail("rate_limited", 429, { retryAfter }, { "Retry-After": String(retryAfter) });
@@ -121,8 +142,26 @@ export function rememberStatus(contractId: string, value: ContractStatus) {
 // Cada token vale una vez y caduca a los 5 minutos.
 
 export const CAPTCHA_ACTION = "contratar";
+/** La acción del Turnstile invisible del recorrido (registro del lead). */
+export const LEAD_CAPTCHA_ACTION = "lead";
 
-export async function verifyCaptcha(token: unknown, ip: string): Promise<{ ok: boolean; code: string }> {
+const LOCAL_HOSTS = ["localhost", "127.0.0.1"];
+const normalizeHost = (value: string) => value.trim().toLowerCase().replace(/\.+$/, "");
+
+/** Hostnames donde puede haberse resuelto el reto: el de la web (NEXT_PUBLIC_SITE_URL) y, fuera de producción, localhost. */
+function allowedCaptchaHosts(): string[] {
+  const hosts: string[] = [];
+  const site = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+  try { if (site) hosts.push(normalizeHost(new URL(site).hostname)); } catch { /* sin URL válida no hay host que permitir */ }
+  if (process.env.NODE_ENV !== "production") hosts.push(...LOCAL_HOSTS);
+  return hosts;
+}
+
+/** Las claves de prueba de Cloudflare (1x…AA, 2x…AA, 3x…AA) responden con su propio hostname («example.com»). */
+const isCloudflareTestSecret = (secret: string) => /^[123]x0{28,}AA$/.test(secret);
+
+/** Verifica el token con Turnstile: éxito, la acción EXACTA que se espera y un hostname permitido. */
+export async function verifyCaptcha(token: unknown, ip: string, action: string = CAPTCHA_ACTION): Promise<{ ok: boolean; code: string }> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {
     // Sin clave en producción no se contrata: el CAPTCHA es obligatorio delante del código.
@@ -137,9 +176,12 @@ export async function verifyCaptcha(token: unknown, ip: string): Promise<{ ok: b
       signal: AbortSignal.timeout(8000),
       body: JSON.stringify({ secret, response: token, ...(ip !== "local" ? { remoteip: ip } : {}), idempotency_key: randomUUID() }),
     });
-    const data = await response.json() as { success?: boolean; action?: string };
+    const data = await response.json() as { success?: boolean; action?: string; hostname?: string };
     if (data.success !== true) return { ok: false, code: "captcha_failed" };
-    if (data.action && data.action !== CAPTCHA_ACTION) return { ok: false, code: "captcha_failed" };
+    // Un token sin acción (widget sin action) o de otra acción no vale: cada paso tiene la suya.
+    if (data.action !== action) return { ok: false, code: "captcha_failed" };
+    const testKey = process.env.NODE_ENV !== "production" && isCloudflareTestSecret(secret);
+    if (!testKey && !(typeof data.hostname === "string" && allowedCaptchaHosts().includes(normalizeHost(data.hostname)))) return { ok: false, code: "captcha_failed" };
     return { ok: true, code: "captcha_ok" };
   } catch {
     return { ok: false, code: "captcha_unavailable" };

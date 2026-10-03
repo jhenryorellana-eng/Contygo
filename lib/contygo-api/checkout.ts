@@ -10,6 +10,7 @@
    ============================================================ */
 import type { AnswerValue, CatalogQuestion, ContractBody, ContractCreated, ContractParty, I18nText, Locale, PartyRole } from "./types";
 import type { ApiResponse } from "./client";
+import { effectiveApiBase } from "./api-base";
 
 export const text = (value: I18nText | null | undefined, locale: Locale = "es") =>
   (locale === "en" ? value?.en : null) || value?.es || "";
@@ -55,26 +56,37 @@ export function isValidYmd(value: unknown): value is string {
   return day <= [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
 }
 
-export function isPastOrTodayDate(value: unknown, today = todayYmd()): value is string {
-  return isValidYmd(value) && value <= today;
+/** El día siguiente o anterior de un «YYYY-MM-DD» (calendario UTC). */
+function shiftYmd(ymd: string, days: number): string {
+  return new Date(Date.parse(`${ymd}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** future_event: la fecha de un hecho por venir (p. ej. una audiencia): desde hoy. */
+/**
+ * Las fechas de las respuestas se comparan con el «hoy» UTC del servidor, pero el navegador
+ * limita el selector con SU «hoy» local: pueden diferir un día (por la tarde en América, al este de
+ * UTC por la mañana). Se tolera un día en cada sentido; quien decide la elegibilidad es contygo.
+ */
+export function isPastOrTodayDate(value: unknown, today = todayYmd()): value is string {
+  return isValidYmd(value) && value <= shiftYmd(today, 1);
+}
+
+/** future_event: la fecha de un hecho por venir (p. ej. una audiencia): desde hoy (con un día de tolerancia). */
 export function isTodayOrFutureDate(value: unknown, today = todayYmd()): value is string {
-  return isValidYmd(value) && value >= today;
+  return isValidYmd(value) && value >= shiftYmd(today, -1);
 }
 
 /** Lo que hace falta de una pregunta para normalizar su respuesta. */
-export interface AnswerTarget { kind: QuestionKind; dateMode?: string | null; options?: { code: string; label?: unknown }[] }
+export interface AnswerTarget { kind: QuestionKind; dateMode?: string | null; options?: { code: string; label?: unknown; name?: unknown }[] }
 
 const fold = (value: string) => value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ");
 
-const optionLabels = (option: { label?: unknown }) => {
-  const label = option.label;
-  if (typeof label === "string") return [label];
-  if (label && typeof label === "object") return [(label as I18nText).es, (label as I18nText).en].filter((item): item is string => typeof item === "string");
+const textsOf = (value: unknown): string[] => {
+  if (typeof value === "string") return value ? [value] : [];
+  if (value && typeof value === "object") return [(value as I18nText).es, (value as I18nText).en].filter((item): item is string => typeof item === "string" && item !== "");
   return [];
 };
+/** contygo publica el rótulo en `name: {es, en}`; `label` queda como respaldo de catálogos antiguos. */
+const optionLabels = (option: { label?: unknown; name?: unknown }) => [...textsOf(option.name), ...textsOf(option.label)];
 
 /** us_state: el código de 2 letras que existe en las options de la pregunta (o, sin options, un estado de EE. UU.). */
 function normalizeState(value: unknown, options?: AnswerTarget["options"]): string | null {
@@ -383,7 +395,7 @@ export const checkoutEnabled = () => process.env.CONTYGO_CHECKOUT_ENABLED !== "0
  * Solo se muestra un enlace de firma que sea https y de contygo. Excepción para el E2E de desarrollo:
  * http si la API es localhost/127.0.0.1 y no estamos en producción.
  */
-export function isTrustedSigningUrl(value: unknown, apiBase = process.env.CONTYGO_API_BASE || "https://contygo.app/api/integrations/v1") {
+export function isTrustedSigningUrl(value: unknown, apiBase = effectiveApiBase()) {
   if (typeof value !== "string" || value.length > 2000) return false;
   try {
     const url = new URL(value), api = new URL(apiBase);
@@ -494,7 +506,8 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
     case "DESTINATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "destination", retryAfter: response.retryAfter };
     case "VERIFICATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "verification", retryAfter: response.retryAfter ?? 3600 };
     case "RATE_LIMITED": return { step: "RETRY_LATER", reason: "general", retryAfter: response.retryAfter };
-    case "IN_PROGRESS": return { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 1 };
+    case "IN_PROGRESS":
+    case "REQUEST_IN_PROGRESS": return { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 1 };
     case "IDEMPOTENCY_MISMATCH": return { step: "RETRY_LATER", reason: "conflict", retryAfter: null };
     default:
       if (status === 503) return { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter };

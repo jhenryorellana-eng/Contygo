@@ -19,7 +19,9 @@ import type {
   MeResponse, ResendLinkResult, UpsertLeadBody, UpsertLeadResult,
 } from "./types";
 
-export const CONTYGO_API_BASE = "https://contygo.app/api/integrations/v1";
+import { CONTYGO_API_BASE, customApiHost, effectiveApiBase } from "./api-base";
+
+export { CONTYGO_API_BASE, effectiveApiBase };
 
 export interface ApiResponse<T> {
   /** 0 = no hubo respuesta HTTP (red o timeout agotados). */
@@ -78,24 +80,22 @@ function readError(json: unknown, status: number): ApiError {
 /** Esperas cortas: la función del servidor tiene su propio límite de duración. */
 const WAIT_CAP_SECONDS = 3;
 
-/** Host de CONTYGO_API_BASE, o null si no está definida o no es una URL. */
-function customApiHost(): string | null {
-  const base = process.env.CONTYGO_API_BASE;
-  if (!base) return null;
-  try { return new URL(base).host; } catch { return null; }
-}
+/** Fuera de producción solo se escribe contra un contygo en esta máquina (lista blanca). */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 /**
  * En producción cada alta crea un cliente, un caso y un contrato reales, y cada lead una
- * tarjeta real. Solo se escribe si VERCEL_ENV === "production" (los Preview nunca escriben),
- * con CONTYGO_ALLOW_WRITES=1 (prueba coordinada) o contra un contygo que no es contygo.app
- * (CONTYGO_API_BASE apuntando a DEV, en local). Sin nada de eso solo se lee (catálogo y elegibilidad).
+ * tarjeta real. Solo se escribe si VERCEL_ENV === "production" (los Preview nunca escriben; ahí
+ * la clave solo va a contygo.app, ver api-base.ts), con CONTYGO_ALLOW_WRITES=1 (prueba coordinada)
+ * o contra un contygo LOCAL: CONTYGO_API_BASE con host localhost o 127.0.0.1 (lista blanca, no lista
+ * negra: cualquier otro nombre —un alias, una IP, «contygo.app.»— podría ser el mismo producción).
+ * Sin nada de eso solo se lee (catálogo y elegibilidad).
  */
 export function writesBlocked(method: string, path: string) {
   if (method === "GET" || path === "/eligibility/evaluate") return false;
   if (process.env.VERCEL_ENV === "production" || process.env.CONTYGO_ALLOW_WRITES === "1") return false;
   const host = customApiHost();
-  return !(host && host !== "contygo.app");
+  return !(host && LOCAL_HOSTS.has(host));
 }
 
 async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<T>> {
@@ -105,7 +105,7 @@ async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<
     console.warn(`[contygo] ${options.method} ${path.split("/").slice(0, 2).join("/")} bloqueado en desarrollo: define CONTYGO_ALLOW_WRITES=1 solo para la prueba coordinada con contygo`);
     return { status: 0, data: null, error: { code: "DEV_WRITES_DISABLED" }, retryAfter: null };
   }
-  const base = (process.env.CONTYGO_API_BASE || CONTYGO_API_BASE).replace(/\/+$/, "");
+  const base = effectiveApiBase();
   // Serializado UNA vez: cada reintento manda exactamente los mismos bytes.
   const payload = options.body === undefined ? undefined : JSON.stringify(options.body);
   const headers: Record<string, string> = { Authorization: `Bearer ${key}`, Accept: "application/json" };

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, publicServiceView, remoteServiceFor } from "@/lib/contygo-api/catalog";
 import { checkoutEnabled } from "@/lib/contygo-api/checkout";
+import { logConfig } from "@/lib/contygo-api/log";
 import { checkLimits, clientIp, fail, guarded, json, readBrowserJson } from "@/lib/contygo-api/server";
 import { CONTRACT_TERMS } from "@/lib/contygo-api/terms";
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       // 401/403: la clave o el canal están mal; no se disfraza de «revisa tu conexión».
       if (error instanceof CatalogUnavailableError && error.isConfig) {
-        console.error(`[contygo:config] catalog ${error.code.replace(/[^A-Za-z0-9_]/g, "").slice(0, 60)}`);
+        logConfig("catalog", error.code);
         return json({ ok: true, checkoutEnabled: false, reason: "unavailable_online", service: null, terms: CONTRACT_TERMS, captchaSiteKey });
       }
       throw error;

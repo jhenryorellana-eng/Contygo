@@ -34,6 +34,7 @@ import {
 } from "./checkout";
 import { contygoApi } from "./client";
 import { buildAttemptBody, buildLeadBody, syncLead } from "./lead";
+import { logConfig } from "./log";
 import { CONTRACT_TERMS } from "./terms";
 import { assertTokensReady, checkVerificationTicket, signContractToken, signVerificationTicket } from "./tokens";
 import type { Attribution, ContractBody } from "./types";
@@ -61,8 +62,6 @@ export type BrowserOutcome =
   | { step: "ERROR"; code: string; ref: string };
 
 const logCode = (where: string, code: string) => console.warn(`[contygo] ${where}: ${code}`);
-/** Formato fijo para alertar: sin PII ni credenciales, solo dónde y qué código. */
-const logConfig = (where: string, code: string) => console.error(`[contygo:config] ${where} ${code.replace(/[^A-Za-z0-9_]/g, "").slice(0, 60)}`);
 
 export interface FlowOptions {
   /** Solo tests: reemplaza REQUEST_BUDGET_MS. */
@@ -79,6 +78,8 @@ interface Attempt {
   deadline: number;
   /** Nombre del servicio de la landing, o null si no se supo. */
   serviceName: string | null;
+  /** Búsqueda perezosa del nombre (catálogo): solo si hay que avisar a ventas, nunca antes del canje. */
+  resolveServiceName?: (budget: { deadline: number }) => Promise<string | null>;
   person: { fullName: string; phoneE164: string } | null;
 }
 
@@ -86,6 +87,8 @@ interface Attempt {
 async function reportAttempt(attempt: Attempt, code: string) {
   if (!attempt.person) return;
   try {
+    const deadline = Math.max(attempt.deadline, Date.now() + REPORT_MARGIN_MS);
+    if (attempt.serviceName === null && attempt.resolveServiceName) attempt.serviceName = await attempt.resolveServiceName({ deadline }).catch(() => null);
     await syncLead(
       attempt.externalRef,
       buildAttemptBody(attempt.person, attempt.serviceName ?? "servicio", code),
@@ -284,7 +287,9 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
   const attempt: Attempt = {
     externalRef: body.externalRef,
     deadline,
-    serviceName: await localServiceNameFor(body.serviceId, { deadline }).catch(() => null),
+    // El nombre del servicio solo hace falta si hay que avisar a ventas: se busca entonces, no antes del canje.
+    serviceName: null,
+    resolveServiceName: budget => localServiceNameFor(body.serviceId, budget),
     person: typeof body.client?.fullName === "string" && typeof body.client?.phoneE164 === "string"
       ? { fullName: body.client.fullName, phoneE164: body.client.phoneE164 } : null,
   };

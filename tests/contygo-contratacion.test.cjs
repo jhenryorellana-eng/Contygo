@@ -259,8 +259,9 @@ test('CAPTCHA, clave de la UI y límite propio por IP delante del envío del có
 
 test('sin LANDING_TOKEN_SECRET en producción no se envía ningún código: no se podría canjear', async () => {
   const net = mockFetch(); contygoDefaults(net);
-  const saved = { env: process.env.NODE_ENV, secret: process.env.LANDING_TOKEN_SECRET };
+  const saved = { env: process.env.NODE_ENV, secret: process.env.LANDING_TOKEN_SECRET, site: process.env.NEXT_PUBLIC_SITE_URL };
   process.env.NODE_ENV = 'production';
+  process.env.NEXT_PUBLIC_SITE_URL = 'https://landing.invalid'; // el CAPTCHA exige el hostname de la web
   process.env.TURNSTILE_SECRET_KEY = '1x0000000000000000000000000000000AA';
   delete process.env.LANDING_TOKEN_SECRET;
   try {
@@ -273,6 +274,7 @@ test('sin LANDING_TOKEN_SECRET en producción no se envía ningún código: no s
   } finally {
     process.env.NODE_ENV = saved.env;
     process.env.LANDING_TOKEN_SECRET = saved.secret;
+    if (saved.site === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = saved.site;
   }
 });
 

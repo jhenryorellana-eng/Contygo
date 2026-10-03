@@ -109,13 +109,13 @@ test('B1 · normalizeAnswer: estado = código de 2 letras que exista en options;
   assert.equal(checkout.normalizeAnswer('state', 'ZZ'), null);
 
   const today = '2026-10-02';
-  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'past' }, '2026-10-03', today), null);
-  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'birthdate' }, '2026-10-03', today), null);
+  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'past' }, '2026-10-04', today), null, 'dos días adelante; uno se tolera por la zona horaria');
+  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'birthdate' }, '2026-10-04', today), null);
   assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'birthdate' }, '2014-04-03', today), '2014-04-03');
-  assert.equal(checkout.normalizeAnswer({ kind: 'date' }, '2026-10-03', today), null, 'sin dateMode: hasta hoy (catálogo antiguo)');
+  assert.equal(checkout.normalizeAnswer({ kind: 'date' }, '2026-10-04', today), null, 'sin dateMode: hasta hoy (catálogo antiguo)');
   assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'future_event' }, '2026-12-15', today), '2026-12-15');
   assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'future_event' }, '2026-10-02', today), '2026-10-02', 'hoy vale: minNotice lo decide contygo');
-  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'future_event' }, '2026-10-01', today), null);
+  assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'future_event' }, '2026-09-30', today), null, 'dos días atrás; uno se tolera por la zona horaria');
   assert.equal(checkout.normalizeAnswer({ kind: 'date', dateMode: 'future_event' }, '2026-02-30', today), null);
   assert.equal(checkout.normalizeAnswer('unknown', true), null);
   assert.equal(checkout.normalizeAnswer({ kind: 'unknown' }, 'si'), null);
@@ -649,7 +649,7 @@ test('B8 · /confirmar quita todo lo que no sea dígito del código antes de val
 
 // =============================== B10 · seguridad operativa ===============================
 
-test('B10 · writesBlocked: solo VERCEL_ENV=production, CONTYGO_ALLOW_WRITES=1 o un contygo que no es contygo.app', async () => {
+test('B10 · writesBlocked: solo VERCEL_ENV=production, CONTYGO_ALLOW_WRITES=1 o un contygo local (localhost/127.0.0.1)', async () => {
   const none = { VERCEL_ENV: undefined, CONTYGO_ALLOW_WRITES: undefined, CONTYGO_API_BASE: undefined };
   const check = (patch, expected, label) => withEnv({ ...none, ...patch }, () => {
     assert.equal(client.writesBlocked('POST', '/contracts'), expected, label);
@@ -663,7 +663,7 @@ test('B10 · writesBlocked: solo VERCEL_ENV=production, CONTYGO_ALLOW_WRITES=1 o
   await check({ CONTYGO_ALLOW_WRITES: '1' }, false, 'prueba coordinada');
   await check({ CONTYGO_ALLOW_WRITES: '0' }, true, 'solo «1» vale');
   await check({ CONTYGO_API_BASE: 'http://127.0.0.1:3999/api/integrations/v1' }, false, 'contygo local de desarrollo');
-  await check({ CONTYGO_API_BASE: 'https://dev.contygo.example/api/integrations/v1' }, false, 'un contygo DEV');
+  await check({ CONTYGO_API_BASE: 'https://dev.contygo.example/api/integrations/v1' }, true, 'lista blanca: un host DEV con nombre tampoco abre las escrituras (solo localhost/127.0.0.1)');
   await check({ CONTYGO_API_BASE: 'https://contygo.app/api/integrations/v1' }, true, 'apuntar a contygo.app no abre las escrituras');
   await check({ CONTYGO_API_BASE: 'no es una url' }, true, 'una base inválida no abre nada');
   await withEnv(none, () => {

@@ -4,6 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
+import { waLink } from "@/lib/config";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
@@ -72,7 +73,7 @@ const faqs = [
   ["¿Qué es un consultor de inmigración registrado?", "Una persona registrada ante el Estado de Utah para dar asistencia no legal en trámites migratorios, como completar formularios oficiales y organizar documentos. No es abogado: no da asesoría legal ni representa ante una corte o USCIS."],
   ["¿ContyGo garantiza la aprobación de mi trámite?", "No. ContyGo ofrece preparación documental y acompañamiento. Las decisiones y los tiempos de las autoridades no dependen de nosotros. Las condiciones del servicio y de reembolso se explican en tu contrato."],
 ];
-const help = "https://wa.me/17633422258?text=" + encodeURIComponent("Hola, quiero conocer el alcance de un servicio de ContyGo.");
+const help = waLink("Hola, quiero conocer el alcance de un servicio de ContyGo.");
 
 function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
   const paths: Record<string, ReactNode> = {

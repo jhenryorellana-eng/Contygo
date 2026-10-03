@@ -47,7 +47,7 @@ export default function ResultSlide({ service, result, isActive, onRestart, onTr
     const name = capName.trim();
     const phone = capPhone.replace(/\D/g, "");
     if (name.length < 2) return setCapError("Escribe tu nombre.");
-    if (!/^[0-9]{8,15}$/.test(phone)) return setCapError("Escribe tu WhatsApp con código de área, por ejemplo +1 (763) 342-2258.");
+    if (!/^[0-9]{8,15}$/.test(phone)) return setCapError("Escribe tu WhatsApp con código de país y de área.");
     setCapError(null);
     setCapBusy(true);
     try {

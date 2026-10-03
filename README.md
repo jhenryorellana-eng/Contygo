@@ -62,11 +62,12 @@ npm start
 
 ## Configuración (variables de entorno)
 
-Copia `.env.example` a `.env.local` (o configúralas en Vercel):
+Copia `.env.example` a `.env.local` (o configúralas en Vercel). El archivo lista **todas** las variables que lee la landing y cuáles son obligatorias en producción. El número de WhatsApp **no** es una variable: es la constante única `WHATSAPP_DISPLAY` / `WHATSAPP_DIGITS` de `lib/config.ts` (+1 (385) 392-7656, el bot de ventas).
+
+Las del video:
 
 | Variable | Descripción | Valor por defecto |
 | --- | --- | --- |
-| `NEXT_PUBLIC_WHATSAPP` | Número de WhatsApp del negocio (con código de país) | `+1 (763) 342-2258` |
 | `NEXT_PUBLIC_VIDEO_URL` | Ruta del video demo dentro de `/public` | `/videos/demo.mp4` |
 | `NEXT_PUBLIC_VIDEO_POSTER` | Imagen de portada del video (opcional) | _(vacío)_ |
 
@@ -82,7 +83,7 @@ Copia `.env.example` a `.env.local` (o configúralas en Vercel):
 
 1. Sube el repositorio a GitHub/GitLab.
 2. En Vercel: **Add New → Project**, importa el repo (framework detectado: Next.js).
-3. Añade las variables de entorno (`NEXT_PUBLIC_WHATSAPP`, etc.).
+3. Añade las variables de entorno (ver `.env.example`).
 4. **Deploy**. No requiere configuración adicional.
 
 ## Estructura
@@ -220,10 +221,15 @@ escritorio: tarjeta flotante.
 - Eventos del Pixel: `AgentChat`, `AgentCall` (custom) y `Contact` al pasar a WhatsApp.
 - Decisiones y fuentes: `docs/evidencia-agente-gemini.md`.
 
-## Reparto de leads entre asesoras (WhatsApp)
+## Reparto de leads entre asesoras (WhatsApp) — LEGADO, desactivado para el destino
 
-Todos los botones de WhatsApp apuntan a `/ir/whatsapp` (ver `lib/wa-route.ts`). Ahí el
-servidor decide a qué asesora va la persona y redirige a `wa.me`:
+> Desde octubre de 2026 la landing tiene **un solo número de WhatsApp** (`lib/config.ts`,
+> +1 (385) 392-7656, el bot de ventas). `/ir/whatsapp` sigue funcionando pero **siempre**
+> redirige a ese número: ya no consulta asesoras ni fija la cookie `ulp_adv`. Lo que sigue
+> describe el reparto anterior (ULP) y se conserva solo como referencia.
+
+Los botones antiguos de WhatsApp apuntan a `/ir/whatsapp` (ver `lib/wa-route.ts`). Antes, el
+servidor decidía a qué asesora iba la persona y redirigía a `wa.me`:
 
 1. Si ya tiene asesora asignada (cookie `ulp_adv`, 30 días) y sigue activa → la misma.
 2. Si no → la siguiente por **turno ponderado** según los "turnos" de cada asesora (RPC `ulp_assign_advisor`, bloqueo de fila): con 4/4/2 salen 4, 4 y 2 de cada 10 leads.

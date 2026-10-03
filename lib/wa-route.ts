@@ -29,7 +29,7 @@ export function waRoute(opts: { message?: string; kind?: LeadKind; serviceId?: s
   return `/ir/whatsapp?${p.toString()}`;
 }
 
-/** "17633422258" → "+1 (763) 342-2258"; otros formatos → "+<dígitos>". */
+/** "13853927656" → "+1 (385) 392-7656"; otros formatos → "+<dígitos>". */
 export function formatPhone(digits: string): string {
   const d = digits.replace(/\D/g, "");
   if (d.length === 11 && d.startsWith("1")) {

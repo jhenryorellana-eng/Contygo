@@ -4,6 +4,7 @@
    · Se asigna al capturar un contacto o al primer clic en WhatsApp.
      La asignación y el conteo de clics nuevos son conceptos distintos.
    · Sin Supabase todo cae al número general de lib/config.ts.
+   · /ir/whatsapp ya NO usa este reparto: siempre va al número único.
    Esquema: supabase/advisors.sql
    ============================================================ */
 import { randomUUID } from "crypto";

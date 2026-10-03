@@ -5,6 +5,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { getContygoServiceUrl } from "@/lib/contygo";
+import { waLink } from "@/lib/config";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_DELIVERABLES } from "@/lib/contygo-deliverables";
 import { getRebuildPlatformFilm, getRebuildServiceFilm, type RebuildFilm } from "@/lib/contygo-rebuild-media";
@@ -209,7 +210,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const plans = service.plans.length ? service.plans : [{ name: "Servicio", price: service.price }];
   const selectedPlan = plans[planIndex] ?? plans[0];
   const contractUrl = getContygoServiceUrl(service.id) ?? `https://contygo.app/servicios/${service.slug}`;
-  const whatsappUrl = "https://wa.me/17633422258?text=" + encodeURIComponent(`Hola, quiero orientación sobre ${service.name}, plan ${selectedPlan.name}, en ContyGo.`);
+  const whatsappUrl = waLink(`Hola, quiero orientación sobre ${service.name}, plan ${selectedPlan.name}, en ContyGo.`);
 
   useEffect(() => {
     const element = dialog.current;

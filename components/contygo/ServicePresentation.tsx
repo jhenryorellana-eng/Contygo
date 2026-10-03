@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { getContygoServiceUrl } from "@/lib/contygo";
+import { waLink } from "@/lib/config";
 import { getServicePresentation } from "@/lib/contygo-presentation";
 import s from "./ServicePresentation.module.css";
 
@@ -40,7 +41,7 @@ export default function ServicePresentation({ service }: { service: ContygoServi
           <a className={s.contractButton} href={getContygoServiceUrl(service.id) ?? "https://contygo.app/servicios"}>Crear mi contrato en ContyGo <Arrow /></a><p className={s.contractNote}>Crea tu cuenta, confirma tu correo y revisa tu paquete antes de firmar. Precio vigente y opciones de pago en ContyGo. Tasas gubernamentales aparte.</p>
           <details className={s.scopeDetails}><summary>Qué incluye el servicio</summary><ul className={s.inclusions}>{service.includes.map(item => <li key={item}>{item}</li>)}</ul></details>
           <details className={s.scopeDetails}><summary>Qué debes tener en cuenta</summary><div className={s.exclusions}>{service.exclusions.map(item => <p key={item}>{item}</p>)}</div></details>
-          <a className={s.assistance} href={`https://wa.me/17633422258?text=${encodeURIComponent(`Hola, estoy revisando ${service.name} en ContyGo y tengo una duda antes de contratar.`)}`}>Necesito ayuda con este servicio <Arrow /></a>
+          <a className={s.assistance} href={waLink(`Hola, estoy revisando ${service.name} en ContyGo y tengo una duda antes de contratar.`)}>Necesito ayuda con este servicio <Arrow /></a>
         </section>
       </div>
     </main>

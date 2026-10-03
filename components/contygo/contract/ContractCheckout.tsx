@@ -13,8 +13,9 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
-import { text, validateContractForm, type FieldErrors } from "@/lib/contygo-api/checkout";
-import { outcomeMessage, serviceAlreadyLiveMessage, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
+import { outcomeMessage, readResend, serviceAlreadyLiveMessage, whatsappHelpMessage, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
 import {
@@ -30,14 +31,16 @@ import PhoneField, { COUNTRIES, splitPhone } from "../guide/PhoneField";
 import s from "./ContractCheckout.module.css";
 
 type Terms = { version: string; es: string; en: string };
-type ServiceData = { service: PublicServiceView; terms: Terms; captchaSiteKey: string | null };
+type ServiceData = { service: PublicServiceView | null; checkoutEnabled?: boolean; reason?: string; terms: Terms; captchaSiteKey: string | null };
+/** The same data once the service is known to be contractable. */
+type ReadyData = Omit<ServiceData, "service"> & { service: PublicServiceView };
 type Person = DraftPerson;
 type Notice = { title: string; detail?: string; tone: "info" | "error" | "success" };
 type Result = { clientCreated: boolean; caseNumber: string; signingUrl: string | null; token: string | null; serviceAlreadyLive: string | null; firstName: string };
 type Stage = "loading" | "form" | "code" | "done" | "blocked" | "failed";
 type ApiOutcome = ScreenOutcome & {
   errors?: FieldErrors; maskedEmail?: string; expiresAt?: string | null; caseNumber?: string; signingUrl?: string; token?: string;
-  verificationId?: string; body?: SentVerification["body"]; ticket?: string; role?: string | null; retryAfter?: number | null;
+  verificationId?: string; body?: SentVerification["body"]; ticket?: string; role?: string | null; retryAfter?: number | null; ref?: string; code?: string; clientCreated?: boolean; firstName?: string;
 };
 /** The key of an attempt that may be repeated as it is after a cut: same key, same body (guía §8). */
 type Pending = { op: "start"; key: string; fingerprint: string } | { op: "confirm"; key: string; code: string; verificationId: string };
@@ -45,7 +48,8 @@ type Step = "name" | "contact" | "address" | "people" | "plan" | "review";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const cents = (value: number) => money.format(value / 100);
-const WHATSAPP = "https://wa.me/17633422258?text=";
+/** The contract phone is US only (+1). A value that is not +1 (the reveal phone may be international) is not carried over. */
+const isUsPhone = (value: string) => /^\+1\d{0,10}$/.test(value.trim());
 
 /** Each step: what it asks, which validator errors belong to it and what the guide says there. */
 const STEPS: Record<Step, { label: string; title: string; lead?: string; guide: GuideLineId; owns: (key: string) => boolean }> = {
@@ -104,7 +108,8 @@ function useTurnstile(siteKey: string | null, slot: string) {
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store" });
   const data = await response.json().catch(() => null) as ({ ok?: boolean; error?: string; outcome?: ApiOutcome } & Record<string, unknown>) | null;
-  return { status: response.status, data };
+  const header = Number(response.headers.get("Retry-After"));
+  return { status: response.status, data, retryAfter: Number.isFinite(header) && header > 0 ? header : null };
 }
 
 /** +13055550199 → 🇺🇸 +1 (305) 555-0199, for the summary. */
@@ -128,7 +133,12 @@ type Props = {
 export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, voice: sharedVoice }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
-  const [data, setData] = useState<ServiceData | null>(null);
+  const [data, setData] = useState<ReadyData | null>(null);
+  const [phoneHint, setPhoneHint] = useState(false);
+  /** The short reference of the web attempt the server named (WEB-XXXXXX), for the WhatsApp message. */
+  const [helpRef, setHelpRef] = useState<string | null>(null);
+  /** The blocked screen offers «Reintentar» when what failed may pass (a cut, a hiccup). */
+  const [retryable, setRetryable] = useState(false);
   const [stage, setStage] = useState<Stage>("loading");
   const [step, setStep] = useState<Step>("name");
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -161,9 +171,16 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     try {
       const { status, data: body } = await postJson("/api/contratar/servicio", { serviceId: service.id });
       if (status !== 200 || !body?.ok) throw new Error(body?.error ?? String(status));
-      const next = body as unknown as ServiceData;
-      setData(next);
+      const answer = body as unknown as ServiceData;
       const from = journey.current;
+      reference.current = from.externalRef || reference.current;
+      // Kill switch (CONTYGO_CHECKOUT_ENABLED=0) or a catalog the key cannot read: WhatsApp from the first moment.
+      if (answer.checkoutEnabled === false || !answer.service) {
+        setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) });
+        return;
+      }
+      const next: ReadyData = { ...answer, service: answer.service };
+      setData(next);
       // A contract already made in this tab goes straight to its screen (the link can be resent).
       const saved = readContract();
       if (saved?.serviceId === service.id) {
@@ -171,19 +188,27 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "info", ...outcomeMessage({ step: "ALREADY_DONE", caseNumber: saved.caseNumber }) });
         return;
       }
-      if (from.eligible === false) { setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
-      if (!next.service.questions.every(question => from.answers?.[question.id] !== undefined)) { setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NEEDS_ANSWERS" }) }); return; }
+      if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
+      // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
+      if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
+      if (!next.service.questions.every(question => from.answers?.[question.id] !== undefined)) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NEEDS_ANSWERS" }) }); return; }
 
       const draft = readDraft();
       const mine = draft?.serviceId === service.id ? draft : null;
       reference.current = from.externalRef || mine?.externalRef || reference.current || newExternalRef();
       if (mine) {
-        setForm(mine.form); setPersons(mine.persons); setConsent(mine.consent);
+        // A draft from before the US-only phone may carry a foreign number: it does not go in the contract.
+        const usable = isUsPhone(mine.form.phone) ? mine.form.phone : "";
+        if (mine.form.phone && !usable) setPhoneHint(true);
+        setForm({ ...mine.form, phone: usable }); setPersons(mine.persons); setConsent(mine.consent);
         personKey.current = Math.max(personKey.current, ...mine.persons.map(person => person.key));
       } else {
         const plan = next.service.plans[0];
         const name = from.displayName.trim();
-        setForm(current => ({ ...current, planId: current.planId || plan?.id || "", firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || from.phone }));
+        // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
+        const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
+        if (from.phone?.trim() && !prefill) setPhoneHint(true);
+        setForm(current => ({ ...current, planId: current.planId || plan?.id || "", firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
         setPersons(current => current.length ? current : next.service.partyRoles.filter(role => role.isRequired).map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" })));
       }
       setKeeping(true);
@@ -237,7 +262,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   function show(outcome: ApiOutcome) {
     const roleLabel = outcome.step === "INVALID_PARTIES" ? text(roles.find(role => role.roleKey === outcome.role)?.label) : undefined;
     const message = outcomeMessage(outcome, roleLabel);
-    const tone: Notice["tone"] = ["WRONG_CODE", "ERROR", "INVALID", "INVALID_PARTIES", "RETRY_LATER", "UNAVAILABLE"].includes(outcome.step) ? "error" : "info";
+    const tone: Notice["tone"] = ["WRONG_CODE", "ERROR", "INVALID", "INVALID_PARTIES", "RETRY_LATER"].includes(outcome.step) ? "error" : "info";
     setNotice({ tone, ...message });
   }
 
@@ -258,21 +283,25 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     setErrors(found); setStage("form"); goTo(first, found);
   }
 
-  function handle(status: number, body: Awaited<ReturnType<typeof postJson>>["data"]) {
+  function handle(status: number, body: Awaited<ReturnType<typeof postJson>>["data"], retryAfter: number | null = null) {
     const outcome = body?.outcome;
     // contygo answered for good: the next attempt gets a new key. Only «busy» (IN_PROGRESS, 503, a cut)
     // lets the same key and body be repeated as they are (guía §8).
     if (outcome && !(outcome.step === "RETRY_LATER" && outcome.reason === "busy")) pending.current = null;
-    if (status === 429) { show({ step: "RETRY_LATER", reason: "destination" }); return; }
+    if (status === 429) { show({ step: "RETRY_LATER", reason: "destination", retryAfter }); return; }
     if (status === 403 && body?.error?.startsWith("captcha")) { setNotice({ tone: "error", title: "No pudimos confirmar que no eres un robot.", detail: "Espera a que se complete la verificación e inténtalo de nuevo." }); return; }
-    if (status !== 200 || !outcome) { setStage("blocked"); show({ step: "ERROR" }); return; }
+    // 502, 504, 503 or a page that is not JSON: our own route did not answer. It is «busy»: same key, same body.
+    if (!outcome && (status >= 500 || status === 200)) { show({ step: "RETRY_LATER", reason: "busy" }); return; }
+    // Anything else without an outcome (400, 404, 413…): not transient, but the person can still try again or write.
+    if (status !== 200 || !outcome) { pending.current = null; setRetryable(true); setStage("blocked"); show({ step: "ERROR" }); return; }
+    if (outcome.ref) setHelpRef(outcome.ref);
     switch (outcome.step) {
       case "INVALID":
         if (outcome.errors?.code) { setErrors(outcome.errors); setNotice({ tone: "error", title: outcome.errors.code }); }
         else { show(outcome); reopen(outcome.errors ?? {}); }
         return;
       case "ASK_CODE":
-        if (!outcome.body || !outcome.ticket || !outcome.verificationId) { finish(); setStage("blocked"); show({ step: "ERROR" }); return; }
+        if (!outcome.body || !outcome.ticket || !outcome.verificationId) { finish(); setRetryable(false); setStage("blocked"); show({ step: "ERROR" }); return; }
         // Guía §4, paso 3: the UI keeps the verificationId and the exact body; the server keeps nothing.
         setSent({ body: outcome.body, ticket: outcome.ticket, verificationId: outcome.verificationId, maskedEmail: outcome.maskedEmail ?? "", expiresAt: outcome.expiresAt ?? null });
         setMaskedEmail(outcome.maskedEmail ?? ""); setCode(""); setStage("code"); show(outcome);
@@ -287,11 +316,22 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "success", ...outcomeMessage(outcome) });
         return;
       }
+      case "SIGN_LINK_PENDING": {
+        // The case exists but the link did not come back: show the case and offer «Enviarme el enlace» (/reenviar).
+        const caseNumber = outcome.caseNumber ?? "", token = outcome.token ?? null;
+        finish();
+        if (token) saveContract({ v: 1, serviceId: service.id, token, caseNumber, clientCreated: outcome.clientCreated ?? false });
+        setResult({ clientCreated: outcome.clientCreated ?? false, caseNumber, signingUrl: null, token, serviceAlreadyLive: null, firstName: outcome.firstName ?? "" });
+        setStage("done"); setNotice({ tone: "info", ...outcomeMessage({ step: "SIGN_LINK_PENDING", caseNumber }) });
+        return;
+      }
       case "WRONG_CODE": setCode(""); show(outcome); return;
       case "RESTART": setSent(null); show(outcome); setStage("code"); setPendingRestart(true); return;
       case "INVALID_PARTIES": setSent(null); show(outcome); setStage("form"); goTo(steps.includes("people") ? "people" : "review"); return;
       case "RETRY_LATER": show(outcome); return;
-      default: finish(); setStage("blocked"); show(outcome); // HUMAN, NOT_ELIGIBLE, UNAVAILABLE, NEEDS_ANSWERS, ERROR
+      // ERROR keeps the form (and a code already sent) so «Reintentar» comes back to where the person was.
+      case "ERROR": setRetryable(true); setStage("blocked"); show(outcome); return;
+      default: finish(); setRetryable(false); setStage("blocked"); show(outcome); // HUMAN, NOT_ELIGIBLE, UNAVAILABLE, UNAVAILABLE_ONLINE, NEEDS_ANSWERS
     }
   }
 
@@ -327,10 +367,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     pending.current = { op: "start", key, fingerprint };
     setErrors({}); setBusy(true);
     try {
-      const { status, data: body } = await postJson("/api/contratar/iniciar", {
+      const { status, data: body, retryAfter } = await postJson("/api/contratar/iniciar", {
         serviceId: service.id, externalRef: reference.current, form: input, answers: answersNow, attribution: pageAttribution(), idempotencyKey: key, captchaToken: captcha.token,
       });
-      handle(status, body);
+      handle(status, body, retryAfter);
     } catch { show({ step: "RETRY_LATER", reason: "busy" }); }
     finally { captcha.reset(); setBusy(false); }
   }
@@ -354,8 +394,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     pending.current = { op: "confirm", key, code: clean, verificationId: sent.verificationId };
     setBusy(true);
     try {
-      const { status, data: body } = await postJson("/api/contratar/confirmar", { body: sent.body, verificationId: sent.verificationId, ticket: sent.ticket, code: clean, idempotencyKey: key });
-      handle(status, body);
+      const { status, data: body, retryAfter } = await postJson("/api/contratar/confirmar", { body: sent.body, verificationId: sent.verificationId, ticket: sent.ticket, code: clean, idempotencyKey: key });
+      handle(status, body, retryAfter);
     } catch { show({ step: "RETRY_LATER", reason: "busy" }); }
     finally { setBusy(false); }
   }
@@ -367,15 +407,14 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     resendKey.current = key;
     setBusy(true);
     try {
-      const { status, data: body } = await postJson("/api/contratar/reenviar", { token: result.token, idempotencyKey: key });
-      const outcome = body?.outcome as { step: string; signingUrl?: string; reason?: string } | undefined;
-      if (!(outcome?.step === "RETRY_LATER" && outcome.reason === "busy")) resendKey.current = null;
-      if (status === 200 && outcome?.step === "SIGN_LINK" && outcome.signingUrl) {
-        setResult(current => current ? { ...current, signingUrl: outcome.signingUrl! } : current);
+      const { status, data: body, retryAfter } = await postJson("/api/contratar/reenviar", { token: result.token, idempotencyKey: key });
+      const reading = readResend(status, body?.outcome as Parameters<typeof readResend>[1], retryAfter);
+      // Busy / in progress / a cut: the next try repeats the same key; anything else gets a new one.
+      if (reading.kind === "link" || !reading.keepKey) resendKey.current = null;
+      if (reading.kind === "link") {
+        setResult(current => current ? { ...current, signingUrl: reading.signingUrl } : current);
         setNotice({ tone: "success", title: "Listo: te lo enviamos también a tu correo y a tu app de ContyGo." });
-      } else if (outcome?.step === "ALREADY_SIGNED") setNotice({ tone: "success", title: "Tu contrato ya está firmado." });
-      else if (status === 429 || outcome?.step === "RETRY_LATER") show({ step: "RETRY_LATER", reason: "destination" });
-      else show({ step: "ERROR" });
+      } else setNotice({ tone: reading.tone, title: reading.title, ...(reading.detail ? { detail: reading.detail } : {}) });
     } catch { show({ step: "RETRY_LATER", reason: "busy" }); }
     finally { setBusy(false); }
   }
@@ -395,7 +434,14 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       <span className={s.label}>{label}</span>{control}
       {errors[name] ? <small className={s.error} role="alert">{errors[name]}</small> : options.hint ? <small className={s.hint}>{options.hint}</small> : null}
     </label>;
-  const whatsapp = WHATSAPP + encodeURIComponent(`Hola, quiero ayuda para contratar ${service.name} en ContyGo.`);
+  const whatsapp = waLink(whatsappHelpMessage(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : null)));
+  /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
+  function retryFromBlocked() {
+    setNotice(null); setRetryable(false);
+    if (sent) { setStage("code"); return; }
+    if (!data) { void load(); return; }
+    setStage("form"); goTo("review");
+  }
   const stateName = US_STATES.find(item => item.code === form.state)?.name ?? (form.state === "PR" ? "Puerto Rico" : form.state);
   const summary: { step: Step; title: string; lines: string[] }[] = [
     { step: "name", title: "Tu nombre", lines: [[form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ")] },
@@ -422,7 +468,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       {notice && <div className={s.notice} data-tone={notice.tone} role={notice.tone === "error" ? "alert" : "status"}><strong>{notice.title}</strong>{notice.detail && <span>{notice.detail}</span>}</div>}
 
       {stage === "loading" && <div className={s.loading} role="status"><i /><i /><i /><span>Preparando tu contrato…</span></div>}
-      {stage === "failed" && <button type="button" className={s.secondary} onClick={() => void load()}>Reintentar</button>}
+      {stage === "failed" && <div className={s.links}>
+        <button type="button" className={s.secondary} onClick={() => void load()}>Reintentar</button>
+        <a className={s.secondary} href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+      </div>}
 
       {stage === "form" && data && <form className={s.form} noValidate onSubmit={event => { event.preventDefault(); if (step === "review") void start(); else next(); }}>
         <div ref={body} className={s.stepBody} data-step-body key={step}>
@@ -436,8 +485,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
             {field("email", "Correo electrónico", <input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={160} value={form.email} onChange={set("email")} placeholder="nombre@correo.com" />, { hint: "Aquí te llega el código para confirmar.", guide: "email" })}
             <div className={s.field} data-invalid={Boolean(errors.phone)} data-guided={guide.target === "phone" || undefined}>
               <span className={s.label} id={`${uid}-phone`}>Teléfono</span>
-              <PhoneField value={form.phone} onChange={value => { setForm(current => ({ ...current, phone: value })); clear("phone"); }} invalid={Boolean(errors.phone)} describedBy={`${uid}-phone-help`} />
-              {errors.phone ? <small className={s.error} role="alert" id={`${uid}-phone-help`}>{errors.phone}</small> : <small className={s.hint} id={`${uid}-phone-help`}>Elige tu país y escribe tu número.</small>}
+              <PhoneField usOnly value={form.phone} onChange={value => { setForm(current => ({ ...current, phone: value })); clear("phone"); setPhoneHint(false); }} invalid={Boolean(errors.phone)} describedBy={`${uid}-phone-help`} />
+              {errors.phone ? <small className={s.error} role="alert" id={`${uid}-phone-help`}>{errors.phone}</small> : <small className={s.hint} id={`${uid}-phone-help`}>{phoneHint && !form.phone ? PHONE_US_MESSAGE : "Un teléfono de EE. UU. (+1) para tu cuenta."}</small>}
             </div>
           </div>}
 
@@ -501,7 +550,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
             <div className={s.options} role="radiogroup" aria-label="Idioma de tu contrato">
               <p className={s.groupTitle}>Idioma de tu contrato y tus correos</p>
               <div className={s.segmented}>
-                {(["es", "en"] as const).map(locale => <label key={locale} data-selected={form.locale === locale}><input type="radio" name={`${uid}-lang`} checked={form.locale === locale} onChange={() => setForm(current => ({ ...current, locale }))} />{locale === "es" ? "Español" : "English"}</label>)}
+                {(["es", "en"] as const).map(locale => <label key={locale} data-selected={form.locale === locale}><input type="radio" name={`${uid}-lang`} checked={form.locale === locale} onChange={() => { setForm(current => ({ ...current, locale })); setConsent({ accepted: false, at: "" }); }} />{locale === "es" ? "Español" : "English"}</label>)}
               </div>
             </div>
           </div>}
@@ -517,7 +566,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
             <label className={s.consent} data-invalid={Boolean(errors.consent)} data-guided={guide.target === "consent" || undefined}>
               <input type="checkbox" checked={consent.accepted} onChange={event => { setConsent(event.target.checked ? { accepted: true, at: new Date().toISOString() } : { accepted: false, at: "" }); clear("consent"); }} />
               <span className={s.check} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m6 12.5 4 4 8-9" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
-              <span>{data.terms.es} <a href="/terminos" target="_blank" rel="noopener noreferrer">Términos</a> · <a href="/privacidad" target="_blank" rel="noopener noreferrer">Privacidad</a></span>
+              <span lang={form.locale}>{form.locale === "en" ? data.terms.en : data.terms.es} <a href="/terminos" target="_blank" rel="noopener noreferrer">{form.locale === "en" ? "Terms" : "Términos"}</a> · <a href="/privacidad" target="_blank" rel="noopener noreferrer">{form.locale === "en" ? "Privacy" : "Privacidad"}</a></span>
             </label>
             {errors.consent && <small className={s.error} role="alert">{errors.consent}</small>}
             <div ref={captcha.container} className={s.captchaBox} />
@@ -537,7 +586,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         <div className={s.stepBody}>
           <label className={s.codeField} data-guided={guide.target === "code" || undefined}>
             <span className={s.label}>Código de 6 números</span>
-            <input ref={codeInput} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} aria-describedby={`${uid}-code-help`} disabled={busy || pendingRestart} placeholder="••••••" />
+            <input ref={codeInput} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" aria-describedby={`${uid}-code-help`} disabled={busy || pendingRestart} placeholder="••••••" />
           </label>
           <p id={`${uid}-code-help`} className={s.note}>Lo enviamos a <strong>{maskedEmail || "tu correo"}</strong>. Si no lo ves, revisa la carpeta de correo no deseado.</p>
           <div ref={captcha.container} className={s.captchaBox} />
@@ -564,7 +613,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       </div>}
 
       {stage === "blocked" && <div className={s.links}>
-        <a className={s.secondary} href={whatsapp} target="_blank" rel="noopener noreferrer">Hablar con un asesor</a>
+        <a className={s.secondary} href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        {retryable && <button type="button" className={s.secondary} onClick={retryFromBlocked}>Reintentar</button>}
       </div>}
       {(stage === "form" || stage === "code") && <a className={s.help} href={whatsapp} target="_blank" rel="noopener noreferrer">¿Necesitas ayuda? Escríbenos por WhatsApp</a>}
     </div>

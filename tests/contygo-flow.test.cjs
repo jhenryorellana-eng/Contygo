@@ -103,12 +103,12 @@ test('las nueve rutas de evaluación muestran contratación antes del video y pe
   }
 });
 
-test('la entrada directa muestra nombre y precio del catálogo sin crear una cuenta o contrato local', () => {
+test('la entrada directa muestra el nombre y nunca un precio fijo (el precio llega vivo del catálogo)', () => {
   const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   for (const service of CONTYGO_SERVICES) {
     const markup = renderToStaticMarkup(React.createElement(DirectContractEntry, { serviceId: service.id, onChooseQuestions() {} }));
     assert.ok(markup.includes(service.name), service.id);
-    assert.ok(markup.includes(dollars.format(service.price)), service.id);
+    assert.ok(!markup.includes(dollars.format(service.price)) && !markup.includes('Desde'), service.id);
     assert.ok(markup.includes('confirma tu correo'), service.id);
     assert.ok(!markup.includes('<form'), service.id);
   }

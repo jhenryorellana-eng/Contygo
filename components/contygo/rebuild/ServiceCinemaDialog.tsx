@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import { waLink } from "@/lib/config";
+import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_DELIVERABLES } from "@/lib/contygo-deliverables";
 import { getRebuildPlatformFilm, getRebuildServiceFilm, type RebuildFilm } from "@/lib/contygo-rebuild-media";
@@ -38,7 +39,6 @@ const stages: { id: Stage; label: string }[] = [
   { id: "platform", label: "Cómo funciona" },
   { id: "decision", label: "Para empezar" },
 ];
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 const DEBUG_COMPLETED_INTAKE: VisaIntakeSession = {
   watched: true,
@@ -207,7 +207,10 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const isEvaluation = service.id === "evaluacion-asilo";
   const platformFilm = getRebuildPlatformFilm(service.id);
   const deliverables = CONTYGO_DELIVERABLES[service.id];
+  // Prices are live (GET /catalog); the local list only gives the plan names. No price until the live one arrives.
+  const prices = useServicePrices();
   const plans = service.plans.length ? service.plans : [{ name: "Servicio", price: service.price }];
+  const priceOf = (plan: { name: string }) => { const cents = planPriceCents(prices, service.slug, plan.name, plans.length); return cents === null ? null : formatCents(cents); };
   const selectedPlan = plans[planIndex] ?? plans[0];
   const contractUrl = getContygoServiceUrl(service.id) ?? `https://contygo.app/servicios/${service.slug}`;
   const whatsappUrl = waLink(`Hola, quiero orientación sobre ${service.name}, plan ${selectedPlan.name}, en ContyGo.`);
@@ -339,9 +342,9 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
           <div className={s.decisionGrid}>
             <section className={s.planPanel} aria-label="Planes y precios">
               <span className={s.eyebrow}>{isEvaluation ? "Tu evaluación" : "Tu servicio"}</span><h3>{service.name}</h3>
-              <div className={s.price}><strong>{money.format(selectedPlan.price)}</strong><span>USD</span></div>
+              {priceOf(selectedPlan) && <div className={s.price}><strong>{priceOf(selectedPlan)}</strong><span>USD</span></div>}
               <p className={s.priceNote}>{isEvaluation ? "Un intento de evaluación por pago." : "Honorarios del servicio. Revisa las tasas y el alcance en tu contrato."}</p>
-              <fieldset className={s.plans}><legend>{plans.length > 1 ? "Elige el plan que quieres revisar" : "Plan disponible"}</legend>{plans.map((plan, index) => <label key={plan.name} className={s.plan} data-selected={planIndex === index}><input type="radio" name={planName} checked={planIndex === index} onChange={() => setPlanIndex(index)} /><span>{plan.name}</span><strong>{money.format(plan.price)}</strong></label>)}</fieldset>
+              <fieldset className={s.plans}><legend>{plans.length > 1 ? "Elige el plan que quieres revisar" : "Plan disponible"}</legend>{plans.map((plan, index) => <label key={plan.name} className={s.plan} data-selected={planIndex === index}><input type="radio" name={planName} checked={planIndex === index} onChange={() => setPlanIndex(index)} /><span>{plan.name}</span>{priceOf(plan) && <strong>{priceOf(plan)}</strong>}</label>)}</fieldset>
               <p className={s.planNote}>{isEvaluation ? "Entra o crea tu cuenta en ContyGo para revisar el precio, las condiciones y el pago de tu evaluación." : "Entra o crea tu cuenta en ContyGo para revisar tu contrato, confirmar el plan y consultar las opciones de pago."}</p>
             </section>
             <div className={s.scope}>

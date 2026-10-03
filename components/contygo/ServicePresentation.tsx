@@ -5,15 +5,16 @@ import Link from "next/link";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import { waLink } from "@/lib/config";
+import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getServicePresentation } from "@/lib/contygo-presentation";
 import s from "./ServicePresentation.module.css";
 
 function Arrow() { return <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
 function Play() { return <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m12 7 14 9-14 9V7Z" fill="currentColor" /></svg>; }
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default function ServicePresentation({ service }: { service: ContygoService }) {
   const presentation = getServicePresentation(service.id);
+  const prices = useServicePrices();
   const video = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -37,7 +38,7 @@ export default function ServicePresentation({ service }: { service: ContygoServi
           {presentation && <p className={s.videoCaption}>{presentation.caption}</p>}
           <p className={s.videoStatus} role="status">{finished ? "Ya viste la presentación. El siguiente paso es crear tu contrato en ContyGo." : "Después de conocer el servicio, continúa a ContyGo para crear tu cuenta y revisar tu contrato."}</p>
         </section>
-        <section className={s.summary} aria-labelledby="service-next-heading"><span className={s.summaryLabel}>TU SIGUIENTE PASO</span><h2 id="service-next-heading">Empieza tu contratación.</h2><div className={s.priceList}>{service.plans.map(plan => <div key={plan.name}><span>{plan.name}</span><strong>{money.format(plan.price)} <small>USD</small></strong></div>)}</div>
+        <section className={s.summary} aria-labelledby="service-next-heading"><span className={s.summaryLabel}>TU SIGUIENTE PASO</span><h2 id="service-next-heading">Empieza tu contratación.</h2><div className={s.priceList}>{service.plans.map(plan => { const cents = planPriceCents(prices, service.slug, plan.name, service.plans.length); return <div key={plan.name}><span>{plan.name}</span>{cents !== null && <strong>{formatCents(cents)} <small>USD</small></strong>}</div>; })}</div>
           <a className={s.contractButton} href={getContygoServiceUrl(service.id) ?? "https://contygo.app/servicios"}>Crear mi contrato en ContyGo <Arrow /></a><p className={s.contractNote}>Crea tu cuenta, confirma tu correo y revisa tu paquete antes de firmar. Precio vigente y opciones de pago en ContyGo. Tasas gubernamentales aparte.</p>
           <details className={s.scopeDetails}><summary>Qué incluye el servicio</summary><ul className={s.inclusions}>{service.includes.map(item => <li key={item}>{item}</li>)}</ul></details>
           <details className={s.scopeDetails}><summary>Qué debes tener en cuenta</summary><div className={s.exclusions}>{service.exclusions.map(item => <p key={item}>{item}</p>)}</div></details>

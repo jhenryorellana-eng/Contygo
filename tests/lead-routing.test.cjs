@@ -69,27 +69,23 @@ test('captura y WhatsApp mantienen la asesora del contacto y envían el primer c
   assert.equal(saved.cookies.get('ulp_adv').value, 'advisor-b');
   assert.equal(identity.readLeadCookie(saved.cookies.get('ulp_cid').value, 'contact'), cid);
   const cookie = saved.cookies.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+  const before = calls.length;
   const result = await whatsapp.GET(new NextRequest('https://landing.invalid/ir/whatsapp?svc=itin', {
     headers: { cookie, 'user-agent': 'Mozilla/5.0', 'x-forwarded-for': '192.0.2.1' },
   }));
   assert.equal(result.status, 302);
-  assert.ok(result.headers.get('location').startsWith('https://wa.me/15555550200'));
-  const record = calls.find(c => c.path.endsWith('/ulp_record_lead')).body;
-  assert.equal(record.p_contact_id, cid);
-  assert.equal(record.p_advisor_id, 'advisor-b');
-  assert.equal(record.p_source, 'auto');
-  assert.equal(record.p_visitor_id, identity.readLeadCookie(saved.cookies.get('ulp_lead_visitor').value, 'visitor'));
-  assert.equal(record.p_secret, process.env.SUPABASE_ADMIN_SECRET);
-  assert.ok(!calls.some(c => c.path.endsWith('/ulp_leads') || c.path.endsWith('/ulp_crm_activity_add')));
+  // /ir/whatsapp ya no reparte por asesoras: siempre va al único número (lib/config.ts) y no toca la base de ULP.
+  assert.ok(result.headers.get('location').startsWith('https://wa.me/13853927656'));
+  assert.equal(calls.length, before);
 });
 
-test('una cookie de contacto falsificada no se vincula al historial', async () => {
+test('una cookie de contacto falsificada no cambia el destino ni consulta el historial', async () => {
   calls.length = 0;
-  await whatsapp.GET(new NextRequest('https://landing.invalid/ir/whatsapp', {
+  const result = await whatsapp.GET(new NextRequest('https://landing.invalid/ir/whatsapp', {
     headers: { cookie: `ulp_cid=${cid}`, 'user-agent': 'Mozilla/5.0', 'x-forwarded-for': '192.0.2.2' },
   }));
-  assert.ok(!calls.some(c => c.path.endsWith('/ulp_crm_contact_get')));
-  assert.equal(calls.find(c => c.path.endsWith('/ulp_record_lead')).body.p_contact_id, null);
+  assert.ok(result.headers.get('location').startsWith('https://wa.me/13853927656'));
+  assert.equal(calls.length, 0);
 });
 
 test('los bots no consumen turnos ni registran clics', async () => {

@@ -4,7 +4,15 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent
 import { US_STATES } from "@/lib/agent/visa-intake";
 import s from "./VisaStatePicker.module.css";
 
-type VisaStatePickerProps = { onChoose: (code: string) => void; onClose: () => void };
+type StateOption = { code: string; name: string };
+type VisaStatePickerProps = {
+  onChoose: (code: string) => void; onClose: () => void;
+  /** Catalog options ({code, label}) of a us_state question; by default the 50 states and D. C. */
+  options?: { code: string; label: string }[];
+  /** The «not defined yet» footer button is only for the visa chat (it answers UNKNOWN); a catalog question needs a code. */
+  allowUnknown?: boolean;
+  description?: string;
+};
 
 const cleanSearch = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
@@ -16,7 +24,8 @@ function Close() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>;
 }
 
-export default function VisaStatePicker({ onChoose, onClose }: VisaStatePickerProps) {
+export default function VisaStatePicker({ onChoose, onClose, options, allowUnknown = !options, description = "La vía judicial puede cambiar según el estado." }: VisaStatePickerProps) {
+  const states: ReadonlyArray<StateOption> = options ? options.map(option => ({ code: option.code, name: option.label })) : US_STATES;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -26,7 +35,7 @@ export default function VisaStatePicker({ onChoose, onClose }: VisaStatePickerPr
   const descriptionId = useId();
   const resultsId = useId();
   const query = cleanSearch(search);
-  const filtered = US_STATES.filter(state => cleanSearch(`${state.name} ${state.code}`).includes(query));
+  const filtered = states.filter(state => cleanSearch(`${state.name} ${state.code}`).includes(query));
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -96,7 +105,7 @@ export default function VisaStatePicker({ onChoose, onClose }: VisaStatePickerPr
       <div><span className={s.kicker}>UN DATO IMPORTANTE</span><h2 id={titleId}>¿En qué estado?</h2></div>
       <button className={s.close} type="button" onClick={onClose} aria-label="Cerrar selección de estado"><Close /></button>
     </header>
-    <p id={descriptionId} className={s.description}>La vía judicial puede cambiar según el estado.</p>
+    <p id={descriptionId} className={s.description}>{description}</p>
 
     <label className={s.search}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.6" /><path d="m16 16 4.5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
@@ -104,13 +113,13 @@ export default function VisaStatePicker({ onChoose, onClose }: VisaStatePickerPr
       {search && <button className={s.clear} type="button" onClick={() => { setSearch(""); searchRef.current?.focus({ preventScroll: true }); }} aria-label="Limpiar búsqueda"><Close /></button>}
     </label>
 
-    <p className={s.resultCount} role="status" aria-live="polite">{query ? `${filtered.length} ${filtered.length === 1 ? "estado encontrado" : "estados encontrados"}` : "50 estados y Washington, D. C."}</p>
+    <p className={s.resultCount} role="status" aria-live="polite">{query ? `${filtered.length} ${filtered.length === 1 ? "estado encontrado" : "estados encontrados"}` : options ? `${states.length} opciones` : "50 estados y Washington, D. C."}</p>
     <div ref={listRef} id={resultsId} className={s.list} aria-label="Estados de Estados Unidos">
       {filtered.map(state => <button className={s.option} type="button" key={state.code} data-state-option onClick={() => choose(state.code)}><span className={s.code}>{state.code}</span><span className={s.name}>{state.name}</span><Arrow /></button>)}
       {!filtered.length && <p className={s.empty}>No encontramos ese estado.<span>Prueba con su nombre o sus siglas.</span></p>}
     </div>
-    <footer className={s.footer}>
+    {allowUnknown && <footer className={s.footer}>
       <button className={s.unknown} type="button" data-state-option onClick={() => choose("UNKNOWN")}><span>Aún no tengo un estado definido</span><Arrow /></button>
-    </footer>
+    </footer>}
   </dialog>;
 }

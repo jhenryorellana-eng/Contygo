@@ -195,7 +195,7 @@ test('token del contrato de la guía (§2 bis) y ticket de la verificación: fir
 test('el texto de aceptación y su versión cambian juntos', () => {
   // Si cambias el texto, cambia CONTRACT_TERMS.version y actualiza esta huella.
   const fingerprint = crypto.createHash('sha256').update(CONTRACT_TERMS.es + '\n' + CONTRACT_TERMS.en).digest('hex').slice(0, 16);
-  assert.deepEqual({ version: CONTRACT_TERMS.version, fingerprint }, { version: 'terminos-web-2026-09-28', fingerprint: '09c02063e3add444' });
+  assert.deepEqual({ version: CONTRACT_TERMS.version, fingerprint }, { version: 'terminos-web-2026-10-02', fingerprint: '6f02897c8a009f41' });
 });
 
 test('fuera de producción, contra el contygo real, solo se lee salvo prueba coordinada', async () => {

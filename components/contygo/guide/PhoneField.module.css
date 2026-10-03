@@ -6,6 +6,7 @@
 .phone[data-invalid]{box-shadow:inset 0 0 0 2px var(--pf-danger,#c0392b)}
 .phone[data-disabled]{opacity:.6}
 .country{position:relative;display:flex;align-items:center;gap:6px;padding:0 10px 0 14px;border-right:1.5px solid var(--field-line);cursor:pointer;flex:none}
+.country[data-fixed]{cursor:default;padding-right:14px}
 .flag{font-size:22px;line-height:1}
 .dial{font-size:17px;font-weight:750;font-variant-numeric:tabular-nums}
 .chevron{width:14px;height:14px;opacity:.6}

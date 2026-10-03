@@ -9,6 +9,8 @@
    · 409 IN_PROGRESS → la misma clave se está procesando: se espera
      Retry-After y se repite con la misma clave.
    · 429 → NUNCA se reintenta aquí: cada intento cuenta.
+   · Plazo (deadline): una petición del navegador tiene un presupuesto
+     global; ningún intento empieza si no cabe antes de que se agote.
    · Este módulo no escribe nada en consola: signingUrl y
      verificationId son credenciales.
    ============================================================ */
@@ -34,7 +36,13 @@ export class ContygoNotConfiguredError extends Error {
 
 export const contygoConfigured = () => Boolean(process.env.CONTYGO_API_KEY);
 
-type CallOptions = {
+/** Un plazo global (ms desde epoch) compartido por todas las llamadas de una petición del navegador. */
+export interface CallBudget { deadline?: number }
+
+/** Un intento con menos de esto por delante no se empieza: no podría terminar. */
+export const MIN_ATTEMPT_MS = 2_000;
+
+type CallOptions = CallBudget & {
   method?: "GET" | "POST" | "PUT";
   body?: unknown;
   idempotencyKey?: string;
@@ -42,6 +50,10 @@ type CallOptions = {
   retriable: boolean;
   timeoutMs?: number;
   attempts?: number;
+  /** false: tras un corte o un timeout NO se repite (la clave quedaría ocupada). Por defecto, igual que `retriable`. */
+  retryNetwork?: boolean;
+  /** true: un 500 también se repite con la misma clave y los mismos bytes (2.ª llamada de /contracts). */
+  retry500?: boolean;
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -66,14 +78,24 @@ function readError(json: unknown, status: number): ApiError {
 /** Esperas cortas: la función del servidor tiene su propio límite de duración. */
 const WAIT_CAP_SECONDS = 3;
 
+/** Host de CONTYGO_API_BASE, o null si no está definida o no es una URL. */
+function customApiHost(): string | null {
+  const base = process.env.CONTYGO_API_BASE;
+  if (!base) return null;
+  try { return new URL(base).host; } catch { return null; }
+}
+
 /**
  * En producción cada alta crea un cliente, un caso y un contrato reales, y cada lead una
- * tarjeta real. Fuera de producción, contra el contygo real, solo se lee (catálogo y
- * elegibilidad) salvo que la prueba esté coordinada: CONTYGO_ALLOW_WRITES=1.
+ * tarjeta real. Solo se escribe si VERCEL_ENV === "production" (los Preview nunca escriben),
+ * con CONTYGO_ALLOW_WRITES=1 (prueba coordinada) o contra un contygo que no es contygo.app
+ * (CONTYGO_API_BASE apuntando a DEV, en local). Sin nada de eso solo se lee (catálogo y elegibilidad).
  */
 export function writesBlocked(method: string, path: string) {
   if (method === "GET" || path === "/eligibility/evaluate") return false;
-  return process.env.NODE_ENV !== "production" && !process.env.CONTYGO_API_BASE && process.env.CONTYGO_ALLOW_WRITES !== "1";
+  if (process.env.VERCEL_ENV === "production" || process.env.CONTYGO_ALLOW_WRITES === "1") return false;
+  const host = customApiHost();
+  return !(host && host !== "contygo.app");
 }
 
 async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<T>> {
@@ -90,9 +112,15 @@ async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<
   if (payload !== undefined) headers["Content-Type"] = "application/json";
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
   const attempts = Math.max(1, options.attempts ?? 3);
+  const remaining = () => options.deadline === undefined ? Infinity : options.deadline - Date.now();
+  const networkRetry = options.retriable && options.retryNetwork !== false;
+  // Lo último que se supo de contygo: si el plazo se agota esperando, esto es lo que se informa.
+  let previous: ApiResponse<T> | null = null;
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const last = attempt === attempts;
+    // Nunca se empieza un intento que no cabe en el plazo.
+    if (remaining() < MIN_ATTEMPT_MS) return previous ?? { status: 0, data: null, error: { code: "DEADLINE" }, retryAfter: null };
     let response: Response;
     try {
       response = await fetch(`${base}${path}`, {
@@ -101,11 +129,13 @@ async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<
         body: payload,
         cache: "no-store",
         redirect: "error",
-        signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
+        signal: AbortSignal.timeout(Math.max(1, Math.min(options.timeoutMs ?? 15_000, remaining()))),
       });
     } catch {
-      if (!options.retriable || last) return { status: 0, data: null, error: { code: "NETWORK" }, retryAfter: null };
-      await sleep(attempt * 500);
+      const cut: ApiResponse<T> = { status: 0, data: null, error: { code: "NETWORK" }, retryAfter: null };
+      if (!networkRetry || last) return cut;
+      previous = cut;
+      await sleep(Math.min(attempt * 500, Math.max(0, remaining() - MIN_ATTEMPT_MS)));
       continue;
     }
     const retryAfter = parseRetryAfter(response.headers.get("retry-after"));
@@ -115,12 +145,17 @@ async function call<T>(path: string, options: CallOptions): Promise<ApiResponse<
     if (response.ok) return { status: response.status, data: json as T, error: null, retryAfter };
     const error = readError(json, response.status);
     const busy = response.status === 409 && (error.code === "IN_PROGRESS" || error.code === "REQUEST_IN_PROGRESS");
-    const down = response.status === 503;
+    const down = response.status === 503 || (options.retry500 === true && response.status === 500);
+    const result: ApiResponse<T> = { status: response.status, data: null, error, retryAfter };
     if ((busy || (down && options.retriable)) && !last && (retryAfter ?? 1) <= WAIT_CAP_SECONDS) {
-      await sleep(Math.max(1, retryAfter ?? 1) * 1000);
+      const wait = Math.max(1, retryAfter ?? 1) * 1000;
+      // Si esperar deja sin plazo para otro intento, se informa lo que contygo dijo.
+      if (remaining() - wait < MIN_ATTEMPT_MS) return result;
+      previous = result;
+      await sleep(wait);
       continue;
     }
-    return { status: response.status, data: null, error, retryAfter };
+    return result;
   }
   return { status: 0, data: null, error: { code: "NETWORK" }, retryAfter: null };
 }
@@ -131,25 +166,36 @@ export const contygoApi = {
   /** Comprueba la clave: 200 con principal.channel = "web". */
   me: () => call<MeResponse>("/me", { retriable: true, attempts: 2 }),
 
-  catalog: () => call<{ services: CatalogService[] }>("/catalog", { retriable: true, attempts: 2 }),
+  catalog: (budget: CallBudget = {}) => call<{ services: CatalogService[] }>("/catalog", { retriable: true, attempts: 2, ...budget }),
 
   /** Idempotente por externalRef: repetirla actualiza el mismo lead. */
-  upsertLead: (externalRef: string, body: UpsertLeadBody) =>
-    call<UpsertLeadResult>(`/leads/${ref(externalRef)}`, { method: "PUT", body, retriable: true }),
+  upsertLead: (externalRef: string, body: UpsertLeadBody, budget: CallBudget = {}) =>
+    call<UpsertLeadResult>(`/leads/${ref(externalRef)}`, { method: "PUT", body, retriable: true, ...budget }),
 
   /** No persiste nada: se puede repetir. Aquí los campos son answers[{questionId, value}]. */
-  evaluateEligibility: (body: { serviceId: string; answers: { questionId: string; value: boolean | string }[] }) =>
-    call<EligibilityResult>("/eligibility/evaluate", { method: "POST", body, retriable: true, attempts: 2 }),
+  evaluateEligibility: (body: { serviceId: string; answers: { questionId: string; value: boolean | string }[] }, budget: CallBudget = {}) =>
+    call<EligibilityResult>("/eligibility/evaluate", { method: "POST", body, retriable: true, attempts: 2, ...budget }),
 
-  /** Alta en dos llamadas. Cada llamada lleva su propia clave; un corte repite la misma. */
-  createContract: (body: ContractBody & { verificationId?: string; verificationCode?: string }, idempotencyKey: string) =>
-    call<ContractCreated>("/contracts", { method: "POST", body, idempotencyKey, retriable: true, timeoutMs: 25_000 }),
+  /**
+   * Alta en dos llamadas. Cada llamada lleva su propia clave.
+   * · 1.ª (sin verificationCode): tras un corte o un timeout NO se repite con la misma clave
+   *   (contygo no guarda ese 409 y la clave quedaría en IN_PROGRESS 120 s): el flujo estrena clave.
+   * · 2.ª (con verificationCode): un corte, un 503, un 500 o IN_PROGRESS repiten con la MISMA
+   *   clave y los mismos bytes (contygo retoma desde el cliente ya creado).
+   */
+  createContract: (body: ContractBody & { verificationId?: string; verificationCode?: string }, idempotencyKey: string, options: CallBudget & { phase?: "first" | "second" } = {}) => {
+    const second = options.phase === "second" || (options.phase === undefined && body.verificationCode !== undefined);
+    return call<ContractCreated>("/contracts", {
+      method: "POST", body, idempotencyKey, retriable: true, timeoutMs: 25_000,
+      retryNetwork: second, retry500: second, deadline: options.deadline,
+    });
+  },
 
   /** Sin PII ni URL de firma. No más de una vez por minuto por contrato. */
   getContract: (contractId: string) =>
     call<ContractStatus>(`/contracts/${ref(contractId)}`, { retriable: true, attempts: 2 }),
 
   /** Reenvío del enlace de firma. Sin cuerpo; Idempotency-Key obligatoria. */
-  resendSigningLink: (contractId: string, idempotencyKey: string) =>
-    call<ResendLinkResult>(`/contracts/${ref(contractId)}/link`, { method: "POST", idempotencyKey, retriable: true }),
+  resendSigningLink: (contractId: string, idempotencyKey: string, budget: CallBudget = {}) =>
+    call<ResendLinkResult>(`/contracts/${ref(contractId)}/link`, { method: "POST", idempotencyKey, retriable: true, ...budget }),
 };

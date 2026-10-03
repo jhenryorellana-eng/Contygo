@@ -16,16 +16,20 @@ export const text = (value: I18nText | null | undefined, locale: Locale = "es") 
 
 /**
  * Cómo se responde cada pregunta: lo dice `kind` en GET /catalog (guía §4, paso 0; en el
- * OpenAPI de producción es obligatorio), yes_no con un booleano y date con "YYYY-MM-DD".
- * Manda siempre `kind`: el texto engaña («¿La fecha de prioridad del I-360 está vigente…?»
- * es de sí/no en el catálogo real). Deducirlo del texto queda solo como defensa, si una
- * respuesta llegara sin él.
+ * OpenAPI de producción es obligatorio): yes_no con un booleano, date con "YYYY-MM-DD" y
+ * us_state con el código de 2 letras de `options`. Manda siempre `kind`: el texto engaña
+ * («¿La fecha de prioridad del I-360 está vigente…?» es de sí/no en el catálogo real).
+ * Un kind que no conocemos NO se adivina: es "unknown", no se puede responder y el flujo
+ * escala a una persona (OpenAPI). Deducirlo del texto queda solo como defensa para un
+ * catálogo antiguo que llegara SIN kind.
  */
-export type QuestionKind = "yesno" | "date";
-export function questionKind(question: Pick<CatalogQuestion, "prompt"> & { kind?: string }): QuestionKind {
-  if (question.kind === "date") return "date";
+export type QuestionKind = "yesno" | "date" | "state" | "unknown";
+export function questionKind(question: Pick<CatalogQuestion, "prompt"> & { kind?: string | null }): QuestionKind {
   if (question.kind === "yes_no") return "yesno";
-  return /\bfecha\b/i.test(question.prompt.es ?? "") || /\bdate\b/i.test(question.prompt.en ?? "") ? "date" : "yesno";
+  if (question.kind === "date") return "date";
+  if (question.kind === "us_state") return "state";
+  if (typeof question.kind === "string" && question.kind) return "unknown";
+  return /\bfecha\b/i.test(question.prompt?.es ?? "") || /\bdate\b/i.test(question.prompt?.en ?? "") ? "date" : "yesno";
 }
 
 /** externalRef lo genera la UI al empezar la conversación: «web-» + un UUID (guía §2 bis). */
@@ -40,18 +44,64 @@ export const partyRolesToAsk = <R extends Pick<PartyRole, "roleKey">>(roles: R[]
 
 // ---------------- Fechas y respuestas de elegibilidad ----------------
 
-export function isPastOrTodayDate(value: unknown, today = new Date().toISOString().slice(0, 10)): value is string {
+const todayYmd = () => new Date().toISOString().slice(0, 10);
+
+/** "YYYY-MM-DD" que existe en el calendario (1900-2100). */
+export function isValidYmd(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
-  if (year < 1900 || month < 1 || month > 12 || day < 1) return false;
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1) return false;
   const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  if (day > [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]) return false;
-  return value <= today;
+  return day <= [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
 }
 
-/** Normaliza una respuesta a la forma que acepta la API, o null si no vale. */
-export function normalizeAnswer(kind: QuestionKind, value: unknown): AnswerValue | null {
-  if (kind === "date") return isPastOrTodayDate(value) ? value : null;
+export function isPastOrTodayDate(value: unknown, today = todayYmd()): value is string {
+  return isValidYmd(value) && value <= today;
+}
+
+/** future_event: la fecha de un hecho por venir (p. ej. una audiencia): desde hoy. */
+export function isTodayOrFutureDate(value: unknown, today = todayYmd()): value is string {
+  return isValidYmd(value) && value >= today;
+}
+
+/** Lo que hace falta de una pregunta para normalizar su respuesta. */
+export interface AnswerTarget { kind: QuestionKind; dateMode?: string | null; options?: { code: string; label?: unknown }[] }
+
+const fold = (value: string) => value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ");
+
+const optionLabels = (option: { label?: unknown }) => {
+  const label = option.label;
+  if (typeof label === "string") return [label];
+  if (label && typeof label === "object") return [(label as I18nText).es, (label as I18nText).en].filter((item): item is string => typeof item === "string");
+  return [];
+};
+
+/** us_state: el código de 2 letras que existe en las options de la pregunta (o, sin options, un estado de EE. UU.). */
+function normalizeState(value: unknown, options?: AnswerTarget["options"]): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  const valid = (code: string) => (options?.length ? options.some(option => option.code === code) : US_STATE_CODES.has(code));
+  if (/^[A-Za-z]{2}$/.test(text)) { const code = text.toUpperCase(); return valid(code) ? code : null; }
+  // «Texas» tal cual lo rotulan las options: sin adivinar nada que contygo no ofrezca.
+  const wanted = fold(text);
+  if (wanted.length < 4 || !options?.length) return null;
+  return options.find(option => optionLabels(option).some(label => fold(label) === wanted))?.code ?? null;
+}
+
+/**
+ * Normaliza una respuesta a la forma que acepta la API, o null si no vale. Con un `kind` suelto
+ * (compatibilidad) una fecha es «hasta hoy» y un estado cualquiera de EE. UU.; con la pregunta
+ * completa manda su `dateMode` y sus `options`. Un kind "unknown" nunca se puede responder.
+ * minNotice no se aplica aquí: es solo informativo, quien decide es contygo.
+ */
+export function normalizeAnswer(target: QuestionKind | AnswerTarget, value: unknown, today = todayYmd()): AnswerValue | null {
+  const { kind, dateMode, options } = typeof target === "string" ? { kind: target, dateMode: undefined, options: undefined } : target;
+  if (kind === "unknown") return null;
+  if (kind === "date") {
+    if (dateMode === "future_event") return isTodayOrFutureDate(value, today) ? value : null;
+    return isPastOrTodayDate(value, today) ? value : null;
+  }
+  if (kind === "state") return normalizeState(value, options);
   if (typeof value === "boolean") return value;
   if (typeof value !== "string") return null;
   const word = value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[¿?¡!.,]/g, "");
@@ -60,18 +110,26 @@ export function normalizeAnswer(kind: QuestionKind, value: unknown): AnswerValue
   return null;
 }
 
-/** Solo respuestas consecutivas y válidas, en el orden del catálogo. */
-export function sanitizeAnswers(questions: Pick<CatalogQuestion, "id" | "prompt" | "kind">[], input: unknown): Record<string, AnswerValue> {
+export const answerTarget = (question: Pick<CatalogQuestion, "prompt" | "kind" | "dateMode" | "options">): AnswerTarget =>
+  ({ kind: questionKind(question), dateMode: question.dateMode, options: question.options });
+
+type SanitizableQuestion = Pick<CatalogQuestion, "id" | "prompt" | "kind"> & Partial<Pick<CatalogQuestion, "dateMode" | "options">>;
+
+/** Solo respuestas consecutivas y válidas, en el orden del catálogo. Una pregunta de kind desconocido corta la cadena. */
+export function sanitizeAnswers(questions: SanitizableQuestion[], input: unknown, today = todayYmd()): Record<string, AnswerValue> {
   const answers: Record<string, AnswerValue> = {};
   if (!input || typeof input !== "object" || Array.isArray(input)) return answers;
   for (const question of questions) {
     if (!Object.prototype.hasOwnProperty.call(input, question.id)) break;
-    const value = normalizeAnswer(questionKind(question), (input as Record<string, unknown>)[question.id]);
+    const value = normalizeAnswer(answerTarget(question), (input as Record<string, unknown>)[question.id], today);
     if (value === null) break;
     answers[question.id] = value;
   }
   return answers;
 }
+
+/** ¿Hay una pregunta que esta web no sabe responder? Entonces el servicio se escala (OpenAPI). */
+export const hasUnknownQuestion = (questions: Pick<CatalogQuestion, "prompt" | "kind">[]) => questions.some(question => questionKind(question) === "unknown");
 
 export const toEvaluateAnswers = (questions: Pick<CatalogQuestion, "id">[], answers: Record<string, AnswerValue>) =>
   questions.filter(question => answers[question.id] !== undefined).map(question => ({ questionId: question.id, value: answers[question.id] }));
@@ -84,21 +142,41 @@ export const toContractAnswers = (questions: Pick<CatalogQuestion, "id">[], answ
 const NAME = new RegExp("^[\\p{L}\\p{M}][\\p{L}\\p{M} '.-]*$", "u");
 const clean = (value: unknown) => typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
 
-/** E.164. Diez dígitos sin prefijo se entienden como EE. UU. (+1). */
-export function normalizePhone(raw: unknown): string | null {
+/** Mismo criterio que el bot: sin espacios, puntos, guiones ni paréntesis; «00» es «+». */
+function phoneCandidate(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const value = raw.trim();
   if (!/^\+?[\d\s().-]{7,25}$/.test(value)) return null;
-  const digits = value.replace(/\D/g, "");
+  const compact = value.replace(/[\s().-]/g, "");
+  return compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
+}
+
+/** NANP: el código de área y la central empiezan por 2-9 (+1 y diez dígitos). */
+const isNanp = (e164: string) => /^\+1[2-9]\d{2}[2-9]\d{6}$/.test(e164);
+
+/**
+ * El teléfono de CONTACTO del lead (PUT /leads): E.164, puede ser internacional. Diez dígitos sin
+ * prefijo, o «1» + diez, se entienden como EE. UU. (+1). El del CONTRATO es normalizeContractPhone.
+ */
+export function normalizePhone(raw: unknown): string | null {
+  const value = phoneCandidate(raw);
+  if (!value) return null;
   let e164: string;
-  if (value.startsWith("+")) e164 = `+${digits}`;
-  else if (digits.length === 10) e164 = `+1${digits}`;
-  else if (digits.length === 11 && digits.startsWith("1")) e164 = `+${digits}`;
+  if (value.startsWith("+")) e164 = value;
+  else if (value.length === 10) e164 = `+1${value}`;
+  else if (value.length === 11 && value.startsWith("1")) e164 = `+${value}`;
   else return null;
   if (!/^\+[1-9]\d{7,14}$/.test(e164)) return null;
-  // En EE. UU. el número nacional no empieza por 0 ni 1.
-  if (e164.startsWith("+1") && (e164.length !== 12 || /^[01]/.test(e164.slice(2)))) return null;
-  return e164;
+  return e164.startsWith("+1") && !isNanp(e164) ? null : e164;
+}
+
+/** Copia única del error del teléfono del contrato (también la devuelve contygo con unsupported_country). */
+export const PHONE_US_MESSAGE = "Necesitamos un teléfono de EE. UU. para tu cuenta.";
+
+/** El teléfono del CONTRATO: contygo solo acepta +1 (400 unsupported_country). Como el bot: ^\+1\d{10}$ con reglas NANP. */
+export function normalizeContractPhone(raw: unknown): string | null {
+  const e164 = normalizePhone(raw);
+  return e164 && isNanp(e164) ? e164 : null;
 }
 
 /** El dominio interno no recibe correo: la persona no podría leer su código (OpenAPI, 400). */
@@ -168,8 +246,8 @@ export function validateContractForm(input: unknown, service: ServiceForForm, no
 
   const email = normalizeEmail(form.email);
   if (!email) errors.email = "Escribe un correo válido. Ahí llegará tu código.";
-  const phoneE164 = normalizePhone(form.phone);
-  if (!phoneE164) errors.phone = "Escribe un teléfono válido, con código de país si no es de EE. UU.";
+  const phoneE164 = normalizeContractPhone(form.phone);
+  if (!phoneE164) errors.phone = PHONE_US_MESSAGE;
 
   const address = (form.address && typeof form.address === "object" ? form.address : {}) as Partial<ContractFormInput["address"]>;
   const line1 = clean(address.line1), apartment = clean(address.apartment), city = clean(address.city);
@@ -270,8 +348,11 @@ export function buildContractBody(options: {
 // ---------------- Respuestas de POST /contracts ----------------
 
 export type ContractOutcome =
+  | { step: "INVALID"; errors: FieldErrors }
   | { step: "ASK_CODE"; verificationId: string; maskedEmail: string; expiresAt: string | null }
   | { step: "SIGN"; created: ContractCreated; serviceAlreadyLive: string | null }
+  | { step: "SIGN_LINK_PENDING"; created: ContractCreated }
+  | { step: "UNAVAILABLE_ONLINE"; code: string }
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN" }
@@ -282,31 +363,118 @@ export type ContractOutcome =
   | { step: "ERROR"; code: string };
 
 /**
- * busy: la MISMA clave y el mismo cuerpo se pueden repetir (IN_PROGRESS, 503, corte de red).
- * destination / general: un 429; nada se creó y el próximo intento estrena clave, sin bucles.
+ * busy: la MISMA clave y el mismo cuerpo se pueden repetir (IN_PROGRESS, 503, 500 de la 2.ª llamada, corte de red en la 2.ª).
+ * destination: DESTINATION_RATE_LIMITED (429); nada se creó y el próximo intento estrena clave, sin bucles.
+ * verification: VERIFICATION_RATE_LIMITED (429, 3 códigos por hora y correo); retryAfter ≈ 3600 s.
+ * general: RATE_LIMITED (429). Se guarda con la clave: el reintento necesita clave y código nuevos.
  * conflict: IDEMPOTENCY_MISMATCH; esa clave ya no sirve y el próximo intento estrena otra.
+ * fresh_key: la 1.ª llamada se cortó sin respuesta; con la misma clave contygo daría IN_PROGRESS 120 s.
+ *   El próximo intento estrena clave y hay que avisar de que vale el código MÁS RECIENTE.
  */
-export type RetryReason = "destination" | "general" | "busy" | "conflict";
+export type RetryReason = "destination" | "verification" | "general" | "busy" | "conflict" | "fresh_key";
 
-/** Solo se muestra un enlace de firma que sea https y de contygo. */
+/** Referencia corta y pública del intento web (sin PII): «WEB-» + los últimos 6 del externalRef. */
+export const publicRef = (externalRef: string) => `WEB-${externalRef.slice(-6).toUpperCase()}`;
+
+/** Interruptor de apagado: CONTYGO_CHECKOUT_ENABLED=0 deriva a WhatsApp sin tocar contygo. */
+export const checkoutEnabled = () => process.env.CONTYGO_CHECKOUT_ENABLED !== "0";
+
+/**
+ * Solo se muestra un enlace de firma que sea https y de contygo. Excepción para el E2E de desarrollo:
+ * http si la API es localhost/127.0.0.1 y no estamos en producción.
+ */
 export function isTrustedSigningUrl(value: unknown, apiBase = process.env.CONTYGO_API_BASE || "https://contygo.app/api/integrations/v1") {
   if (typeof value !== "string" || value.length > 2000) return false;
   try {
     const url = new URL(value), api = new URL(apiBase);
-    return url.protocol === "https:" && url.host === api.host && !url.username && !url.password;
+    if (url.username || url.password || url.host !== api.host) return false;
+    if (url.protocol === "https:") return true;
+    return url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(api.hostname) && process.env.NODE_ENV !== "production";
   } catch { return false; }
 }
 
-export function mapContractResponse(response: ApiResponse<ContractCreated>): ContractOutcome {
+// ---------------- Errores de configuración y de campos ----------------
+
+/** Nada que la persona pueda arreglar: contygo no está listo para contratar en línea. */
+const CONFIG_CODES = new Set(["UNAUTHORIZED", "FORBIDDEN", "COMPLIANCE_INCOMPLETE", "COMPLIANCE_EXPIRED", "CASE_PAYMENT_PLAN_INVALID", "CONSENT_CHANNEL_MISMATCH", "NO_SALES_OWNER"]);
+export const isConfigFailure = (status: number, code: string) => status === 401 || status === 403 || CONFIG_CODES.has(code);
+
+const FIELD_PATHS: Record<string, string> = {
+  "client.email": "email",
+  "client.phoneE164": "phone",
+  "client.fullName": "firstName",
+  "client.nameParts.firstName": "firstName",
+  "client.nameParts.middleName": "middleName",
+  "client.nameParts.lastName": "lastName",
+  "client.address.line1": "address.line1",
+  "client.address.apartment": "address.apartment",
+  "client.address.city": "address.city",
+  "client.address.state": "address.state",
+  "client.address.zip": "address.zip",
+  servicePlanId: "servicePlanId",
+  installmentOptionId: "installmentOptionId",
+};
+const PARTY_FIELDS = new Set(["role", "firstName", "middleName", "lastName", "dateOfBirth"]);
+
+/** La clave del formulario de un path de contygo («client.address.zip» → «address.zip», «parties.1.lastName» igual), o null. */
+export function formFieldKey(rawPath: unknown): string | null {
+  const path = Array.isArray(rawPath) ? rawPath.join(".") : typeof rawPath === "string" ? rawPath : "";
+  const normalized = path.replace(/\[(\d+)\]/g, ".$1").replace(/^\./, "");
+  if (FIELD_PATHS[normalized]) return FIELD_PATHS[normalized];
+  const party = /^parties\.(\d+)(?:\.(\w+))?$/.exec(normalized);
+  if (party) return party[2] && PARTY_FIELDS.has(party[2]) ? `parties.${party[1]}.${party[2]}` : "parties";
+  if (normalized.startsWith("consent")) return "consent";
+  return null;
+}
+
+function fieldMessage(key: string, reason: string): string {
+  if (key === "email") return reason === "reserved_domain" ? "Usa otro correo." : "Escribe un correo válido. Ahí llegará tu código.";
+  if (key === "phone") return PHONE_US_MESSAGE; // unsupported_country, invalid…: contygo solo acepta +1
+  if (key === "address.zip") return "El código postal tiene 5 dígitos.";
+  if (key === "address.state") return "Elige tu estado.";
+  if (key === "consent") return "Marca la casilla para continuar.";
+  return "Revisa este dato.";
+}
+
+/**
+ * Errores por campo de un 400 INVALID_REQUEST. details.fields llega en dos formas:
+ * zod {path, code} y de identidad {path, reason: invalid|reserved_domain|unsupported_country}.
+ * Lo que no corresponde a ningún campo de la ficha se ignora.
+ */
+export function mapInvalidFields(details: Record<string, unknown> | undefined): FieldErrors {
+  const errors: FieldErrors = {};
+  const fields = details && Array.isArray(details.fields) ? details.fields : [];
+  for (const entry of fields) {
+    if (!entry || typeof entry !== "object") continue;
+    const { path, reason, code } = entry as { path?: unknown; reason?: unknown; code?: unknown };
+    const key = formFieldKey(path);
+    if (key && !errors[key]) errors[key] = fieldMessage(key, typeof reason === "string" ? reason : typeof code === "string" ? code : "invalid");
+  }
+  return errors;
+}
+
+/**
+ * phase "first": 500 INTERNAL es un fallo de nuestra configuración (UNAVAILABLE_ONLINE). phase "second": un
+ * 500 viene de DESPUÉS de crear al cliente y se repite con la misma clave; si sigue fallando, busy.
+ */
+export function mapContractResponse(response: ApiResponse<ContractCreated>, phase: "first" | "second" = "first"): ContractOutcome {
   const { status, data, error } = response;
   if (status === 201 && data) {
-    if (!isTrustedSigningUrl(data.signingUrl) || !data.contractId) return { step: "ERROR", code: "BAD_SIGNING_URL" };
+    // Sin enlace de firma de confianza pero con contrato (repetición de un 201): se ofrece «Enviarme el enlace».
+    if (!isTrustedSigningUrl(data.signingUrl)) return data.contractId ? { step: "SIGN_LINK_PENDING", created: data } : { step: "ERROR", code: "BAD_SIGNING_URL" };
+    if (!data.contractId) return { step: "ERROR", code: "BAD_SIGNING_URL" };
     const live = Array.isArray(data.warnings) ? data.warnings.find(item => item?.code === "SERVICE_ALREADY_LIVE") : undefined;
     return { step: "SIGN", created: data, serviceAlreadyLive: live?.caseNumber ?? null };
   }
   const code = error?.code ?? `HTTP_${status}`;
   const details = error?.details ?? {};
+  if (isConfigFailure(status, code)) return { step: "UNAVAILABLE_ONLINE", code };
+  if (status === 500) return phase === "first" ? { step: "UNAVAILABLE_ONLINE", code } : { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 5 };
   switch (code) {
+    case "INVALID_REQUEST": {
+      const errors = mapInvalidFields(details);
+      return Object.keys(errors).length ? { step: "INVALID", errors } : { step: "ERROR", code };
+    }
     case "CLIENT_VERIFICATION_REQUIRED": {
       const verificationId = details.verificationId;
       if (typeof verificationId !== "string" || verificationId.length < 20) return { step: "ERROR", code: "BAD_VERIFICATION" };
@@ -323,8 +491,8 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>): Con
     case "NOT_ELIGIBLE": return { step: "NOT_ELIGIBLE" };
     case "PLAN_NOT_CONTRACTABLE": return { step: "UNAVAILABLE" };
     case "INVALID_PARTIES": return { step: "INVALID_PARTIES", role: typeof details.role === "string" ? details.role : null };
-    case "DESTINATION_RATE_LIMITED":
-    case "VERIFICATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "destination", retryAfter: response.retryAfter };
+    case "DESTINATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "destination", retryAfter: response.retryAfter };
+    case "VERIFICATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "verification", retryAfter: response.retryAfter ?? 3600 };
     case "RATE_LIMITED": return { step: "RETRY_LATER", reason: "general", retryAfter: response.retryAfter };
     case "IN_PROGRESS": return { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 1 };
     case "IDEMPOTENCY_MISMATCH": return { step: "RETRY_LATER", reason: "conflict", retryAfter: null };

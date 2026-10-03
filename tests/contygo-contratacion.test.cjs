@@ -85,7 +85,7 @@ test('la ficha recibe el servicio de contygo, sin nada de la persona', async () 
   const net = mockFetch(); contygoDefaults(net);
   const b = browser();
   const view = await (await post(serviceRoute, b, '/api/contratar/servicio', { serviceId: 'visa-juvenil' })).json();
-  assert.deepEqual(Object.keys(view).sort(), ['captchaSiteKey', 'ok', 'service', 'terms']);
+  assert.deepEqual(Object.keys(view).sort(), ['captchaSiteKey', 'checkoutEnabled', 'ok', 'service', 'terms']);
   assert.deepEqual(view.service.questions, [{ id: ids.visaQ, prompt: { es: '¿El menor tiene menos de 21 años y no está casado?', en: null }, kind: 'yesno' }]);
   assert.equal(view.service.partyRoles.some(role => role.roleKey === 'lead'), false, 'el titular no se pide como persona adicional');
   assert.equal(b.jar.size, 0);
@@ -202,7 +202,9 @@ test('CLIENT_NEEDS_HUMAN, código caducado, 429 e IDEMPOTENCY_MISMATCH: cada uno
   });
   const b = browser();
   const ask = await outcomeOf(await start(b));
-  assert.deepEqual(await outcomeOf(await confirm(b, ask)), { step: 'HUMAN' });
+  const human = await outcomeOf(await confirm(b, ask));
+  assert.equal(human.step, 'HUMAN');
+  assert.match(human.ref, /^WEB-[0-9A-F]{6}$/, 'referencia corta para el mensaje de WhatsApp');
 
   mode = 'expired';
   assert.deepEqual(await outcomeOf(await confirm(b, ask)), { step: 'RESTART' });

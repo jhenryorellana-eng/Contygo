@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
-import { isExternalRef, isIdempotencyKey } from "@/lib/contygo-api/checkout";
+import { checkoutEnabled, isExternalRef, isIdempotencyKey, publicRef } from "@/lib/contygo-api/checkout";
 import { startContract } from "@/lib/contygo-api/flow";
 import { sanitizeAttribution } from "@/lib/contygo-api/lead";
 import { checkLimits, clientIp, fail, guarded, json, readBrowserJson, verifyCaptcha } from "@/lib/contygo-api/server";
@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
     if (!local) return fail("invalid_service", 400);
     if (!isExternalRef(body.externalRef)) return fail("invalid_reference", 400);
     if (!isIdempotencyKey(body.idempotencyKey)) return fail("invalid_idempotency_key", 400);
+    // Interruptor de apagado (CONTYGO_CHECKOUT_ENABLED=0): a WhatsApp sin gastar un CAPTCHA ni llamar a contygo.
+    if (!checkoutEnabled()) return json({ ok: true, outcome: { step: "UNAVAILABLE_ONLINE", code: "CHECKOUT_DISABLED", ref: publicRef(body.externalRef) } });
     const captcha = await verifyCaptcha(body.captchaToken, ip);
     if (!captcha.ok) return fail(captcha.code, captcha.code === "captcha_not_configured" || captcha.code === "captcha_unavailable" ? 503 : 403);
 

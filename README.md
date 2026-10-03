@@ -50,19 +50,37 @@ Los slugs viven en `lib/services.ts` (campo `slug`).
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+npm run dev      # http://localhost:3001 (package.json fija el puerto 3001)
+npm test         # pruebas sin red (node --test tests/*.test.cjs)
 ```
 
 Build de producción:
 
 ```bash
 npm run build
-npm start
+npm start        # también en el puerto 3001
 ```
 
 ## Configuración (variables de entorno)
 
-Copia `.env.example` a `.env.local` (o configúralas en Vercel). El archivo lista **todas** las variables que lee la landing y cuáles son obligatorias en producción. El número de WhatsApp **no** es una variable: es la constante única `WHATSAPP_DISPLAY` / `WHATSAPP_DIGITS` de `lib/config.ts` (+1 (385) 392-7656, el bot de ventas).
+- **Dónde van.** En local, en `.env.local`, que está en `.gitignore`. En Vercel, en el scope **Production** del proyecto.
+- **La referencia completa** es la tabla de [docs/contygo-contratacion-api.md](docs/contygo-contratacion-api.md#variables-de-entorno): qué hace cada variable y qué pasa si falta.
+- **`.env.example`** va a listar todas las variables, vacías. Si todavía no está en tu copia, usa esa tabla.
+
+| Grupo | Variables |
+| --- | --- |
+| **Obligatorias en producción** | `CONTYGO_API_KEY`, `LANDING_TOKEN_SECRET` (32 caracteres o más), `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `GEMINI_API_KEY`, `NEXT_PUBLIC_SITE_URL` |
+| Opcionales | `CONTYGO_CHECKOUT_ENABLED` (`0` apaga la contratación), `CONTYGO_WEBHOOK_SECRET`, los `GEMINI_*` de modelo y voz, las de Meta (abajo), las del vídeo (abajo), `AGENT_PREVIEW` |
+| **Nunca en producción** | `CONTYGO_API_BASE` y `CONTYGO_ALLOW_WRITES`: sirven para el simulador o el contygo de desarrollo, y abren las escrituras |
+| Legado de UsaLatinoPrime: **no se configuran** en el proyecto de ContyGo | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_ADMIN_SECRET`, `ADMIN_PASSWORD` |
+
+**Cuándo escribe en contygo la contratación:**
+- solo cuando Vercel marca el despliegue como producción (`VERCEL_ENV=production`), así que los Preview nunca crean leads, clientes ni contratos;
+- en local, solo con `CONTYGO_API_BASE` apuntando a otro contygo o con `CONTYGO_ALLOW_WRITES=1`.
+
+En Vercel, una variable nueva o cambiada solo se aplica al siguiente despliegue.
+
+El número de WhatsApp **no** es una variable. Es la constante única `WHATSAPP_DISPLAY` / `WHATSAPP_DIGITS` de `lib/config.ts`: +1 (385) 392-7656, el bot de ventas.
 
 Las del video:
 
@@ -83,8 +101,9 @@ Las del video:
 
 1. Sube el repositorio a GitHub/GitLab.
 2. En Vercel: **Add New → Project**, importa el repo (framework detectado: Next.js).
-3. Añade las variables de entorno (ver `.env.example`).
-4. **Deploy**. No requiere configuración adicional.
+3. Añade las variables de entorno en el scope **Production**: las obligatorias de la tabla de arriba. `CONTYGO_API_KEY` va **solo** en Production.
+4. **Deploy**. Si cambias una variable después, vuelve a desplegar.
+5. Antes de anunciarlo, sigue el humo de producción de [docs/contygo-contratacion-api.md](docs/contygo-contratacion-api.md). Para apagar la contratación en una emergencia, sigue su runbook.
 
 ## Estructura
 
@@ -112,6 +131,10 @@ project/               Bundle de diseño original (referencia, no se compila)
 
 ## Reseñas de clientes (Supabase)
 
+> **Legado de UsaLatinoPrime.** En el proyecto de Vercel de ContyGo **no** se configuran
+> `SUPABASE_*` ni `ADMIN_PASSWORD`. Sin ellas, las reseñas se ocultan y el CRM y el panel
+> quedan sin configurar.
+
 Flujo: el cliente entra a **`/califica`** (link que le envías por WhatsApp) → deja
 estrellas + comentario → queda **pendiente** → en **`/admin`** la apruebas o rechazas →
 las aprobadas aparecen en la home al instante (revalidación automática).
@@ -129,10 +152,14 @@ Para activarlo:
 
 ## Sección de la app móvil
 
-La home incluye la sección **"Nuestra aplicación"** con badges de App Store y
+> **Desactualizado (comprobado el 02-10-2026).** Ningún archivo del código lee hoy
+> `NEXT_PUBLIC_APPSTORE_URL` ni `NEXT_PUBLIC_PLAYSTORE_URL`.
+> `components/home/AppSection.tsx` enlaza directamente a ContyGo. No hace falta configurarlas.
+
+La home incluía la sección **"Nuestra aplicación"**, con badges de App Store y
 Google Play. Mientras `NEXT_PUBLIC_APPSTORE_URL` / `NEXT_PUBLIC_PLAYSTORE_URL`
-estén vacías, los badges se muestran como **"Próximamente"**; al llenarlas se
-convierten en enlaces de descarga.
+estuvieran vacías, los badges se mostraban como **"Próximamente"**; al llenarlas,
+se convertían en enlaces de descarga.
 
 ## Pagos (fase siguiente)
 
@@ -214,7 +241,7 @@ escritorio: tarjeta flotante.
   El modelo conoce los 9 servicios (se le inyectan desde `lib/services.ts`) y puede
   devolver marcadores `{{svc:slug}}` (tarjeta al servicio) y `{{whatsapp}}` (pase a humano).
 - **Llamar**: `POST /api/agent/voice-token` crea un token efímero (un uso, 15 min) y el
-  navegador abre la **Live API** (`gemini-3.1-flash-live-preview`) con voz bidireccional,
+  navegador abre la **Live API** (`GEMINI_LIVE_MODEL`, por defecto `gemini-3.8-live`) con voz bidireccional,
   interrupciones y transcripción en vivo. La API key nunca sale del servidor.
 - Sin `GEMINI_API_KEY` el widget **no se muestra** en producción. Para verlo en modo vista
   previa (responde invitando a WhatsApp) pon `AGENT_PREVIEW="1"`.
@@ -250,6 +277,7 @@ Dos paneles con la misma sesión (`lib/session.ts`):
   del negocio (rendimiento por asesora, por servicio, cobrado), Contactos de todo el equipo,
   Leads y asesoras, Reseñas, Equipo (crear accesos) y Mi cuenta (cambiar contraseña).
   Si el campo usuario se deja vacío, `ADMIN_PASSWORD` funciona como clave maestra de emergencia.
+  (Legado de UsaLatinoPrime: en el proyecto de ContyGo no se configura; ver «Configuración».)
 - **`/equipo` — panel de las asesoras** (rol `advisor`): solo sus contactos y su cuenta.
 
 - **Contactos**: vista *Hoy* (sin contactar ordenados por espera + seguimientos vencidos y

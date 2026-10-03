@@ -64,6 +64,17 @@ export type BrowserOutcome =
   | { step: "RETRY_LATER"; reason: RetryReason; retryAfter: number | null }
   | { step: "ERROR"; code: string; ref: string };
 
+/**
+ * email_has_account cuya pista no puede ayudar: sin phoneHint (la cuenta no tiene teléfono) o con un phoneHint IGUAL
+ * a los 2 últimos dígitos que la persona ya tecleó (una cuenta que x-legal no reconoció sola). Corregir el teléfono
+ * no sirve: sale por WhatsApp (HUMAN) y se avisa a ventas. phone_in_use y una pista distinta siguen en FIX_CONTACT.
+ */
+function fixCannotHelp(outcome: FixContact, typedPhoneE164: string | null | undefined): boolean {
+  if (outcome.reason !== "email_has_account") return false;
+  if (!outcome.phoneHint) return true;
+  return typeof typedPhoneE164 === "string" && typedPhoneE164.slice(-2) === outcome.phoneHint;
+}
+
 const logCode = (where: string, code: string) => console.warn(`[contygo] ${where}: ${code}`);
 
 export interface FlowOptions {
@@ -250,8 +261,8 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
-    case "FIX_CONTACT": // La 1.ª llamada no lleva pista (es idéntica exista o no la persona); si llegara, pasa tal cual.
-      return outcome;
+    case "FIX_CONTACT": // La 1.ª llamada no lleva pista (es idéntica exista o no la persona); si llegara, pasa salvo que no pueda ayudar.
+      return fixCannotHelp(outcome, form.value.phoneE164) ? human(attempt, "CLIENT_NEEDS_HUMAN") : outcome;
     case "ERROR":
       // Sin respuesta de contygo: el código pudo salir o no. La misma clave daría IN_PROGRESS 120 s: clave nueva.
       if (outcome.code === "NETWORK") return { step: "RETRY_LATER", reason: "fresh_key", retryAfter: null };
@@ -317,8 +328,8 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
-    case "FIX_CONTACT": // La persona corrige el teléfono: no es un fallo que avisar a ventas (sin reportAttempt).
-      return outcome;
+    case "FIX_CONTACT": // La persona corrige el teléfono: no es un fallo que avisar a ventas, salvo que corregirlo no pueda ayudar.
+      return fixCannotHelp(outcome, body.client?.phoneE164) ? human(attempt, "CLIENT_NEEDS_HUMAN") : outcome;
     case "ERROR":
       // Corte, timeout o plazo agotado: la MISMA clave y los mismos bytes retoman desde el cliente ya creado.
       if (outcome.code === "NETWORK" || outcome.code === "DEADLINE") return { step: "RETRY_LATER", reason: "busy", retryAfter: 5 };

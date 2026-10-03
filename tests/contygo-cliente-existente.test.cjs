@@ -125,3 +125,67 @@ test('«Te reconocimos» solo con clientCreated=false', () => {
   assert.equal(messages.outcomeMessage({ step: 'SIGN', clientCreated: false, serviceAlreadyLive: null, firstName: 'Ana' }).title, messages.RECOGNIZED_MESSAGE);
   assert.match(messages.outcomeMessage({ step: 'SIGN', clientCreated: true, serviceAlreadyLive: null, firstName: 'Ana' }).title, /Tu contrato está preparado/);
 });
+
+// Casos límite DOC-76 §6.2: corregir el teléfono no puede ayudar -> HUMAN (con aviso a ventas), no FIX_CONTACT.
+const attemptPuts = () => leadPuts(net).filter(call => /Intentó contratar/.test(call.json.aiSummary ?? ''));
+
+test('2.ª llamada: phoneHint IGUAL a los últimos 2 dígitos tecleados -> HUMAN y SÍ avisa a ventas', async () => {
+  const b = browser();
+  const ask = await start(b); // teléfono tecleado: (305) 555-0199 -> termina en 99
+  net.on('POST', '/contracts', needsHuman({ resolution: 'email_has_account', phoneHint: '99' }));
+  const before = attemptPuts().length;
+  const out = await confirm(b, ask);
+  assert.equal(out.step, 'HUMAN');
+  assert.match(out.ref, /^WEB-/);
+  assert.equal(attemptPuts().length, before + 1);
+});
+
+test('2.ª llamada: email_has_account SIN phoneHint -> HUMAN y SÍ avisa a ventas', async () => {
+  const b = browser();
+  const ask = await start(b);
+  net.on('POST', '/contracts', needsHuman({ resolution: 'email_has_account' }));
+  const before = attemptPuts().length;
+  assert.equal((await confirm(b, ask)).step, 'HUMAN');
+  assert.equal(attemptPuts().length, before + 1);
+});
+
+test('2.ª llamada: phoneHint DISTINTO al tecleado -> FIX_CONTACT sin aviso', async () => {
+  const b = browser();
+  const ask = await start(b);
+  net.on('POST', '/contracts', needsHuman({ resolution: 'email_has_account', phoneHint: '42' }));
+  const before = attemptPuts().length;
+  assert.deepEqual(await confirm(b, ask), { step: 'FIX_CONTACT', reason: 'email_has_account', phoneHint: '42' });
+  assert.equal(attemptPuts().length, before);
+});
+
+test('2.ª llamada: phone_in_use sigue siendo FIX_CONTACT aunque no haya pista', async () => {
+  const b = browser();
+  const ask = await start(b);
+  net.on('POST', '/contracts', needsHuman({ resolution: 'phone_in_use' }));
+  assert.equal((await confirm(b, ask)).step, 'FIX_CONTACT');
+});
+
+test('1.ª llamada (simetría): email_has_account con la pista igual o sin pista -> HUMAN y aviso', async () => {
+  for (const details of [{ resolution: 'email_has_account', phoneHint: '99' }, { resolution: 'email_has_account' }]) {
+    freshModules(); net = mockFetch(); contygoDefaults(net);
+    net.on('POST', '/contracts', needsHuman(details));
+    const b = browser();
+    const before = attemptPuts().length;
+    assert.equal((await start(b)).step, 'HUMAN');
+    assert.equal(attemptPuts().length, before + 1);
+  }
+  freshModules(); net = mockFetch(); contygoDefaults(net);
+  net.on('POST', '/contracts', needsHuman({ resolution: 'email_has_account', phoneHint: '42' }));
+  assert.equal((await start(browser())).step, 'FIX_CONTACT');
+});
+
+test('afterOutcome: tras FIX_CONTACT no queda clave pendiente y la siguiente llamada estrena clave aunque el teléfono no cambie', () => {
+  const fingerprint = JSON.stringify([{ phone: '+13055550199' }]);
+  const pend = { op: 'start', key: 'k1', fingerprint };
+  assert.equal(keys.startKey(pend, fingerprint, () => 'new'), 'k1', 'control: sin respuesta definitiva la clave se repite');
+  const next = keys.afterOutcome(pend, { status: 200, outcome: { step: 'FIX_CONTACT', reason: 'email_has_account', phoneHint: '42' } });
+  assert.equal(next, null);
+  assert.equal(keys.startKey(next, fingerprint, () => 'new'), 'new');
+  const busy = keys.afterOutcome(pend, { status: 200, outcome: { step: 'RETRY_LATER', reason: 'busy' } });
+  assert.equal(busy, pend, 'busy conserva la clave pendiente');
+});

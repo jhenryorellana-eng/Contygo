@@ -22,7 +22,7 @@ import {
   clearDraft, newExternalRef, newIdempotencyKey, pageAttribution, readContract, readDraft, saveContract, saveDraft,
   type DraftForm, type DraftPerson, type SentVerification,
 } from "@/lib/contygo-api/browser";
-import { confirmKey, confirmRetryDelay, keepsKey, retriesConfirmAlone, startKey, type Pending } from "@/lib/contygo-api/checkout-keys";
+import { afterOutcome, confirmKey, confirmRetryDelay, retriesConfirmAlone, startKey, type Pending } from "@/lib/contygo-api/checkout-keys";
 import type { GuideLineId } from "@/lib/agent/guide-scripts";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
 import type { ClosingVoice } from "../juvenil/closingSpeech";
@@ -289,8 +289,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   function handle(status: number, body: Awaited<ReturnType<typeof postJson>>["data"], retryAfter: number | null = null) {
     const outcome = body?.outcome;
     // contygo answered for good: the next attempt gets a new key. Only «busy» (IN_PROGRESS, 503, a cut, our own 429)
-    // lets the same key and body be repeated as they are (guía §8). The decision is keepsKey (unit-tested).
-    if (!keepsKey({ status, outcome, error: body?.error })) pending.current = null;
+    // lets the same key and body be repeated as they are (guía §8). The decision is afterOutcome (unit-tested).
+    pending.current = afterOutcome(pending.current, { status, outcome, error: body?.error });
     if (status === 429) { show({ step: "RETRY_LATER", reason: "destination", retryAfter }); return; }
     if (status === 403 && body?.error?.startsWith("captcha")) { setNotice({ tone: "error", title: "No pudimos confirmar que no eres un robot.", detail: "Espera a que se complete la verificación e inténtalo de nuevo." }); return; }
     // 502, 504, 503 or a page that is not JSON: our own route did not answer. It is «busy»: same key, same body.
@@ -327,7 +327,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setSent(null); setCode(""); setPendingRestart(false); pending.current = null;
         const found: FieldErrors = { phone: fix.fieldError };
         setErrors(found); setStage("form");
-        setNotice({ tone: "error", title: fix.title, detail: fix.detail, action: outcome.reason === "email_has_account" ? "login" : "whatsapp" });
+        // tone info: the phone field keeps the role=alert error, so a screen reader announces one alert, not two.
+        setNotice({ tone: "info", title: fix.title, detail: fix.detail, action: outcome.reason === "email_has_account" ? "login" : "whatsapp" });
         goTo("contact", found);
         return;
       }

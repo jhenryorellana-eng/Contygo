@@ -201,6 +201,8 @@ Contrato compartido con x-legal (la landing lo implementa; el lado servidor es o
   - `{ resolution: "phone_in_use" }`: el teléfono escrito es de una cuenta y el correo probado no es de nadie.
   - Cualquier otro motivo: sin `details`, como siempre. La 1.ª llamada no cambia (idéntica exista o no la persona) y el bot de WhatsApp conserva su cuerpo opaco. La repetición idempotente de un 409 guardado repite los mismos `details`.
 - **Lo que hace la landing.** `mapContractResponse` convierte esas pistas en el paso `FIX_CONTACT` (`reason`: `email_has_account` | `phone_in_use`, y `phoneHint` solo si son exactamente 2 dígitos; si no, se descarta). Sin `details`, o con algo desconocido, sigue el `HUMAN` de hoy. `FIX_CONTACT` **no es un fallo**: no avisa a ventas (sin `PUT /leads` de intento) y sí lleva clave nueva.
+- **Dos casos límite (DOC-76 §6.2): corregir el teléfono no puede ayudar.** `email_has_account` puede llegar con un `phoneHint` IGUAL a los 2 últimos dígitos del teléfono que la persona ya escribió (una cuenta que x-legal no reconoce sola: nacida en `/registro` o antes del PR #452), o SIN `phoneHint` (la cuenta no tiene teléfono). En ambos la landing lo trata como `HUMAN`, no como `FIX_CONTACT`: WhatsApp neutro al único número del bot con la referencia `WEB` y sí avisa a ventas, igual que cualquier `HUMAN`. Se decide en el servidor (`lib/contygo-api/flow.ts`, donde se conoce el `client.phoneE164` fijado por el ticket) en `confirmContract` y, por simetría, en `startContract`; `mapContractResponse` sigue puro. Una pista DISTINTA al teléfono escrito sigue siendo `FIX_CONTACT` sin aviso, y `phone_in_use` también.
+- **Aviso accesible.** En `FIX_CONTACT` el campo «Teléfono» conserva el error con `role=alert`; el aviso de arriba usa el tono `info`, para que un lector de pantalla no anuncie dos alertas.
 - **Riesgo residual aceptado por el dueño.** `phone_in_use` le dice a quien probó un correo ajeno que un teléfono está registrado. Lo acotan los límites que ya existen: destino (5 por hora y 20 por día por teléfono y correo), código por correo (3 por hora) y alta web (60 por hora y 300 por día).
 
 ### Límites
@@ -506,6 +508,8 @@ Estos cambios están en una rama de contygo (`fix/web-contract-email-and-handoff
    | `ratelimit@…` | 429 `VERIFICATION_RATE_LIMITED` | «Ya te enviamos varios códigos…» |
    | `human@…` | 409 `CLIENT_NEEDS_HUMAN` | `HUMAN` |
    | `hasaccount@…` | Tras el código, 409 `CLIENT_NEEDS_HUMAN` con `email_has_account` y `phoneHint: "42"`, salvo que el teléfono termine en 42 | `FIX_CONTACT`; con el teléfono corregido, firma |
+   | `hasaccountsame@…` | Tras el código, 409 `email_has_account` con `phoneHint` igual a los 2 últimos dígitos del teléfono escrito | `HUMAN` (y aviso a ventas) |
+   | `hasaccountnohint@…` | Tras el código, 409 `email_has_account` sin `phoneHint` | `HUMAN` (y aviso a ventas) |
    | `phoneinuse@…` | Tras el código, 409 `CLIENT_NEEDS_HUMAN` con `phone_in_use`, salvo que el teléfono termine en 77 | `FIX_CONTACT`; con otro teléfono, firma |
    | `returning@…` | Tras el código, 201 con `clientCreated: false` | «Te reconocimos…» |
    | `error@…` | 422 con un código desconocido | `ERROR` con «Reintentar» |
@@ -623,7 +627,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 - [x] Texto de aceptación versionado en `consent.textVersion` (`terminos-web-2026-10-03`), en español o inglés según el idioma. `consent.at` nunca va en el futuro (`tests/contygo-api.test.cjs`). El texto sigue pendiente de aprobación legal (abajo).
 - [x] 1.ª llamada → código → 2.ª llamada con el mismo cuerpo byte a byte, `verificationId`, código y una clave nueva.
   - Tests de `tests/contygo-contratacion.test.cjs`: «Contratar en dos pasos sin estado…» y «solo se canjea un código con el cuerpo y el sobre que firmó este servidor».
-- [x] «Ya eres cliente» solo después del código, y `CLIENT_NEEDS_HUMAN` con texto neutro (`contygo-contratacion` y `contygo-ui`).
+- [x] «Te reconocimos» solo con `clientCreated: false` en el 201 posterior al código; antes del código nada distingue a un cliente, y `CLIENT_NEEDS_HUMAN` usa texto neutro salvo la pista segura de `FIX_CONTACT` (y `HUMAN` si la pista no puede ayudar) (`contygo-contratacion` y `contygo-ui`).
 - [x] La `signingUrl` queda fuera de los logs, de `sessionStorage` y del modelo de IA (`browser.ts`, `client.ts`, `tests/contygo-navegador.test.cjs`).
 - [x] Claves de idempotencia según la llamada:
   - 1.ª llamada cortada: clave nueva.

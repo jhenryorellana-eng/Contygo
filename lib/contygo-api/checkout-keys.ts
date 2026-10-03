@@ -41,6 +41,14 @@ export function retriesConfirmAlone({ status, outcome }: AnswerShape): boolean {
 /** Seconds to wait before that automatic retry: what the server asked, between 2 and 8. */
 export const confirmRetryDelay = (retryAfter: number | null | undefined) => Math.min(8, Math.max(2, retryAfter ?? 2));
 
+/**
+ * The pending attempt after an answer: kept (same key and body on the next call) or dropped (null, so the next call
+ * gets a new key). The component assigns this to its ref; FIX_CONTACT and every final answer drop it.
+ */
+export function afterOutcome(pending: Pending | null, answer: AnswerShape): Pending | null {
+  return keepsKey(answer) ? pending : null;
+}
+
 export function keepsKey({ status, outcome, error }: AnswerShape): boolean {
   const busy = outcome?.step === "RETRY_LATER" && outcome.reason === "busy";
   if (outcome && !busy) return false;

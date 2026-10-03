@@ -12,6 +12,8 @@
 //   error@…  → 422 con un código desconocido (ERROR, con «Reintentar»)
 //   forbidden@… → 403 FORBIDDEN (no disponible en línea)
 //   hasaccount@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'email_has_account', phoneHint:'42'} (la ficha pide corregir el teléfono)
+//   hasaccountsame@… → tras el código, 409 email_has_account con phoneHint IGUAL a los 2 últimos dígitos del teléfono tecleado (la landing lo trata como HUMAN)
+//   hasaccountnohint@… → tras el código, 409 email_has_account SIN phoneHint (la cuenta no tiene teléfono: HUMAN)
 //   phoneinuse@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'phone_in_use'}
 //   returning@… → tras el código, 201 con clientCreated:false («Te reconocimos»)
 //   slow502@… → la 1.ª llamada con ese correo corta la conexión (la ficha reintenta con clave nueva)
@@ -64,6 +66,8 @@ http.createServer((req, res) => {
       if (body.verificationCode !== '481920') return send(409, { error: { code: 'VERIFICATION_INVALID', message: 'Wrong code', details: { attemptsLeft: 4 } } });
       // Como x-legal: la pista solo llega tras un código válido, y el teléfono 555-0142 es el «de la cuenta» (termina en 42).
       if (/^hasaccount@/i.test(email) && !body.client.phoneE164.endsWith('42')) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account', phoneHint: '42' } } });
+      if (/^hasaccountsame@/i.test(email)) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account', phoneHint: body.client.phoneE164.slice(-2) } } });
+      if (/^hasaccountnohint@/i.test(email)) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account' } } });
       if (/^phoneinuse@/i.test(email) && !body.client.phoneE164.endsWith('77')) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'phone_in_use' } } });
       if (/^returning@/i.test(email)) return send(201, { clientCreated: false, caseId: '44444444-4444-4444-8444-444444444444', caseNumber: 'U26-000134', contractId: '55555555-5555-4555-8555-555555555555', clientId: '66666666-6666-4666-8666-666666666666', signingUrl: 'https://127.0.0.1:3999/firma/demo-token', warnings: [] });
       if (/^nolink@/i.test(email)) return send(201, { clientCreated: true, caseId: '44444444-4444-4444-8444-444444444444', caseNumber: 'U26-000133', contractId: '55555555-5555-4555-8555-555555555555', clientId: '66666666-6666-4666-8666-666666666666', warnings: [] });

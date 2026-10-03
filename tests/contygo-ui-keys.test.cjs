@@ -3,7 +3,7 @@
 require('./helpers/contygo-harness.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { keepsKey, startKey, confirmKey } = require('../lib/contygo-api/checkout-keys.ts');
+const { keepsKey, startKey, confirmKey, retriesConfirmAlone, confirmRetryDelay } = require('../lib/contygo-api/checkout-keys.ts');
 
 const outcome = (step, extra = {}) => ({ step, ...extra });
 
@@ -40,4 +40,18 @@ test('una respuesta definitiva estrena clave (fresh_key, WRONG_CODE, ERROR, REST
   // 400, 404, 413 or a 403 that is not the captcha: not transient.
   for (const status of [400, 404, 413]) assert.equal(keepsKey({ status, outcome: undefined }), false, String(status));
   assert.equal(keepsKey({ status: 403, outcome: undefined, error: 'forbidden' }), false);
+});
+
+test('el código se reintenta solo mientras contygo sigue trabajando (busy, 5xx, sin JSON); lo demás decide la persona', () => {
+  assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome('RETRY_LATER', { reason: 'busy' }) }), true);
+  for (const status of [500, 502, 503, 504]) assert.equal(retriesConfirmAlone({ status, outcome: undefined }), true, String(status));
+  assert.equal(retriesConfirmAlone({ status: 200, outcome: undefined }), true, 'página que no es JSON');
+  assert.equal(retriesConfirmAlone({ status: 429, outcome: undefined }), false, 'nuestro 429: no se insiste solo');
+  assert.equal(retriesConfirmAlone({ status: 403, outcome: undefined, error: 'captcha_failed' }), false);
+  for (const reason of ['fresh_key', 'destination', 'verification', 'general', 'conflict']) assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome('RETRY_LATER', { reason }) }), false, reason);
+  for (const step of ['SIGN', 'SIGN_LINK_PENDING', 'WRONG_CODE', 'RESTART', 'HUMAN', 'ERROR', 'UNAVAILABLE_ONLINE']) assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome(step) }), false, step);
+  assert.equal(confirmRetryDelay(null), 2);
+  assert.equal(confirmRetryDelay(1), 2);
+  assert.equal(confirmRetryDelay(5), 5);
+  assert.equal(confirmRetryDelay(60), 8);
 });

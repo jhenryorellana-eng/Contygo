@@ -186,7 +186,8 @@ export const contygoApi = {
   createContract: (body: ContractBody & { verificationId?: string; verificationCode?: string }, idempotencyKey: string, options: CallBudget & { phase?: "first" | "second" } = {}) => {
     const second = options.phase === "second" || (options.phase === undefined && body.verificationCode !== undefined);
     return call<ContractCreated>("/contracts", {
-      method: "POST", body, idempotencyKey, retriable: true, timeoutMs: 25_000,
+      // The 2.ª llamada creates client, case and contract: it may legitimately take longer (always within the deadline).
+      method: "POST", body, idempotencyKey, retriable: true, timeoutMs: second ? 40_000 : 25_000,
       retryNetwork: second, retry500: second, deadline: options.deadline,
     });
   },

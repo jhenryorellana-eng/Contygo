@@ -28,6 +28,19 @@ export type AnswerShape = { status: number; outcome?: { step: string; reason?: s
  * a 429 or a captcha 403 from our own route (nothing reached contygo). New key: anything contygo answered
  * for good (fresh_key, WRONG_CODE, ERROR, RESTART…) and 4xx without an outcome (400, 404, 413…).
  */
+/**
+ * After an answer to the code (2.ª llamada): retry it by itself, same key and same body? Only when contygo
+ * or our route is still working on it («busy», 5xx or no JSON). A 429 or a captcha 403 are not retried alone:
+ * the person decides. Everything else is a final answer.
+ */
+export function retriesConfirmAlone({ status, outcome }: AnswerShape): boolean {
+  if (outcome) return status === 200 && outcome.step === "RETRY_LATER" && outcome.reason === "busy";
+  return status >= 500 || status === 200;
+}
+
+/** Seconds to wait before that automatic retry: what the server asked, between 2 and 8. */
+export const confirmRetryDelay = (retryAfter: number | null | undefined) => Math.min(8, Math.max(2, retryAfter ?? 2));
+
 export function keepsKey({ status, outcome, error }: AnswerShape): boolean {
   const busy = outcome?.step === "RETRY_LATER" && outcome.reason === "busy";
   if (outcome && !busy) return false;

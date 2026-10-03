@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const Module = require('node:module');
+const { NextRequest } = require('next/server');
 const { ids, catalog, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules } = require('./helpers/contygo-harness.cjs');
 
 // Pruebas de «contratación en producción» (plan B1-B10): preguntas us_state / future_event / kind desconocido,
@@ -611,7 +612,7 @@ test('B7 · GET /precios: «desde» y paquetes del catálogo vivo, cacheable, si
   cat.services[0].plans.push({ id: 'p2', name: { es: 'Premium', en: null }, priceCents: 400000, extraPartyPriceCents: 0, installmentOptions: [] });
   cat.services.push({ id: 'zzz', slug: 'servicio-fuera-de-la-landing', name: { es: 'Otro', en: null }, plans: [{ id: 'z', name: { es: 'Z', en: null }, priceCents: 100, extraPartyPriceCents: 0, installmentOptions: [] }], eligibilityQuestions: [], partyRoles: [] });
   net.on('GET', '/catalog', { status: 200, body: cat });
-  const response = await pricesRoute.GET();
+  const response = await pricesRoute.GET(new NextRequest("https://landing.invalid/api/contratar/precios"));
   assert.equal(response.status, 200);
   assert.match(response.headers.get('cache-control'), /public, s-maxage=300, stale-while-revalidate=\d+/);
   const body = await response.json();
@@ -626,7 +627,7 @@ test('B7 · GET /precios: «desde» y paquetes del catálogo vivo, cacheable, si
   net.on('GET', '/catalog', { status: 503, body: { error: { code: 'INTERNAL' } } });
   const log = captureConsole();
   let down;
-  try { down = await pricesRoute.GET(); } finally { log.restore(); }
+  try { down = await pricesRoute.GET(new NextRequest("https://landing.invalid/api/contratar/precios")); } finally { log.restore(); }
   assert.equal(down.status, 503);
   assert.equal(down.headers.get('cache-control'), 'no-store');
   assert.equal((await down.json()).error, 'prices_unavailable');

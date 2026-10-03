@@ -22,7 +22,7 @@ import {
   clearDraft, newExternalRef, newIdempotencyKey, pageAttribution, readContract, readDraft, saveContract, saveDraft,
   type DraftForm, type DraftPerson, type SentVerification,
 } from "@/lib/contygo-api/browser";
-import { confirmKey, keepsKey, startKey, type Pending } from "@/lib/contygo-api/checkout-keys";
+import { confirmKey, confirmRetryDelay, keepsKey, retriesConfirmAlone, startKey, type Pending } from "@/lib/contygo-api/checkout-keys";
 import type { GuideLineId } from "@/lib/agent/guide-scripts";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
 import type { ClosingVoice } from "../juvenil/closingSpeech";
@@ -49,6 +49,8 @@ const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 const cents = (value: number) => money.format(value / 100);
 /** The contract phone is US only (+1). A value that is not +1 (the reveal phone may be international) is not carried over. */
 const isUsPhone = (value: string) => /^\+1\d{0,10}$/.test(value.trim());
+/** «Confirmar» goes alone up to this many times while contygo is still creating the contract. */
+const CONFIRM_ATTEMPTS = 3;
 
 /** Each step: what it asks, which validator errors belong to it and what the guide says there. */
 const STEPS: Record<Step, { label: string; title: string; lead?: string; guide: GuideLineId; owns: (key: string) => boolean }> = {
@@ -250,9 +252,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   useEffect(() => {
     const key = stage === "form" ? `form:${step}` : stage === "code" ? "code" : stage === "done" ? `done:${Boolean(result?.signingUrl)}` : "";
     if (!key || spokenFor.current === key) return;
-    spokenFor.current = key;
     const line: GuideLineId = stage === "form" ? STEPS[step].guide : stage === "code" ? "contractCode" : result?.signingUrl ? "contractDone" : "contractDoneNoLink";
-    const timer = window.setTimeout(() => guideRef.current.play(line), 450);
+    // Marked as spoken only when it really plays: a timer cleared by a quick re-render must not leave
+    // the previous screen's caption on this one.
+    const timer = window.setTimeout(() => { spokenFor.current = key; guideRef.current.play(line); }, 450);
     return () => window.clearTimeout(timer);
   }, [stage, step, result?.signingUrl]);
   useEffect(() => { guideRef.current.prefetch(["contractName", "contractContact", "contractAddress", "contractPlan", "contractReview", "contractCode"]); }, []);
@@ -391,10 +394,21 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     pending.current = { op: "confirm", key, code: clean, verificationId: sent.verificationId };
     setBusy(true);
     try {
-      const { status, data: body, retryAfter } = await postJson("/api/contratar/confirmar", { body: sent.body, verificationId: sent.verificationId, ticket: sent.ticket, code: clean, idempotencyKey: key });
-      handle(status, body, retryAfter);
-    } catch { show({ step: "RETRY_LATER", reason: "busy" }); }
-    finally { setBusy(false); }
+      // While contygo is still creating the contract («busy», 5xx, a cut), the same key and body go again by
+      // themselves a couple of times: the person typed the code once and should not have to press again.
+      for (let attempt = 1; ; attempt++) {
+        let answer: Awaited<ReturnType<typeof postJson>> | null = null;
+        try { answer = await postJson("/api/contratar/confirmar", { body: sent.body, verificationId: sent.verificationId, ticket: sent.ticket, code: clean, idempotencyKey: key }); } catch { answer = null; }
+        const again = answer ? retriesConfirmAlone({ status: answer.status, outcome: answer.data?.outcome }) : true;
+        if (!again || attempt >= CONFIRM_ATTEMPTS) {
+          if (answer) handle(answer.status, answer.data, answer.retryAfter);
+          else show({ step: "RETRY_LATER", reason: "busy" });
+          return;
+        }
+        setNotice({ tone: "info", title: "Estamos confirmando tu contrato…", detail: "Puede tardar unos segundos. No cierres esta página." });
+        await new Promise(resolve => window.setTimeout(resolve, confirmRetryDelay(answer?.retryAfter) * 1000));
+      }
+    } finally { setBusy(false); }
   }
 
   async function resend() {

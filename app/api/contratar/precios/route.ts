@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 
 const CACHE = "public, s-maxage=300, stale-while-revalidate=600";
 
-export async function GET(req?: NextRequest) {
-  const limited = checkLimits([{ key: `prices:ip:${req ? clientIp(req) : "local"}`, windowSeconds: 600, max: 120 }]);
+export async function GET(req: NextRequest) {
+  const limited = checkLimits([{ key: `prices:ip:${clientIp(req)}`, windowSeconds: 600, max: 120 }]);
   if (limited) return limited;
   try {
     const prices = priceSummary(await loadCatalog());

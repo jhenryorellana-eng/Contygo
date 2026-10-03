@@ -14,7 +14,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
 import { publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
-import { outcomeMessage, readResend, serviceAlreadyLiveMessage, whatsappHelpMessage, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { ACCOUNT_LOGIN_URL, fixContactMessages, outcomeMessage, readResend, serviceAlreadyLiveMessage, whatsappHelpMessage, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
@@ -36,7 +36,8 @@ type ServiceData = { service: PublicServiceView | null; checkoutEnabled?: boolea
 /** The same data once the service is known to be contractable. */
 type ReadyData = Omit<ServiceData, "service"> & { service: PublicServiceView };
 type Person = DraftPerson;
-type Notice = { title: string; detail?: string; tone: "info" | "error" | "success" };
+/** `action`: the exit the notice offers under its text (FIX_CONTACT): the account login or the WhatsApp number. */
+type Notice = { title: string; detail?: string; tone: "info" | "error" | "success"; action?: "login" | "whatsapp" };
 type Result = { clientCreated: boolean; caseNumber: string; signingUrl: string | null; token: string | null; serviceAlreadyLive: string | null; firstName: string };
 type Stage = "loading" | "form" | "code" | "done" | "blocked" | "failed";
 type ApiOutcome = ScreenOutcome & {
@@ -318,6 +319,18 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "success", ...outcomeMessage(outcome) });
         return;
       }
+      case "FIX_CONTACT": {
+        // The code was used and the data does not fit an account: not a dead end. The used verification is dropped
+        // (the next «Enviar mi código» is a normal first call: new key, new code) and the person goes back to the phone.
+        if (outcome.reason !== "email_has_account" && outcome.reason !== "phone_in_use") { finish(); setRetryable(false); setStage("blocked"); show({ step: "HUMAN" }); return; }
+        const fix = fixContactMessages({ reason: outcome.reason, phoneHint: outcome.phoneHint });
+        setSent(null); setCode(""); setPendingRestart(false); pending.current = null;
+        const found: FieldErrors = { phone: fix.fieldError };
+        setErrors(found); setStage("form");
+        setNotice({ tone: "error", title: fix.title, detail: fix.detail, action: outcome.reason === "email_has_account" ? "login" : "whatsapp" });
+        goTo("contact", found);
+        return;
+      }
       case "SIGN_LINK_PENDING": {
         // The case exists but the link did not come back: show the case and offer «Enviarme el enlace» (/reenviar).
         const caseNumber = outcome.caseNumber ?? "", token = outcome.token ?? null;
@@ -476,7 +489,9 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       </header>
 
       {(stage === "form" || stage === "code" || stage === "done") && <GuideCaption guide={guide} />}
-      {notice && <div className={s.notice} data-tone={notice.tone} role={notice.tone === "error" ? "alert" : "status"}><strong>{notice.title}</strong>{notice.detail && <span>{notice.detail}</span>}</div>}
+      {notice && <div className={s.notice} data-tone={notice.tone} role={notice.tone === "error" ? "alert" : "status"}><strong>{notice.title}</strong>{notice.detail && <span>{notice.detail}</span>}
+        {notice.action === "login" && <a className={s.noticeLink} href={ACCOUNT_LOGIN_URL} target="_blank" rel="noopener noreferrer">Entrar a mi cuenta</a>}
+        {notice.action === "whatsapp" && <a className={s.noticeLink} href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>}</div>}
 
       {stage === "loading" && <div className={s.loading} role="status"><i /><i /><i /><span>Preparando tu contrato…</span></div>}
       {stage === "failed" && <div className={s.links}>
@@ -618,6 +633,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
             : <button type="button" className={s.primary} disabled={busy || !result.token} onClick={() => void resend()}><span>{busy ? "Enviando…" : "Enviarme el enlace"}</span><i aria-hidden="true"><Arrow /></i></button>}
         </div>
         {result.caseNumber && <p className={s.caseNumber}>Tu número de caso: <strong>{result.caseNumber}</strong></p>}
+        {/* The success notice above already says it right after the code; a reload of the done screen has no such notice. */}
+        {!result.clientCreated && notice?.title !== RECOGNIZED_MESSAGE && <p className={s.note}>{RECOGNIZED_MESSAGE}</p>}
         {result.clientCreated && <p className={s.note}>Entra a tu app de ContyGo con tu correo. Tu contraseña inicial son los 10 dígitos de tu teléfono.</p>}
         <p className={s.note}>El enlace para firmar vale 14 días y también te llega por correo.{result.token && <> <a href="/contratar/gracias">Ver el estado de mi contrato</a></>}</p>
         {result.signingUrl && <button type="button" className={s.linkButton} disabled={busy} onClick={() => void resend()}>¿No te llegó el enlace? Reenviarlo</button>}

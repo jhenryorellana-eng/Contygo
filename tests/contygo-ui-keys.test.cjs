@@ -32,7 +32,7 @@ test('busy conserva la clave (RETRY_LATER busy, 502/503/504, página que no es J
 
 test('una respuesta definitiva estrena clave (fresh_key, WRONG_CODE, ERROR, RESTART…)', () => {
   for (const reason of ['fresh_key', 'destination', 'verification', 'general', 'conflict']) assert.equal(keepsKey({ status: 200, outcome: outcome('RETRY_LATER', { reason }) }), false, reason);
-  for (const step of ['WRONG_CODE', 'ERROR', 'RESTART', 'INVALID', 'ASK_CODE', 'SIGN', 'SIGN_LINK_PENDING', 'HUMAN', 'NOT_ELIGIBLE', 'UNAVAILABLE', 'UNAVAILABLE_ONLINE', 'INVALID_PARTIES', 'NEEDS_ANSWERS']) {
+  for (const step of ['WRONG_CODE', 'ERROR', 'RESTART', 'INVALID', 'ASK_CODE', 'SIGN', 'SIGN_LINK_PENDING', 'HUMAN', 'FIX_CONTACT', 'NOT_ELIGIBLE', 'UNAVAILABLE', 'UNAVAILABLE_ONLINE', 'INVALID_PARTIES', 'NEEDS_ANSWERS']) {
     assert.equal(keepsKey({ status: 200, outcome: outcome(step) }), false, step);
   }
   // A 429 that does carry an outcome is contygo's answer, not ours.
@@ -49,7 +49,7 @@ test('el código se reintenta solo mientras contygo sigue trabajando (busy, 5xx,
   assert.equal(retriesConfirmAlone({ status: 429, outcome: undefined }), false, 'nuestro 429: no se insiste solo');
   assert.equal(retriesConfirmAlone({ status: 403, outcome: undefined, error: 'captcha_failed' }), false);
   for (const reason of ['fresh_key', 'destination', 'verification', 'general', 'conflict']) assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome('RETRY_LATER', { reason }) }), false, reason);
-  for (const step of ['SIGN', 'SIGN_LINK_PENDING', 'WRONG_CODE', 'RESTART', 'HUMAN', 'ERROR', 'UNAVAILABLE_ONLINE']) assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome(step) }), false, step);
+  for (const step of ['SIGN', 'SIGN_LINK_PENDING', 'WRONG_CODE', 'RESTART', 'HUMAN', 'FIX_CONTACT', 'ERROR', 'UNAVAILABLE_ONLINE']) assert.equal(retriesConfirmAlone({ status: 200, outcome: outcome(step) }), false, step);
   assert.equal(confirmRetryDelay(null), 2);
   assert.equal(confirmRetryDelay(1), 2);
   assert.equal(confirmRetryDelay(5), 5);

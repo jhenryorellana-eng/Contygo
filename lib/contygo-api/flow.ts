@@ -24,13 +24,15 @@
      2.ª llamada: corte, 503, 500 o IN_PROGRESS repiten con la MISMA clave.
    · HUMAN, UNAVAILABLE_ONLINE y los errores no transitorios dejan, sin PII,
      un resumen en el lead (PUT /leads) y una referencia corta WEB-XXXXXX.
+   · FIX_CONTACT (CLIENT_NEEDS_HUMAN con una pista segura: solo canal web y tras un código válido) NO es
+     un fallo: la persona corrige el teléfono y empieza otra vez; no se avisa a ventas.
    ============================================================ */
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, invalidateCatalog, localServiceNameFor, remoteServiceFor } from "./catalog";
 import {
   buildContractBody, checkoutEnabled, hasUnknownQuestion, isConfigFailure, mapContractResponse, normalizeContractPhone, publicRef,
   sanitizeAnswers, toContractAnswers, toEvaluateAnswers, validateContractForm,
-  type ContractOutcome, type FieldErrors, type RetryReason,
+  type ContractOutcome, type FieldErrors, type FixContact, type RetryReason,
 } from "./checkout";
 import { contygoApi } from "./client";
 import { buildAttemptBody, buildLeadBody, syncLead } from "./lead";
@@ -54,6 +56,7 @@ export type BrowserOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN"; ref: string }
+  | FixContact
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "UNAVAILABLE_ONLINE"; code: string; ref: string }
@@ -247,6 +250,8 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
+    case "FIX_CONTACT": // La 1.ª llamada no lleva pista (es idéntica exista o no la persona); si llegara, pasa tal cual.
+      return outcome;
     case "ERROR":
       // Sin respuesta de contygo: el código pudo salir o no. La misma clave daría IN_PROGRESS 120 s: clave nueva.
       if (outcome.code === "NETWORK") return { step: "RETRY_LATER", reason: "fresh_key", retryAfter: null };
@@ -312,6 +317,8 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
+    case "FIX_CONTACT": // La persona corrige el teléfono: no es un fallo que avisar a ventas (sin reportAttempt).
+      return outcome;
     case "ERROR":
       // Corte, timeout o plazo agotado: la MISMA clave y los mismos bytes retoman desde el cliente ya creado.
       if (outcome.code === "NETWORK" || outcome.code === "DEADLINE") return { step: "RETRY_LATER", reason: "busy", retryAfter: 5 };

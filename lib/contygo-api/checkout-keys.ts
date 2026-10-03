@@ -26,7 +26,7 @@ export type AnswerShape = { status: number; outcome?: { step: string; reason?: s
  * After an answer: does the next attempt repeat the same key (true) or get a new one (false)?
  * Same key: «busy» (RETRY_LATER/busy), 502/503/504 or a page that is not JSON (our route did not answer),
  * a 429 or a captcha 403 from our own route (nothing reached contygo). New key: anything contygo answered
- * for good (fresh_key, WRONG_CODE, ERROR, RESTART…) and 4xx without an outcome (400, 404, 413…).
+ * for good (fresh_key, WRONG_CODE, ERROR, RESTART, FIX_CONTACT…) and 4xx without an outcome (400, 404, 413…).
  */
 /**
  * After an answer to the code (2.ª llamada): retry it by itself, same key and same body? Only when contygo

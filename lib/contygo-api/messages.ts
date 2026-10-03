@@ -13,6 +13,7 @@ export type ScreenOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN" }
+  | { step: "FIX_CONTACT"; reason: "email_has_account" | "phone_in_use"; phoneHint?: string }
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "INVALID_PARTIES"; role: string | null }
@@ -23,6 +24,30 @@ export type ScreenOutcome =
 
 /** Texto neutro para CLIENT_NEEDS_HUMAN: nunca se explica el motivo ni se promete que alguien llamará. */
 export const HUMAN_MESSAGE = "Para terminar tu contratación, escríbenos por WhatsApp.";
+
+/** Dónde se aprende a entrar a la cuenta (el aviso de «Ya tienes una cuenta» enlaza aquí). */
+export const ACCOUNT_LOGIN_URL = "https://contygo.app/entrar";
+
+/**
+ * Qué se le dice a quien ya existe pero escribió un teléfono que no cuadra (FIX_CONTACT): el error del campo
+ * «Teléfono» y el aviso. Nunca más de 2 dígitos del teléfono de la cuenta; sin pista, sin paréntesis.
+ */
+export function fixContactMessages(outcome: { reason: "email_has_account" | "phone_in_use"; phoneHint?: string }): { fieldError: string; title: string; detail: string } {
+  if (outcome.reason === "phone_in_use") return {
+    fieldError: "Con este correo no podemos usar este teléfono.",
+    title: "Revisa tu teléfono.",
+    detail: "Si ya eres cliente, usa el correo y el teléfono de tu cuenta; si no, prueba con otro teléfono o escríbenos por WhatsApp.",
+  };
+  const hint = typeof outcome.phoneHint === "string" && /^\d{2}$/.test(outcome.phoneHint) ? outcome.phoneHint : null;
+  return {
+    fieldError: `Este correo ya tiene una cuenta en ContyGo. Usa el teléfono de tu cuenta${hint ? ` (termina en ${hint})` : ""}.`,
+    title: "Ya tienes una cuenta con este correo.",
+    detail: "Escribe el teléfono que registraste y te enviaremos un código nuevo. O entra a tu cuenta.",
+  };
+}
+
+/** «Te reconocimos»: el contrato quedó en la cuenta que la persona ya tenía (clientCreated=false). */
+export const RECOGNIZED_MESSAGE = "Te reconocimos: añadimos este servicio a tu cuenta de ContyGo.";
 
 /** «unos segundos», «unos 5 minutos», «una hora»: lo que dice Retry-After, en palabras. */
 export function waitText(retryAfter?: number | null): string {
@@ -45,11 +70,12 @@ export function outcomeMessage(outcome: ScreenOutcome, roleLabel?: string): { ti
     case "ASK_CODE": return { title: `Te enviamos un código de 6 dígitos a ${outcome.maskedEmail || "tu correo"}.`, detail: "Escríbelo aquí. Vale durante 15 minutos." };
     case "SIGN": return outcome.clientCreated
       ? { title: `¡Listo${outcome.firstName ? `, ${outcome.firstName}` : ""}! Tu contrato está preparado.` }
-      : { title: "¡Ya eres cliente nuestro!", detail: "Añadimos este servicio a tu cuenta." };
+      : { title: RECOGNIZED_MESSAGE };
     case "ALREADY_DONE": return { title: `Tu contrato ya está preparado (caso ${outcome.caseNumber}).`, detail: "Si no te llegó el enlace para firmarlo, te lo reenviamos." };
     case "WRONG_CODE": return { title: "El código no es correcto.", detail: outcome.attemptsLeft === null ? "Revísalo e inténtalo de nuevo." : `Te ${outcome.attemptsLeft === 1 ? "queda 1 intento" : `quedan ${outcome.attemptsLeft} intentos`}.` };
     case "RESTART": return { title: "El código caducó. Te enviamos uno nuevo." };
     case "HUMAN": return { title: HUMAN_MESSAGE };
+    case "FIX_CONTACT": { const { title, detail } = fixContactMessages(outcome); return { title, detail }; }
     case "NOT_ELIGIBLE": return { title: "Con estas respuestas no podemos iniciar este servicio en línea.", detail: "¿Tienes dudas? Escríbenos por WhatsApp." };
     case "UNAVAILABLE_ONLINE": return { title: "La contratación en línea no está disponible en este momento.", detail: "Escríbenos por WhatsApp y te ayudamos a terminar." };
     case "SIGN_LINK_PENDING": return { title: `Tu contrato está preparado (caso ${outcome.caseNumber}).`, detail: "Toca «Enviarme el enlace» para recibir el enlace de firma." };

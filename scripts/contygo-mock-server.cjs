@@ -11,6 +11,9 @@
 //   human@…  → 409 CLIENT_NEEDS_HUMAN
 //   error@…  → 422 con un código desconocido (ERROR, con «Reintentar»)
 //   forbidden@… → 403 FORBIDDEN (no disponible en línea)
+//   hasaccount@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'email_has_account', phoneHint:'42'} (la ficha pide corregir el teléfono)
+//   phoneinuse@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'phone_in_use'}
+//   returning@… → tras el código, 201 con clientCreated:false («Te reconocimos»)
 //   slow502@… → la 1.ª llamada con ese correo corta la conexión (la ficha reintenta con clave nueva)
 const http = require('node:http');
 const fs = require('node:fs');
@@ -59,6 +62,10 @@ http.createServer((req, res) => {
       if (/^slow502@/i.test(email) && !body.verificationId && !cutOnce.has(email)) { cutOnce.add(email); note({ method: req.method, url, cut: true }); return req.socket.destroy(); }
       if (!body.verificationId) return send(409, { error: { code: 'CLIENT_VERIFICATION_REQUIRED', message: 'Code sent', details: { verificationId: VERIFICATION_ID, maskedEmail: body.client.email.replace(/^(.).*@/, '$1***@'), expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() } } });
       if (body.verificationCode !== '481920') return send(409, { error: { code: 'VERIFICATION_INVALID', message: 'Wrong code', details: { attemptsLeft: 4 } } });
+      // Como x-legal: la pista solo llega tras un código válido, y el teléfono 555-0142 es el «de la cuenta» (termina en 42).
+      if (/^hasaccount@/i.test(email) && !body.client.phoneE164.endsWith('42')) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account', phoneHint: '42' } } });
+      if (/^phoneinuse@/i.test(email) && !body.client.phoneE164.endsWith('77')) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'phone_in_use' } } });
+      if (/^returning@/i.test(email)) return send(201, { clientCreated: false, caseId: '44444444-4444-4444-8444-444444444444', caseNumber: 'U26-000134', contractId: '55555555-5555-4555-8555-555555555555', clientId: '66666666-6666-4666-8666-666666666666', signingUrl: 'https://127.0.0.1:3999/firma/demo-token', warnings: [] });
       if (/^nolink@/i.test(email)) return send(201, { clientCreated: true, caseId: '44444444-4444-4444-8444-444444444444', caseNumber: 'U26-000133', contractId: '55555555-5555-4555-8555-555555555555', clientId: '66666666-6666-4666-8666-666666666666', warnings: [] });
       return send(201, { clientCreated: true, caseId: '44444444-4444-4444-8444-444444444444', caseNumber: 'U26-000133', contractId: '55555555-5555-4555-8555-555555555555', clientId: '66666666-6666-4666-8666-666666666666', signingUrl: 'https://127.0.0.1:3999/firma/demo-token', warnings: [] });
     }

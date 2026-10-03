@@ -368,11 +368,33 @@ export type ContractOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN" }
+  | FixContact
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "INVALID_PARTIES"; role: string | null }
   | { step: "RETRY_LATER"; reason: RetryReason; retryAfter: number | null }
   | { step: "ERROR"; code: string };
+
+/**
+ * CLIENT_NEEDS_HUMAN con una pista segura (solo canal web, solo tras un código válido): la persona puede
+ * corregir el teléfono en vez de toparse con un callejón sin salida. `phoneHint` son los 2 últimos dígitos
+ * del teléfono de la cuenta de ese correo (nunca más); si no es exactamente eso, se omite.
+ */
+export type FixContact =
+  | { step: "FIX_CONTACT"; reason: "email_has_account"; phoneHint?: string }
+  | { step: "FIX_CONTACT"; reason: "phone_in_use" };
+
+/** Lo que la API manda en error.details de CLIENT_NEEDS_HUMAN; cualquier otra cosa es el HUMAN opaco de siempre. */
+function readFixContact(details: Record<string, unknown>): FixContact | null {
+  if (details.resolution === "email_has_account") {
+    const hint = details.phoneHint;
+    return typeof hint === "string" && /^\d{2}$/.test(hint)
+      ? { step: "FIX_CONTACT", reason: "email_has_account", phoneHint: hint }
+      : { step: "FIX_CONTACT", reason: "email_has_account" };
+  }
+  if (details.resolution === "phone_in_use") return { step: "FIX_CONTACT", reason: "phone_in_use" };
+  return null;
+}
 
 /**
  * busy: la MISMA clave y el mismo cuerpo se pueden repetir (IN_PROGRESS, 503, 500 de la 2.ª llamada, corte de red en la 2.ª).
@@ -500,7 +522,7 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
     }
     case "VERIFICATION_INVALID": return { step: "WRONG_CODE", attemptsLeft: typeof details.attemptsLeft === "number" ? details.attemptsLeft : null };
     case "VERIFICATION_EXPIRED": return { step: "RESTART" };
-    case "CLIENT_NEEDS_HUMAN": return { step: "HUMAN" };
+    case "CLIENT_NEEDS_HUMAN": return readFixContact(details) ?? { step: "HUMAN" };
     case "NOT_ELIGIBLE": return { step: "NOT_ELIGIBLE" };
     case "PLAN_NOT_CONTRACTABLE": return { step: "UNAVAILABLE" };
     case "INVALID_PARTIES": return { step: "INVALID_PARTIES", role: typeof details.role === "string" ? details.role : null };

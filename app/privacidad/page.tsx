@@ -1,7 +1,7 @@
 /* ============================================================
    /privacidad — el texto vive en lib/legal/privacidad.ts (versionado: tocarlo obliga a subir
    CONTRACT_TERMS.version, ver tests/contygo-api.test.cjs). Aquí solo se muestra.
-   PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO: el abogado aprueba el texto antes de la prueba en producción.
+   APROBADO POR EL DUEÑO el 2026-10-03 (versión terminos-web-2026-10-03): cualquier cambio de texto pide nueva aprobación y nueva versión.
    ============================================================ */
 import type { Metadata } from "next";
 import { LegalDocPage } from "@/components/legal/LegalPage";

@@ -429,7 +429,7 @@ Ya no hay base de datos. Se retiraron `store.ts` y `supabase/contygo-contratacio
 
 - **Texto de la casilla de aceptación** (`terms.ts`, versión `terminos-web-2026-10-03`) y los textos de `/terminos` y `/privacidad` (`lib/legal/*.ts`): la huella de `tests/contygo-api.test.cjs` cubre los tres y tocar cualquiera obliga a subir la versión.
   - Nombra a «ContyGo, marca de USA LATINO PRIME LLC» y se muestra en español o en inglés según el idioma elegido en la ficha.
-  - Es un borrador **PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO**, igual que `/terminos` y `/privacidad`.
+  - **Aprobado por el dueño el 2026-10-03**, igual que `/terminos` y `/privacidad` (versión `terminos-web-2026-10-03`).
   - Si cambia una palabra, cambia la versión: el test «el texto de aceptación y su versión cambian juntos» (`tests/contygo-api.test.cjs`) compara la huella del texto.
   - El comentario de `terms.ts` cita `tests/contygo-checkout.test.cjs`, un archivo que no existe.
 - **Duración del ticket (30 min).** Es nuestra. Se basa en que el código vale 15 minutos (§4); si contygo lo alarga, hay que subirla.
@@ -630,7 +630,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 **Pendiente.** Nada de esto está hecho:
 
 - [ ] **Prueba real de punta a punta.** Primero el ensayo contra el contygo de desarrollo y después el humo en producción (ver «Cómo probar»). Hasta hoy todo se probó con fetch simulado o con el simulador.
-- [ ] **Aprobación legal de `/terminos` y `/privacidad`**, y del texto de la casilla. Los tres llevan «PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO». Faltan también un correo de contacto de ContyGo y los plazos reales de conservación.
+- [x] **Aprobación de `/terminos`, `/privacidad` y del texto de la casilla**: aprobados por el dueño el 2026-10-03 (versión `terminos-web-2026-10-03`). El contacto es solo el WhatsApp único y contygo.app.
 - [ ] **Turnstile y variables en Vercel** (proyecto `contygo`, scope Production):
   - un widget de Cloudflare con la acción `contratar` y el hostname de landing.contygo.app;
   - `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `LANDING_TOKEN_SECRET` (48 bytes al azar), `GEMINI_API_KEY` y `NEXT_PUBLIC_SITE_URL`;

@@ -2,8 +2,7 @@
    /terminos — Términos y Condiciones (texto versionado)
    ContyGo, marca de USA LATINO PRIME LLC (la entidad legal es la LLC;
    ContyGo es la marca del producto).
-   PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO. Un abogado con licencia debe
-   revisarlo antes de darlo por definitivo.
+   APROBADO POR EL DUEÑO el 2026-10-03 (versión terminos-web-2026-10-03): cualquier cambio de texto pide nueva aprobación y nueva versión.
    REGLA: si cambia una sola palabra de este archivo (o de privacidad.ts, o del texto de la casilla
    en lib/contygo-api/terms.ts), sube CONTRACT_TERMS.version en el mismo cambio y actualiza la huella
    de tests/contygo-api.test.cjs: lo que la persona aceptó debe poder probarse después.

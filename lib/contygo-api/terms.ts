@@ -6,8 +6,8 @@
    comprueba con la huella del texto de la casilla Y de las páginas /terminos y /privacidad
    (lib/legal/*.ts): tocar cualquiera de los tres obliga a subir la versión.
 
-   BORRADOR: PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO. Redactado para la
-   integración; la entidad legal es USA LATINO PRIME LLC y ContyGo es su marca.
+   APROBADO POR EL DUEÑO el 2026-10-03 (versión terminos-web-2026-10-03): cualquier cambio de texto pide nueva aprobación y nueva versión.
+   La entidad legal es USA LATINO PRIME LLC y ContyGo es su marca.
    ============================================================ */
 import type { Locale } from "./types";
 

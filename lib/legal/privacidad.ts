@@ -5,8 +5,7 @@
    preguntas de elegibilidad, formulario de contratación (envío a contygo.app),
    asistente de texto y voz (Google Gemini), Cloudflare Turnstile, Vercel,
    Meta Pixel + Conversions API (solo si aceptas el aviso de cookies), reseñas (Supabase).
-   PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO. Un abogado con licencia debe
-   revisar el texto antes de darlo por definitivo.
+   APROBADO POR EL DUEÑO el 2026-10-03 (versión terminos-web-2026-10-03): cualquier cambio de texto pide nueva aprobación y nueva versión.
    REGLA: si cambia una sola palabra de este archivo (o de terminos.ts, o del texto de la casilla
    en lib/contygo-api/terms.ts), sube CONTRACT_TERMS.version en el mismo cambio y actualiza la huella
    de tests/contygo-api.test.cjs.

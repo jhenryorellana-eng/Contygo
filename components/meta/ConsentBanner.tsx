@@ -1,29 +1,32 @@
 "use client";
 
 /* ============================================================
-   Banner de consentimiento (Variante B / GDPR — INACTIVO por defecto).
-   Solo se monta si NEXT_PUBLIC_META_REQUIRE_CONSENT === "1".
-   En la Variante A (disparo directo, EE.UU.) este componente no renderiza nada.
+   Banner de consentimiento (ACTIVO por defecto desde el 02-10-2026, decisión del dueño).
+   El Pixel y la Conversions API solo cargan después de «Aceptar»: este banner guarda la
+   elección y avisa a MetaPixel con CONSENT_EVENT. Solo NEXT_PUBLIC_META_REQUIRE_CONSENT === "0"
+   lo apaga (el Pixel carga sin pedir).
    Estilo inline con el color del tema (#2563c4) para no depender de globals.css.
    ============================================================ */
 import { useEffect, useRef, useState } from "react";
-import { REQUIRE_CONSENT } from "@/lib/meta/events";
+import { CONSENT_EVENT, CONSENT_STORAGE_KEY, REQUIRE_CONSENT } from "@/lib/meta/events";
 
-const STORAGE_KEY = "meta_consent"; // 'granted' | 'denied'
+const STORAGE_KEY = CONSENT_STORAGE_KEY; // 'granted' | 'denied'
 const COOKIE_MAX_AGE = 15552000; // 180 días
 
 function persist(value: "granted" | "denied") {
-  window.localStorage.setItem(STORAGE_KEY, value);
+  try {
+    window.localStorage.setItem(STORAGE_KEY, value);
+  } catch {
+    /* sin almacenamiento: la cookie sigue valiendo para el servidor */
+  }
   // Cookie legible por el servidor para gatear el CAPI en /api/meta.
   document.cookie = `${STORAGE_KEY}=${value}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 function grant() {
   persist("granted");
-  if (typeof window.fbq === "function") {
-    window.fbq("consent", "grant");
-    window.fbq("track", "PageView"); // primer PageView ya consentido
-  }
+  // MetaPixel carga el Pixel (init + primer PageView) al recibir este evento.
+  window.dispatchEvent(new Event(CONSENT_EVENT));
 }
 
 function deny() {
@@ -37,13 +40,15 @@ export function ConsentBanner() {
   useEffect(() => {
     if (!REQUIRE_CONSENT || handledOnLoad.current) return;
     handledOnLoad.current = true;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      /* sin almacenamiento: se pregunta en cada visita */
+    }
     if (stored === "granted") {
-      // Visita recurrente ya consentida: concede y registra el PageView.
-      if (typeof window.fbq === "function") {
-        window.fbq("consent", "grant");
-        window.fbq("track", "PageView");
-      }
+      // Visita recurrente ya consentida: MetaPixel ya lo cargó; se renueva la cookie que lee /api/meta.
+      persist("granted");
     } else if (!stored) {
       setVisible(true);
     }
@@ -80,7 +85,11 @@ export function ConsentBanner() {
       >
         <p style={{ fontSize: "0.875rem", color: "#334155", margin: 0, flex: "1 1 280px" }}>
           Usamos cookies para medir el rendimiento de nuestra publicidad y
-          mejorar tu experiencia. Puedes aceptar o rechazar el seguimiento.
+          mejorar tu experiencia. Puedes aceptar o rechazar el seguimiento; si no aceptas,
+          no se carga nada de Meta.{" "}
+          <a href="/privacidad" style={{ color: "#2563c4", textDecoration: "underline" }}>
+            Ver privacidad
+          </a>
         </p>
         <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
           <button

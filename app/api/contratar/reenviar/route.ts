@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
-import { isIdempotencyKey, isTrustedSigningUrl } from "@/lib/contygo-api/checkout";
+import { isConfigFailure, isIdempotencyKey, isTrustedSigningUrl } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
+import { logConfig } from "@/lib/contygo-api/log";
 import { checkLimits, clientIp, fail, guarded, json, readBrowserJson } from "@/lib/contygo-api/server";
 import { readContractToken } from "@/lib/contygo-api/tokens";
 
@@ -10,6 +11,8 @@ import { readContractToken } from "@/lib/contygo-api/tokens";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+/** Plazo global de la petición, dentro de maxDuration. */
+const BUDGET_MS = 25_000;
 
 export async function POST(req: NextRequest) {
   return guarded(async () => {
@@ -25,13 +28,19 @@ export async function POST(req: NextRequest) {
     ]);
     if (limited) return limited;
 
-    const response = await contygoApi.resendSigningLink(contractId, parsed.body.idempotencyKey);
+    const response = await contygoApi.resendSigningLink(contractId, parsed.body.idempotencyKey, { deadline: Date.now() + BUDGET_MS });
     if (response.status === 200 && response.data && isTrustedSigningUrl(response.data.signingUrl)) {
       return json({ ok: true, outcome: { step: "SIGN_LINK", signingUrl: response.data.signingUrl, expiresAt: response.data.expiresAt, rotated: response.data.rotated } });
     }
     const code = response.error?.code ?? `HTTP_${response.status}`;
     if (code === "CONTRACT_ALREADY_SIGNED") return json({ ok: true, outcome: { step: "ALREADY_SIGNED" } });
     if (code === "CONTRACT_NOT_RESENDABLE") return json({ ok: true, outcome: { step: "NOT_RESENDABLE" } });
+    // La misma clave se está procesando: el próximo intento repite la MISMA clave.
+    if (code === "IN_PROGRESS" || code === "REQUEST_IN_PROGRESS") return json({ ok: true, outcome: { step: "IN_PROGRESS", retryAfter: response.retryAfter ?? 1 } }, 200, { "Retry-After": String(response.retryAfter ?? 1) });
+    if (isConfigFailure(response.status, code)) {
+      logConfig("resend", code);
+      return json({ ok: true, outcome: { step: "UNAVAILABLE_ONLINE", code } });
+    }
     if (response.status === 429 || response.status === 503 || response.status === 0) {
       // 503 o un corte: la misma clave se puede repetir. 429: nada se hizo y el próximo intento estrena clave.
       const reason = response.status === 429 ? "destination" : "busy";

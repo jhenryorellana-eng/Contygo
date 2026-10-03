@@ -2,10 +2,11 @@
    UsaLatinoPrime — Configuración del sitio
    ============================================================ */
 
-// Número general de WhatsApp: lo usan TODOS los servicios.
+// ÚNICO número de WhatsApp de toda la landing: el bot de ventas de ContyGo.
 // Se define en código (no por variable de entorno) para que ninguna
-// configuración de Vercel pueda sobrescribirlo.
-const RAW_WHATSAPP = "+1 (763) 342-2258";
+// configuración de Vercel pueda sobrescribirlo. No escribas otro número en
+// componentes, textos ni enlaces: importa estas constantes.
+const RAW_WHATSAPP = "+1 (385) 392-7656";
 
 /** Número tal cual para mostrar en pantalla. */
 export const WHATSAPP_DISPLAY = RAW_WHATSAPP;
@@ -31,9 +32,8 @@ export const HERO_LEAD =
 
 /**
  * Construye el enlace de WhatsApp con un mensaje pre-redactado.
- * Si se pasa `digits`, usa ese número; si no, el general.
+ * Siempre apunta al número único de WhatsApp (WHATSAPP_DIGITS).
  */
-export function waLink(message: string, digits: string = WHATSAPP_DIGITS): string {
-  const target = digits || WHATSAPP_DIGITS;
-  return `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+export function waLink(message: string): string {
+  return `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent(message)}`;
 }

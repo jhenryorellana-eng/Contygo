@@ -68,18 +68,40 @@ type Props = {
   id?: string;
   describedBy?: string;
   autoFocus?: boolean;
+  /** Contract contact step: the account needs a US number, so the country is fixed to +1 (no selector). */
+  usOnly?: boolean;
 };
 
-export default function PhoneField({ value, onChange, onBlur, disabled, invalid, id, describedBy, autoFocus }: Props) {
-  const initial = useMemo(() => splitPhone(value), []); // eslint-disable-line react-hooks/exhaustive-deps
+/** Digits of a US number as typed or pasted: «+1 (305) 555-0199», «1-305-555-0199» and «3055550199» all give 3055550199.
+ *  A number that starts with another country code (+52…) is kept whole and flagged `foreign`: the contract validator rejects it
+ *  with the +1 message instead of silently turning it into a wrong US number. */
+function usDigits(typed: string): { digits: string; foreign: boolean } {
+  const raw = typed.trim();
+  const all = raw.replace(/\D/g, "");
+  const international = raw.startsWith("+") ? all : raw.startsWith("00") ? all.slice(2) : null;
+  if (international !== null) return international.startsWith("1") ? { digits: international.slice(1, 11), foreign: false } : { digits: international.slice(0, 15), foreign: true };
+  return { digits: (all.length === 11 && all.startsWith("1") ? all.slice(1) : all).slice(0, 10), foreign: false };
+}
+
+/** What the +1-only field reports to the form. A foreign number goes out as its own international value ("+" + digits), never as "+1" + foreign digits:
+ *  +32 12345678 (Belgium) or +53 5 234 5678 (Cuba) are 10 digits long and would otherwise pass as a valid US number. The contract validator rejects it. */
+export function usOnlyPhone(typed: string): { digits: string; foreign: boolean; value: string } {
+  const { digits, foreign } = usDigits(typed);
+  return { digits, foreign, value: !digits ? "" : foreign ? `+${digits}` : `+1${digits}` };
+}
+
+export default function PhoneField({ value, onChange, onBlur, disabled, invalid, id, describedBy, autoFocus, usOnly }: Props) {
+  const initial = useMemo(() => usOnly ? { country: US, national: usDigits(value).digits } : splitPhone(value), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [country, setCountry] = useState<Country>(initial.country);
   const [national, setNational] = useState(initial.national);
+  const [foreign, setForeign] = useState(false);
   const selectId = useId();
 
   // A value set from outside (prefill from the chat, a correction) replaces what is shown.
   useEffect(() => {
-    const own = national ? `+${country.dial}${national}` : "";
+    const own = !national ? "" : usOnly && foreign ? `+${national}` : `+${country.dial}${national}`;
     if (value === own) return;
+    if (usOnly) { const next = usDigits(value); setNational(next.digits); setForeign(next.foreign); return; }
     const next = splitPhone(value);
     setNational(next.national);
     if (value.trim().startsWith("+")) setCountry(current => current.dial === next.country.dial ? current : next.country);
@@ -90,7 +112,10 @@ export default function PhoneField({ value, onChange, onBlur, disabled, invalid,
   }
 
   return <div className={s.phone} data-invalid={invalid || undefined} data-disabled={disabled || undefined}>
-    <label className={s.country} htmlFor={selectId}>
+    {usOnly ? <span className={s.country} data-fixed="true">
+      <span className={s.flag} aria-hidden="true">{US.flag}</span>
+      <span className={s.dial}>+1</span>
+    </span> : <label className={s.country} htmlFor={selectId}>
       <span className={s.flag} aria-hidden="true">{country.flag}</span>
       <span className={s.dial} aria-hidden="true">+{country.dial}</span>
       <svg className={s.chevron} viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -100,14 +125,15 @@ export default function PhoneField({ value, onChange, onBlur, disabled, invalid,
       }}>
         {COUNTRIES.map(item => <option key={item.iso} value={item.iso}>{item.flag} {item.name} (+{item.dial})</option>)}
       </select>
-    </label>
+    </label>}
     <input
-      id={id} type="tel" inputMode="tel" autoComplete="tel-national" maxLength={country.dial === "1" ? 14 : 18}
-      value={pretty(country, national)} disabled={disabled} autoFocus={autoFocus}
+      id={id} type="tel" inputMode="tel" autoComplete="tel-national" maxLength={usOnly ? 24 : country.dial === "1" ? 14 : 18}
+      value={usOnly && foreign ? `+${national}` : pretty(country, national)} disabled={disabled} autoFocus={autoFocus}
       placeholder={country.dial === "1" ? "(305) 555-0199" : "Número"} aria-describedby={describedBy} aria-invalid={invalid || undefined}
       onBlur={onBlur}
       onChange={event => {
         const typed = event.target.value;
+        if (usOnly) { const next = usOnlyPhone(typed); setNational(next.digits); setForeign(next.foreign); onChange(next.value); return; }
         // Someone who types the full international number (+52…) gets their country picked for them.
         if (typed.trim().startsWith("+")) { const next = splitPhone(typed); setCountry(next.country); setNational(next.national); emit(next.country, next.national); return; }
         const digits = typed.replace(/\D/g, "").slice(0, country.dial === "1" ? 10 : 13);

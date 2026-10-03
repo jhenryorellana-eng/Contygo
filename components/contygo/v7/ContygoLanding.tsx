@@ -4,7 +4,9 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
+import { waLink } from "@/lib/config";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { formatCents, fromPriceLabel, lowestCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
 import themeStyles from "../v6/ExperienceTheme.module.css";
@@ -36,9 +38,6 @@ const featured: Star[] = [
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
 ];
 const others = CONTYGO_SERVICES.filter(item => !featured.some(star => star.id === item.id));
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const lowest = (service: ContygoService) => Math.min(service.price, ...service.plans.map(plan => plan.price));
-const fromPrice = Math.min(...CONTYGO_SERVICES.map(lowest));
 const visa = CONTYGO_SERVICES.find(item => item.id === "visa-juvenil");
 const clients = isPublic(CONTYGO_CLAIMS.clientsServed) ? CONTYGO_CLAIMS.clientsServed.text : null;
 const guarantee = CONTYGO_COMMERCIAL_OFFER.guarantee;
@@ -63,16 +62,17 @@ const proof = [
   { icon: "app", text: "En español, desde tu celular" },
   { icon: "file", text: "Revisas tu contrato antes de decidir" },
 ];
-const faqs = [
+// Prices are live (GET /catalog through /api/contratar/precios): with no price loaded, the text just does not quote one.
+const faqs = (from: string | null, visaFrom: string | null) => [
   ["¿Qué hace ContyGo por mí?", "Te acompaña en la preparación de los documentos y formularios incluidos en tu servicio. La plataforma organiza la información que aportas y te permite conocer tus siguientes pasos. Revisa el alcance específico antes de contratar."],
-  ["¿Cuánto cuesta?", `Cada servicio publica sus honorarios antes de empezar: desde ${money.format(fromPrice)}${visa ? `; Visa Juvenil Básico, ${money.format(lowest(visa))}` : ""}. Las tasas del gobierno, cuando aplican, van aparte y se indican en tu contrato.`],
+  ["¿Cuánto cuesta?", `Cada servicio publica sus honorarios antes de empezar${from ? `: desde ${from}${visaFrom ? `; Visa Juvenil Básico, ${visaFrom}` : ""}` : ""}. Las tasas del gobierno, cuando aplican, van aparte y se indican en tu contrato.`],
   ["¿Puedo hacerlo desde mi celular?", "Sí. Puedes conocer el servicio, aportar información y documentos y consultar tus siguientes pasos desde tu cuenta. Si tu proceso requiere originales o actuaciones externas, recibirás las indicaciones correspondientes."],
   ["¿Hay una persona que me acompañe?", "Sí. Puedes comunicarte con el equipo a través de Soporte en tu cuenta. Antes de contratar, también puedes resolver tus dudas por WhatsApp."],
   ["¿Cuándo empieza mi servicio?", "Después de crear tu cuenta, revisar y firmar tu contrato y confirmar el pago inicial correspondiente. Antes de hacerlo podrás consultar el alcance, el precio y las condiciones."],
   ["¿Qué es un consultor de inmigración registrado?", "Una persona registrada ante el Estado de Utah para dar asistencia no legal en trámites migratorios, como completar formularios oficiales y organizar documentos. No es abogado: no da asesoría legal ni representa ante una corte o USCIS."],
   ["¿ContyGo garantiza la aprobación de mi trámite?", "No. ContyGo ofrece preparación documental y acompañamiento. Las decisiones y los tiempos de las autoridades no dependen de nosotros. Las condiciones del servicio y de reembolso se explican en tu contrato."],
 ];
-const help = "https://wa.me/17633422258?text=" + encodeURIComponent("Hola, quiero conocer el alcance de un servicio de ContyGo.");
+const help = waLink("Hola, quiero conocer el alcance de un servicio de ContyGo.");
 
 function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
   const paths: Record<string, ReactNode> = {
@@ -105,6 +105,10 @@ export default function ContygoLanding() {
   const [dock, setDock] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
   const [service, setService] = useState<ContygoService | null>(null);
+  const prices = useServicePrices();
+  const fromCents = lowestCents(prices);
+  const fromPrice = fromCents === null ? null : formatCents(fromCents);
+  const visaFrom = visa ? fromPriceLabel(prices, visa.slug) : null;
   const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -200,7 +204,7 @@ export default function ContygoLanding() {
 
       <section className={s.facts} aria-label="ContyGo en cifras" data-thread="facts">
         <div data-react="count"><strong data-value={String(CONTYGO_SERVICES.length)}>{CONTYGO_SERVICES.length}</strong><span>servicios con precio publicado</span></div>
-        <div data-react="count"><strong data-value={money.format(fromPrice)}>{money.format(fromPrice)}</strong><span>honorarios desde</span></div>
+        {fromPrice && <div><strong>{fromPrice}</strong><span>honorarios desde</span></div>}
         {clients && <div data-react="count"><strong data-value={clients.split(" ")[0]}>{clients.split(" ")[0]}</strong><span>{clients.split(" ").slice(1).join(" ")}</span></div>}
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
       </section>
@@ -245,7 +249,7 @@ export default function ContygoLanding() {
               <span className={s.contractChip}>Lo lees antes de pagar</span>
             </header>
             <ol className={s.clauses}>
-              <li><span className={s.clauseNo}>1</span><div><h3>Precio publicado</h3><p>Honorarios <mark>desde {money.format(visa ? lowest(visa) : fromPrice)}</mark>, visibles antes de empezar. Las tasas del gobierno, cuando aplican, se indican aparte.</p></div></li>
+              <li><span className={s.clauseNo}>1</span><div><h3>Precio publicado</h3><p>Honorarios {(visaFrom ?? fromPrice) ? <mark>desde {visaFrom ?? fromPrice}</mark> : <mark>publicados</mark>}, visibles antes de empezar. Las tasas del gobierno, cuando aplican, se indican aparte.</p></div></li>
               <li><span className={s.clauseNo}>2</span><div><h3>Contrato antes de pagar</h3><p>Lees <mark>el alcance, el precio y las condiciones</mark>. Decides y firmas cuando estés listo.</p></div></li>
               {guarantee && <li className={s.clauseGuarantee}><span className={s.clauseNo}>3</span><div><h3>{guarantee.title}</h3><p>{guarantee.description}</p><ul>{guarantee.conditions.map(item => <li key={item}>{item}</li>)}</ul></div></li>}
             </ol>
@@ -261,7 +265,7 @@ export default function ContygoLanding() {
           <div className={s.chatHead}><span className={s.chatAvatar}><Image src="/contygo/v7/simbolo-oscuro.png" alt="" width={568} height={640} sizes="24px" /></span><span><strong>ContyGo</strong><small><i aria-hidden="true" />Respuestas claras, en español</small></span></div>
           <div className={s.chatBody}>
             <p className={s.chatHello}>Hola. Estas son las preguntas que más nos hacen. Toca la tuya.</p>
-            {faqs.map(([question, answer]) => <details key={question} className={s.qa}><summary>{question}</summary><div className={s.reply}><span className={s.typing} aria-hidden="true"><i /><i /><i /></span><p>{answer}</p></div></details>)}
+            {faqs(fromPrice, visaFrom).map(([question, answer]) => <details key={question} className={s.qa}><summary>{question}</summary><div className={s.reply}><span className={s.typing} aria-hidden="true"><i /><i /><i /></span><p>{answer}</p></div></details>)}
           </div>
           <a className={s.composer} href={help}><span>¿Otra pregunta? <b>Escríbele al equipo</b></span><i><Icon kind="send" /></i></a>
         </div>
@@ -273,7 +277,7 @@ export default function ContygoLanding() {
     <footer className={s.footer}><div><a href="#inicio" className={s.logo}><Image src={logo} width={3000} height={849} alt="ContyGo" sizes="150px" /></a><span>Siempre contigo. Paso a paso.</span></div><p>El consultor no es abogado y no presta servicios legales. ContyGo ofrece asistencia administrativa y tecnológica. No garantiza decisiones ni tiempos de las autoridades.</p><div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a><a href="https://contygo.app/entrar">Mi cuenta <span aria-hidden="true">↗</span></a></div></footer>
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
-      <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Encontrar mi servicio</strong><small>Precios desde {money.format(fromPrice)}</small></span><i><Icon /></i></a>
+      <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Encontrar mi servicio</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
     </div>
     <ServiceCinemaDialog service={service} origin={origin} onClose={() => setService(null)} />
   </div>;

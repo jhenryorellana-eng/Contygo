@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import type { JourneyGuidance } from "@/lib/agent/service-intake";
 import { normalizePhone } from "@/lib/contygo-api/checkout";
+import { outcomeMessage } from "@/lib/contygo-api/messages";
 import PhoneField from "../guide/PhoneField";
 import type { Guide } from "../guide/useGuide";
 import s from "./VisaJourneyReveal.module.css";
@@ -21,6 +22,10 @@ type Props = {
   fromChat?: boolean;
   /** Guía por voz: dice en voz alta qué llenar aquí (solo audio: esta pantalla conserva su diseño). */
   guide?: Guide;
+  /** Online contracting is not available for this person (eligibility answered 401/403, or the service is handled by a person): the WhatsApp way is shown up front. */
+  unavailableOnline?: boolean;
+  /** The single WhatsApp link (waLink with the WEB reference) for that notice. */
+  helpHref?: string;
 };
 
 const LAUNCHES = [
@@ -55,7 +60,7 @@ export function Celebration({ placement = "scene" }: { placement?: "scene" | "br
   </div>;
 }
 
-export default function VisaJourneyReveal({ guidance, onContinue, onEdit, departing = false, pending = false, fromChat = false, serviceName = "Visa Juvenil", displayName = "", onDisplayNameChange, phone = "", onPhoneChange, guide }: Props) {
+export default function VisaJourneyReveal({ guidance, onContinue, onEdit, departing = false, pending = false, fromChat = false, serviceName = "Visa Juvenil", displayName = "", onDisplayNameChange, phone = "", onPhoneChange, guide, unavailableOnline = false, helpHref }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
   const headingId = useId();
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -103,8 +108,9 @@ export default function VisaJourneyReveal({ guidance, onContinue, onEdit, depart
       <div className={s.nextStep}>
         <span>02</span><i aria-hidden="true" /><span>CONOCE LA SOLUCIÓN</span>
       </div>
+      {unavailableOnline&&helpHref&&<div className={s.unavailable} role="status"><strong>{outcomeMessage({ step: "UNAVAILABLE_ONLINE" }).title}</strong><span>{outcomeMessage({ step: "UNAVAILABLE_ONLINE" }).detail}</span><a href={helpHref} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a></div>}
       {onDisplayNameChange&&<label className={s.namePrompt}>¿Cómo te gustaría que te llamemos?<span>Tu nombre · opcional</span><input autoComplete="given-name" maxLength={32} value={displayName} disabled={pending||departing} placeholder="Escribe tu nombre" onChange={event=>onDisplayNameChange(event.target.value.replace(new RegExp("[^\\p{L}\\p{M} '-]", "gu"),""))}/></label>}
-      {onPhoneChange&&<div className={s.namePrompt} data-invalid={phoneInvalid||undefined}><span className={s.promptLabel}>¿A qué teléfono te podemos escribir?</span><span id={phoneHelp}>{phoneInvalid?"Revisa el número y el país":"WhatsApp o celular · opcional"}</span><PhoneField value={phone} onChange={onPhoneChange} onBlur={()=>setPhoneTouched(true)} disabled={pending||departing} invalid={phoneInvalid} describedBy={phoneHelp}/></div>}
+      {onPhoneChange&&<div className={s.namePrompt} data-invalid={phoneInvalid||undefined}><span className={s.promptLabel}>¿A qué teléfono te podemos escribir?</span><span id={phoneHelp}>{phoneInvalid?"Revisa el número y el país":"WhatsApp o celular · opcional"}</span><PhoneField value={phone} onChange={onPhoneChange} onBlur={()=>setPhoneTouched(true)} disabled={pending||departing} invalid={phoneInvalid} describedBy={phoneHelp}/><small className={s.contactNotice}>Al dejar tu teléfono aceptas que ContyGo te escriba por WhatsApp sobre este trámite. <a href="/privacidad" target="_blank" rel="noopener noreferrer">Ver privacidad</a>.</small></div>}
       <button className={s.primary} data-journey-continue type="button" disabled={departing || pending} onClick={event => { guide?.stop(); onContinue(event.currentTarget); }}>
         <span className={s.play} aria-hidden="true"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M6.8 4.7a.7.7 0 0 1 1.1-.6l8 5.3a.7.7 0 0 1 0 1.2l-8 5.3a.7.7 0 0 1-1.1-.6Z" /></svg></span>
         <span className={s.buttonLabel}>Conocer la propuesta</span>

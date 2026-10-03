@@ -7,6 +7,7 @@
    Fotogramas sacados de las propias guías (public/contygo/films, ffmpeg). */
 import Image from "next/image";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import f from "./Finale.module.css";
@@ -16,8 +17,6 @@ const GUIDES = [
   { id: "apelacion", name: "Apelación", label: "Entiende tus siguientes pasos" },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, bien organizada" },
 ];
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const lowest = (service: ContygoService) => Math.min(service.price, ...service.plans.map(plan => plan.price));
 
 function Play() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor" /></svg>;
@@ -27,6 +26,7 @@ function Arrow() {
 }
 
 export default function Finale({ onOpen }: { onOpen: (service: ContygoService, element: HTMLElement) => void }) {
+  const prices = useServicePrices();
   return <section className={f.finale} id="empezar" aria-labelledby="cierre-titulo" data-anim>
     <div className={f.stage}>
       <span className={f.rays} aria-hidden="true" />
@@ -39,12 +39,13 @@ export default function Finale({ onOpen }: { onOpen: (service: ContygoService, e
         const service = CONTYGO_SERVICES.find(item => item.id === guide.id);
         if (!service) return null;
         const film = getRebuildServiceFilm(guide.id);
+        const from = fromPriceLabel(prices, service.slug);
         return <li key={guide.id}>
-          <button type="button" className={f.guide} onClick={event => onOpen(service, event.currentTarget)} aria-label={`Ver la guía en vídeo de ${guide.name}, desde ${money.format(lowest(service))}`}>
+          <button type="button" className={f.guide} onClick={event => onOpen(service, event.currentTarget)} aria-label={`Ver la guía en vídeo de ${guide.name}${from ? `, desde ${from}` : ""}`}>
             <Image className={f.poster} src={`/contygo/v7/cierre-${guide.id}.webp`} alt="" fill sizes="(max-width:760px) 92vw, 30vw" />
             <span className={f.shade} aria-hidden="true" />
             <span className={f.tag}><Play /><span className={f.tagLong}>Guía en vídeo · </span>{formatVideoDuration(film.duration)}</span>
-            <span className={f.text}><small>{guide.label}</small><strong>{guide.name}</strong><span>Desde {money.format(lowest(service))}</span></span>
+            <span className={f.text}><small>{guide.label}</small><strong>{guide.name}</strong>{from && <span>Desde {from}</span>}</span>
             <span className={f.play} data-loop aria-hidden="true"><Play /></span>
           </button>
         </li>;

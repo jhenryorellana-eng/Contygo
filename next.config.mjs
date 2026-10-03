@@ -7,6 +7,23 @@ const nextConfig = {
   // Keep the SDK out of Next 14's server bundle (bufferUtil.mask otherwise fails).
   experimental: { serverComponentsExternalPackages: ["@google/genai"] },
 
+  // Cabeceras de seguridad para todas las rutas. La CSP lleva SOLO frame-ancestors: un script-src
+  // rompería los scripts en línea de Next, Turnstile, GSAP, el Pixel de Meta y Gemini Live.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=(self)" },
+        ],
+      },
+    ];
+  },
+
   // Variantes de URL → slug canónico (para que ningún anuncio caiga en 404).
   async redirects() {
     const map = {

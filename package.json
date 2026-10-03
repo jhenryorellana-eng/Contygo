@@ -4,7 +4,7 @@
   "private": true,
   "description": "UsaLatinoPrime — Evaluación migratoria gratuita (Next.js)",
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -H 127.0.0.1 -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Valores ficticios y no secretos: el build no necesita llaves reales.
+      NEXT_PUBLIC_SITE_URL: https://example.com
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ci-dummy-site-key
+      CONTYGO_API_KEY: ci-dummy-not-a-secret
+      LANDING_TOKEN_SECRET: ci-dummy-token-secret-0123456789abcdef0123
+      TURNSTILE_SECRET_KEY: ci-dummy-not-a-secret
+      GEMINI_API_KEY: ci-dummy-not-a-secret
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      # Acciones fijadas por SHA completo (la etiqueta se puede mover); la etiqueta va al lado.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      # Sin scripts de instalación de las dependencias (postinstall de terceros).
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npx next build
+      # Informativo: no bloquea. Next 14 se actualiza en un PR aparte (decisión del dueño, 02-10-2026).
+      - run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true

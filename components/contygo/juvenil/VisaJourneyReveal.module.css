@@ -308,3 +308,18 @@
 .namePrompt>div{width:100%;min-height:45px;margin-top:4px;border-radius:20px}
 .namePrompt>div input{font-size:16px}
 :global([data-contygo-theme=light]) .namePrompt>.promptLabel{color:inherit}
+
+/* 02-10-2026 · Aviso de contacto bajo el teléfono (WhatsApp + privacidad). */
+.namePrompt>.contactNotice{display:block;font-size:11px;line-height:1.4;color:#f6f8f7aa;text-align:center}
+.namePrompt>.contactNotice a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.namePrompt>.contactNotice a:focus-visible{outline:2px solid #25d366;outline-offset:2px}
+:global([data-contygo-theme=light]) .namePrompt>.contactNotice{color:rgba(6,27,61,.62)}
+
+/* 02-10-2026 · Sin contratación en línea: el camino por WhatsApp se ofrece desde la revelación, no al final. */
+.unavailable{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:330px;margin:12px auto 0;text-align:center;font-size:13px;line-height:1.45;color:#f6f8f7cc}
+.unavailable strong{font-size:14px;color:#f6f8f7}
+.unavailable a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;color:#25d366;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.unavailable a:focus-visible{outline:2px solid #25d366;outline-offset:2px}
+:global([data-contygo-theme=light]) .unavailable{color:rgba(6,27,61,.8)}
+:global([data-contygo-theme=light]) .unavailable strong{color:rgba(6,27,61,1)}
+:global([data-contygo-theme=light]) .unavailable a{color:#087f46}

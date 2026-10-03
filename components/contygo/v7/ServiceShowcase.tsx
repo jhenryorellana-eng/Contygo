@@ -8,6 +8,7 @@
 import Image from "next/image";
 import { useRef } from "react";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import ThreadRail from "./ThreadRail";
@@ -16,8 +17,6 @@ import s from "./ServiceShowcase.module.css";
 export type Star = { id: string; name: string; label: string; copy: string };
 type Props = { stars: Star[]; others: ContygoService[]; open: (item: ContygoService, element: HTMLElement) => void };
 
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const lowest = (service: ContygoService) => Math.min(service.price, ...service.plans.map(plan => plan.price));
 const art = (id: string) => `/contygo/v8/servicio-${id}.webp`;
 const find = (id: string) => CONTYGO_SERVICES.find(item => item.id === id)!;
 const minutes = (id: string) => formatVideoDuration(getRebuildServiceFilm(id).duration);
@@ -38,7 +37,8 @@ const Laurel = ({ flip }: { flip?: boolean }) => <svg className={s.laurel} data-
 
 export default function ServiceShowcase({ stars, others, open }: Props) {
   const row = useRef<HTMLDivElement>(null);
-  const label = (item: ContygoService, star = false) => `Conocer ${item.name}${star ? ", uno de los más solicitados" : ""}, desde ${money.format(lowest(item))}`;
+  const prices = useServicePrices();
+  const label = (item: ContygoService, star = false) => { const from = fromPriceLabel(prices, item.slug); return `Conocer ${item.name}${star ? ", uno de los más solicitados" : ""}${from ? `, desde ${from}` : ""}`; };
 
   return <div className={s.showcase}>
     <div className={s.stage} data-anim>
@@ -57,7 +57,7 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
             <span className={s.rosette}><StarIcon />Más solicitado</span>
             <strong>{star.name}</strong>
             <span className={s.stageLabel}>{star.label}</span>
-            <span className={s.stageFoot}><span className={s.stagePrice}><small>Desde</small>{money.format(lowest(item))}</span><span className={s.stagePlay}><Play />Ver la guía · {minutes(star.id)}</span></span>
+            <span className={s.stageFoot}>{fromPriceLabel(prices, item.slug) ? <span className={s.stagePrice}><small>Desde</small>{fromPriceLabel(prices, item.slug)}</span> : <span />}<span className={s.stagePlay}><Play />Ver la guía · {minutes(star.id)}</span></span>
           </span>
         </button>;
       })}</div>
@@ -66,7 +66,7 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
     <div className={s.listHead} data-reveal><h3>Todo nuestro <em>catálogo.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
     <div className={s.shelf}>{others.map(item => <button key={item.id} type="button" className={s.shelfItem} data-family={item.category} data-react="tile" onClick={e => open(item, e.currentTarget)} aria-label={label(item)}>
       <span className={s.shelfArt}><Image src={art(item.id)} alt="" fill sizes="(max-width:760px) 34vw, 12vw" /></span>
-      <span className={s.shelfCopy}><strong>{item.name}</strong><span className={s.shelfPrice}><small>desde</small> {money.format(lowest(item))}</span></span>
+      <span className={s.shelfCopy}><strong>{item.name}</strong>{fromPriceLabel(prices, item.slug) && <span className={s.shelfPrice}><small>desde</small> {fromPriceLabel(prices, item.slug)}</span>}</span>
       <i className={s.go}><Arrow /></i>
     </button>)}</div>
   </div>;

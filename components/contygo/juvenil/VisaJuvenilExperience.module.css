@@ -290,3 +290,13 @@
 :global([data-contygo-theme=light]) .dateIcon{color:#087f46}
 :global([data-contygo-theme=light]) .dateAnswer input{color:#061b3d}
 :global([data-contygo-theme=light]) .datePlaceholder{color:rgb(6 27 61 / 55%)}
+.notice a,.escalate a{color:#25D366;text-decoration:underline;font-size:13px;padding:5px;font-weight:600}
+.escalate{max-width:390px;margin:0 auto 22px;text-align:center;font-size:14px;line-height:1.5;color:#F6F8F7cc;display:flex;flex-direction:column;align-items:center;gap:6px}
+.dateHint{margin:10px auto 0;text-align:center;font-size:12px;line-height:1.5;color:#F6F8F7aa}
+:global([data-contygo-theme=light]) .notice a,:global([data-contygo-theme=light]) .escalate a{color:#087f46}
+:global([data-contygo-theme=light]) .escalate{color:rgb(6 27 61 / 80%)}
+:global([data-contygo-theme=light]) .dateHint{color:rgb(6 27 61 / 67%)}
+
+/* 02-10-2026 · Turnstile invisible del lead: no ocupa lugar; si Cloudflare pide una interacción, aparece abajo. */
+.leadCaptcha{position:fixed;inset-inline:0;bottom:12px;z-index:30;display:flex;justify-content:center;pointer-events:none}
+.leadCaptcha>*{pointer-events:auto}

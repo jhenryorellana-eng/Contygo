@@ -7,7 +7,7 @@
    aiSummary nunca lleva datos sensibles ni las respuestas.
    ============================================================ */
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
-import { contygoApi } from "./client";
+import { contygoApi, type CallBudget } from "./client";
 import type { Attribution, UpsertLeadBody } from "./types";
 
 /** Solo URL http(s) sin query ni fragmento, y claves utm_* acotadas (máx. 20). */
@@ -54,9 +54,23 @@ export function buildLeadBody(
   };
 }
 
+/**
+ * Resumen cuando la persona intentó contratar en línea y no pudo: ventas lo ve en la tarjeta.
+ * Solo el servicio y un código fijo; nada de la persona. Máx. 2000 caracteres (límite de aiSummary).
+ */
+export function attemptSummary(serviceName: string, code: string) {
+  const safe = code.replace(/[^A-Za-z0-9_]/g, "").slice(0, 60).toUpperCase() || "UNKNOWN";
+  return `Web · ${serviceName.slice(0, 200)}. Intentó contratar en línea y necesita ayuda (${safe}).`;
+}
+
+/** Repetir el PUT con la misma referencia solo actualiza fuente, atribución y resumen (nunca nombre ni teléfono). */
+export function buildAttemptBody(person: { fullName: string; phoneE164: string }, serviceName: string, code: string): UpsertLeadBody {
+  return { fullName: person.fullName.slice(0, 120), phoneE164: person.phoneE164, source: "web", aiSummary: attemptSummary(serviceName, code) };
+}
+
 /** Devuelve el leadId o el código de error (solo el código: sin datos de la persona). */
-export async function syncLead(externalRef: string, body: UpsertLeadBody) {
-  const response = await contygoApi.upsertLead(externalRef, body);
+export async function syncLead(externalRef: string, body: UpsertLeadBody, budget: CallBudget = {}) {
+  const response = await contygoApi.upsertLead(externalRef, body, budget);
   if ((response.status === 200 || response.status === 201) && response.data?.leadId) return { ok: true as const, leadId: response.data.leadId };
   const code = response.error?.code ?? `HTTP_${response.status}`;
   console.warn(`[contygo] lead no registrado: ${code}`);

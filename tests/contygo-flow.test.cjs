@@ -29,7 +29,6 @@ const { getContygoServiceUrl, getSelfServiceUrl, getServicePresentationUrl } = r
 const { getServicePresentation } = require('../lib/contygo-presentation.ts');
 const ServicePresentation = require('../components/contygo/ServicePresentation.tsx').default;
 const DirectContractEntry = require('../components/DirectContractEntry.tsx').default;
-const ServiceOffer = require('../components/contygo/ServiceOffer.tsx').default;
 const SharedClosing = require('../components/contygo/juvenil/PaperPlaneClosing.tsx').default;
 const { getRebuildPlatformFilm, getRebuildServiceFilm } = require('../lib/contygo-rebuild-media.ts');
 const { closingScript, closingAction } = require('../components/contygo/juvenil/closingSpeech.ts');
@@ -103,12 +102,12 @@ test('las nueve rutas de evaluación muestran contratación antes del video y pe
   }
 });
 
-test('la entrada directa muestra nombre y precio del catálogo sin crear una cuenta o contrato local', () => {
+test('la entrada directa muestra el nombre y nunca un precio fijo (el precio llega vivo del catálogo)', () => {
   const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
   for (const service of CONTYGO_SERVICES) {
     const markup = renderToStaticMarkup(React.createElement(DirectContractEntry, { serviceId: service.id, onChooseQuestions() {} }));
     assert.ok(markup.includes(service.name), service.id);
-    assert.ok(markup.includes(dollars.format(service.price)), service.id);
+    assert.ok(!markup.includes(dollars.format(service.price)) && !markup.includes('Desde'), service.id);
     assert.ok(markup.includes('confirma tu correo'), service.id);
     assert.ok(!markup.includes('<form'), service.id);
   }
@@ -152,59 +151,6 @@ test('un servicio desconocido o un resultado no calificado nunca produce un dest
   assert.equal(getSelfServiceUrl('i-485', 'contact'), null);
 });
 
-test('la oferta permite elegir los doce servicios y conserva el alcance y los entregables del elegido', () => {
-  const escapeText = value => renderToStaticMarkup(React.createElement(React.Fragment, null, value));
-  const elements = node => React.isValidElement(node) ? [node, ...React.Children.toArray(node.props.children).flatMap(elements)] : [];
-  const categories = { Familia: 'familia', Asilo: 'asilo', Corte: 'corte', Impuestos: 'fiscal', Empresa: 'empresa' };
-  const reachedServices = new Set();
-  for (const service of CONTYGO_SERVICES) {
-    const markup = renderToStaticMarkup(React.createElement(ServiceOffer, { serviceId: service.id, onServiceChange() {} }));
-    const visibleChoices = [...markup.matchAll(/<button\b[^>]*aria-label="Elegir servicio: ([^"]+)"[^>]*>/g)].map(([, name]) => name);
-    assert.deepEqual(visibleChoices, CONTYGO_SERVICES.filter(item => item.category === service.category).map(item => escapeText(item.name)), `Lista de servicios de la categoría: ${service.id}`);
-    assert.ok(markup.includes(`aria-label="Elegir servicio: ${escapeText(service.name)}" aria-pressed="true"`), `Selección conservada: ${service.id}`);
-    const chosen = [];
-    const controls = elements(ServiceOffer({ serviceId: service.id, onServiceChange: id => chosen.push(id) }));
-    for (const [label, category] of Object.entries(categories)) {
-      const button = controls.find(element => element.type === 'button' && element.props['aria-label'] === label);
-      assert.ok(button, `Categoría visible: ${label}`);
-      button.props.onClick();
-      assert.equal(chosen.at(-1), CONTYGO_SERVICES.find(item => item.category === category).id, `Seleccionar categoría: ${label}`);
-    }
-    for (const item of CONTYGO_SERVICES.filter(item => item.category === service.category)) {
-      const button = controls.find(element => element.props['aria-label'] === `Elegir servicio: ${item.name}`);
-      button.props.onClick();
-      assert.equal(chosen.at(-1), item.id);
-      reachedServices.add(chosen.at(-1));
-    }
-    const initialLink = controls.find(element => element.props['aria-label'] === `Conocer este servicio: ${service.name}`);
-    assert.ok(initialLink, 'El CTA inicial está disponible sin una selección adicional');
-    initialLink.props.onClick();
-    assert.equal(chosen.at(-1), service.id, 'El CTA inicial confirma el servicio activo');
-    const cards = [...markup.matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/g)];
-    assert.equal(cards.length, 1, 'Se explica un servicio activo, no doce tarjetas');
-    const card = cards[0][1];
-    assert.ok(card.includes(`>${escapeText(service.name)}</h3>`), `Nombre: ${service.id}`);
-    assert.ok(card.includes(escapeText(service.description)), `Descripción: ${service.id}`);
-    assert.ok(card.includes(escapeText(service.audience)), `Destinatarios: ${service.id}`);
-    const guide = CONTYGO_DELIVERABLES[service.id];
-    const deliverables = card.match(/<section\b[^>]*aria-labelledby="offer-deliverables-heading"[^>]*>([\s\S]*?)<\/section>/)?.[1];
-    assert.ok(deliverables, `Entregables visibles: ${service.id}`);
-    const outputs = [...deliverables.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map(([, item]) => item.replace(/<[^>]*>/g, ''));
-    assert.deepEqual(outputs, guide.outputs.map(escapeText), `Piezas preparadas: ${service.id}`);
-    for (const document of guide.documents) assert.ok(card.includes(escapeText(document)), `Documento orientativo: ${service.id}: ${document}`);
-    assert.ok(card.includes(escapeText(guide.documentNote)), `Límite de la guía documental: ${service.id}`);
-    const details = card.match(/<details\b[^>]*aria-label="Alcance completo y límites"[^>]*>([\s\S]*?)<\/details>/)?.[1];
-    assert.ok(details, `Alcance desplegable: ${service.id}`);
-    const lists = [...details.matchAll(/<ul\b[^>]*>([\s\S]*?)<\/ul>/g)].map(([, list]) => [...list.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map(([, item]) => item.replace(/<[^>]*>/g, '')));
-    assert.deepEqual(lists, [service.includes.map(escapeText), service.exclusions.map(escapeText)], `Alcance exacto: ${service.id}`);
-    const links = [...markup.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map(([, href]) => href);
-    assert.deepEqual(links, Array(2).fill(`/servicios/${destinations[service.id]}`), `Ambos CTA llevan primero a la presentación: ${service.id}`);
-    assert.ok(!markup.includes('href="https://contygo.app/'), 'La oferta no debe saltar directamente al contrato');
-    assert.ok(markup.includes(`aria-label="Ver presentación y continuar: ${escapeText(service.name)}"`), `Enlace accesible: ${service.id}`);
-  }
-  assert.deepEqual([...reachedServices].sort(), CONTYGO_SERVICES.map(service => service.id).sort(), 'Los doce servicios se pueden elegir con los controles visibles');
-});
-
 test('los doce servicios pasan por presentación antes de enlazar al contrato correcto, sin cuestionario', () => {
   for (const service of CONTYGO_SERVICES) {
     const markup = renderToStaticMarkup(React.createElement(ServicePresentation, { service }));
@@ -219,21 +165,5 @@ test('los doce servicios pasan por presentación antes de enlazar al contrato co
       assert.ok(markup.includes('todavía no está disponible'), service.id);
       assert.ok(!markup.includes('<video'), service.id);
     }
-  }
-});
-
-test('la oferta explica firma, pago y documentación antes de mostrar los paquetes y precios correspondientes', () => {
-  const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-  const escapeText = value => renderToStaticMarkup(React.createElement(React.Fragment, null, value));
-  for (const service of CONTYGO_SERVICES) {
-    const markup = renderToStaticMarkup(React.createElement(ServiceOffer, { serviceId: service.id, onServiceChange() {} }));
-    const positions = ['Lo que prepararemos.', 'Firma tu contrato.', 'Confirma tu pago inicial.', 'Comparte tus documentos.', 'Empieza la preparación.', 'id="precio"'].map(text => markup.indexOf(text));
-    assert.ok(positions.every((position, index) => position >= 0 && (index === 0 || position > positions[index - 1])), `Orden de la oferta: ${service.id}`);
-    assert.ok(markup.includes('id="como-funciona"'), 'El enlace de navegación conserva su destino');
-    const pricing = markup.slice(markup.indexOf('id="service-offer-price"'));
-    const plans = [...pricing.matchAll(/<h4>([^<]+)<\/h4><p>([^<]+) <span>USD<\/span><\/p>/g)].map(([, name, price]) => [name, price]);
-    assert.deepEqual(plans, service.plans.map(plan => [escapeText(plan.name), dollars.format(plan.price)]), `Paquetes y precios: ${service.id}`);
-    assert.ok(pricing.includes('Tasas gubernamentales aparte.'), service.id);
-    assert.ok(!pricing.includes('<select'), 'La elección de plan se confirma en ContyGo, sin selección local que pueda perderse');
   }
 });

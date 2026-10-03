@@ -1,13 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import styles from "./DirectContractEntry.module.css";
-
-const dollars = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
 
 export default function DirectContractEntry({
   serviceId,
@@ -16,6 +13,7 @@ export default function DirectContractEntry({
   serviceId: string;
   onChooseQuestions: () => void;
 }) {
+  const prices = useServicePrices();
   const service = CONTYGO_SERVICES.find((item) => item.id === serviceId);
   const href = getContygoServiceUrl(serviceId);
   if (!service || !href) return null;
@@ -30,7 +28,7 @@ export default function DirectContractEntry({
         </div>
         <h1 id="direct-contract-title">{service.name}</h1>
         <p className={styles.description}>{service.description}</p>
-        <p className={styles.price}>Desde <strong>{dollars.format(service.price)}</strong> <span>USD</span></p>
+        {fromPriceLabel(prices, service.slug) && <p className={styles.price}>Desde <strong>{fromPriceLabel(prices, service.slug)}</strong> <span>USD</span></p>}
       </div>
       <div className={styles.actions}>
         <a className={styles.primary} href={href} target="_blank" rel="noopener noreferrer">

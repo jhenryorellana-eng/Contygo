@@ -7,11 +7,16 @@ import { useVisaVoice, useVisaMicrophone } from "./useVisaVoice";
 import type { VisaVisualTheme } from "./BrandLiquidSurface";
 import { LiquidGlow } from "./ThinkingOverlay";
 import VisaJourneyReveal from "./VisaJourneyReveal";
+import VisaStatePicker from "./VisaStatePicker";
+import { waLink } from "@/lib/config";
+import { whatsappHelpMessage } from "@/lib/contygo-api/messages";
+import { publicRef } from "@/lib/contygo-api/checkout";
 import { useGuide } from "../guide/useGuide";
 import LiquidGlassPlate from "./LiquidGlassPlate";
 import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import type { IntakeQuestion, JourneyGuidance, ServiceAnswers } from "@/lib/agent/service-intake";
 import { newExternalRef, pageAttribution } from "@/lib/contygo-api/browser";
+import { useLeadCaptcha } from "./useLeadCaptcha";
 import shared from "../rebuild/ServiceIntroFilm.module.css";
 import s from "./VisaJuvenilExperience.module.css";
 
@@ -19,8 +24,18 @@ type Phase = "watch" | "packing" | "interview";
 type Message = { id: number; role: "agent" | "user"; text: string };
 // Las preguntas son las del catálogo de contygo: llegan del servidor (/api/agent/service-intake) con su tipo.
 // La conversación vive en este navegador (guía §2 bis): externalRef la identifica ante contygo (lead y alta).
-export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided" };
-type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[] };
+export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean };
+type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean };
+
+/** Hint under a future_event date. The shape of minNotice is not documented yet, so it is read defensively: no hint is better than a wrong one. */
+function noticeHint(minNotice: IntakeQuestion["minNotice"]): string | null {
+  if (!minNotice) return null;
+  const message = minNotice.message;
+  if (message && typeof message === "object" && typeof (message as { es?: unknown }).es === "string") return (message as { es: string }).es;
+  const days = typeof minNotice.days === "number" ? minNotice.days : typeof minNotice.minDays === "number" ? minNotice.minDays : null;
+  if (days && days > 0) return `Debe faltar al menos ${days} ${days === 1 ? "día" : "días"} para esa fecha.`;
+  return "Esta fecha necesita cierta anticipación; la revisamos con lo que nos cuentas.";
+}
 type Props = { film: RebuildFilm; nextFilm: RebuildFilm; initialSession: VisaIntakeSession | null; onSessionChange: (session: VisaIntakeSession) => void; onPhaseChange: (phase: Phase) => void; onContinue: () => void; visualTheme?: VisaVisualTheme; replayCompletion?: boolean; serviceId?: string; serviceName?: string };
 const emptySession = (): VisaIntakeSession => ({ watched: false, externalRef: newExternalRef(), answers: {}, messages: [], complete: false, field: null });
 
@@ -39,10 +54,13 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
   const [phase, setPhase] = useState<Phase>(initialSession?.watched ? "interview" : "watch");
   const [busy, setBusy] = useState(false);
   const [journey, setJourney] = useState<"chat" | "gathering" | "reveal">(initialSession?.complete ? "reveal" : "chat");
+  // Turnstile invisible del lead: se resuelve mientras la persona está en el paso de contacto (revelación).
+  const leadCaptcha = useLeadCaptcha(phase === "interview" && journey !== "chat");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"text" | "voice" | null>(replayCompletion ? "text" : null);
   const [previewDone, setPreviewDone] = useState(false);
   const [draft, setDraft] = useState("");
+  const [statePicker, setStatePicker] = useState(false);
   const [speechId, setSpeechId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -113,6 +131,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     if (field && (answer !== undefined || audio)) {
       let label = audio ? "Respuesta por voz" : String(answer);
       if (typeof answer === "boolean") label = answer ? "Sí" : "No";
+      const asked = sessionRef.current.question;
+      if (typeof answer === "string" && asked?.id === field && asked.kind === "state") label = asked.options?.find(option => option.code === answer)?.label ?? answer;
       if (typeof answer === "string" && /^\d{4}-\d{2}-\d{2}$/.test(answer)) { const [year, month, day] = answer.split("-"); label = `${day}/${month}/${year}`; }
       snapshot = { ...snapshot, messages: [...snapshot.messages, { id: ++counter.current, role: "user", text: label }] };
       updateSession(snapshot);
@@ -124,7 +144,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       // The answers, not model prose, decide whether the next video is available.
       const complete = data.complete && data.field === null;
       const spokenMessage = data.message;
-      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source };
+      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline ?? snapshot.unavailableOnline };
       if(complete){heldMessages.current=next.messages.slice(-1);heldField.current=null;}
       // Reveal as soon as the response arrives. No extra overlay or exit wait.
       updateSession(next); setSpeechId(id); setDraft("");
@@ -153,7 +173,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       const complete = data.complete && data.field === null;
       const messages: Message[] = [{ id, role: "agent", text: data.message }];
       if (complete) { heldMessages.current = messages; heldField.current = null; }
-      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null });
+      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline });
       setSpeechId(id);
       void voiceRef.current.speak(data.message);
     } catch {
@@ -299,14 +319,16 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     return () => { tl.kill(); window.removeEventListener("resize", settle); gsap.set([panel,target,...Array.from(stages)], { clearProps:"opacity,visibility,transform,filter,clipPath" }); };
   }, [phase]);
 
-  /** Con nombre y teléfono, el lead entra en el tablero de ventas de contygo (PUT /leads/{externalRef}). */
+  /** Con nombre y teléfono, el lead entra en el tablero de ventas de contygo (PUT /leads/{externalRef}).
+   *  Lleva el token del Turnstile invisible (acción «lead»); si no llega a tiempo sale sin él. Nunca detiene el recorrido. */
   function registerLead() {
     const { displayName, phone, answers } = sessionRef.current;
     if (!displayName?.trim() || !phone?.trim()) return;
     const externalRef = sessionRef.current.externalRef ?? newExternalRef();
     if (!sessionRef.current.externalRef) updateSession({ ...sessionRef.current, externalRef });
-    void fetch("/api/contratar/lead", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
-      body: JSON.stringify({ serviceId, externalRef, displayName, phone, answers, attribution: pageAttribution() }) }).catch(() => {});
+    const attribution = pageAttribution();
+    void leadCaptcha.take().then(captchaToken => fetch("/api/contratar/lead", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ serviceId, externalRef, displayName, phone, answers, attribution, ...(captchaToken ? { captchaToken } : {}) }) })).catch(() => {});
   }
 
   function continueToFilm(button: HTMLButtonElement) {
@@ -361,6 +383,9 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
   const totalQuestions = session.total ?? 0;
   const locked = busy || departing || (replayCompletion && !previewDone) || microphone.status === "recording" || microphone.status === "processing";
   const now = new Date();
+  const futureDate = question?.kind === "date" && question.dateMode === "future_event";
+  const escalated = Boolean(question?.kind === "unknown" || (session.escalate && !session.complete));
+  const helpLink = waLink(whatsappHelpMessage(serviceName, publicRef(session.externalRef ?? "")));
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const speaking = voice.status === "speaking";
   const messages = busy || session.complete ? heldMessages.current : showHistory ? session.messages : session.messages.slice(-1);
@@ -407,13 +432,15 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
         {journey!=="reveal"&&<div className={s.answerArea} data-arrive>
           {mode===null&&<div className={s.modeChoice}><p>¿Cómo prefieres responder?</p><div><button type="button" onClick={()=>{setMode("voice");voice.unlock();}}><Icon name="mic"/>Con mi voz</button><button type="button" onClick={()=>{setMode("text");voice.unlock();textInput.current?.focus({preventScroll:true});}}><Icon name="text"/>Por escrito</button></div></div>}
           {field&&session.messages.some(m=>m.role==="agent")&&<div className={s.answerControls} key={field}>
-            {question?.kind==="yesno"&&<div className={s.binaryChoices}><button type="button" disabled={locked} onClick={()=>void ask(field,true)}>Sí<Icon name="check"/></button><button type="button" disabled={locked} onClick={()=>void ask(field,false)}>No<Icon name="close"/></button></div>}
-            {question?.kind==="date"&&<form className={s.dateAnswer} onSubmit={event=>{event.preventDefault();const value=(event.currentTarget.elements.namedItem("answerDate") as HTMLInputElement).value;if(value)void ask(field,value);}}><label htmlFor="intake-date">Elige la fecha</label><div><svg className={s.dateIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M8 3v4m8-4v4M3.5 10h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><input id="intake-date" name="answerDate" type="date" required min="1900-01-01" max={today} defaultValue="" disabled={locked}/><span className={s.datePlaceholder} aria-hidden="true">Elige día, mes y año</span><button type="submit" disabled={locked} aria-label="Confirmar fecha"><Icon name="arrow"/></button></div></form>}
-            {mode==="voice"&&<div className={s.voiceAnswer}><button type="button" data-recording={microphone.status==="recording"} disabled={busy||microphone.status==="processing"} onClick={()=>{voice.stop();if(microphone.status==="recording")microphone.stop();else void microphone.start();}}><Icon name="mic"/>{microphone.status==="recording"?`Terminar respuesta · ${microphone.seconds}s`:"Toca para hablar"}</button><button type="button" className={s.changeMode} onClick={()=>{microphone.cancel();setMode("text");}}>Prefiero escribir</button></div>}
-            <div className={s.composerDock} data-processing={busy}>
+            {question?.kind==="yesno"&&!escalated&&<div className={s.binaryChoices}><button type="button" disabled={locked} onClick={()=>void ask(field,true)}>Sí<Icon name="check"/></button><button type="button" disabled={locked} onClick={()=>void ask(field,false)}>No<Icon name="close"/></button></div>}
+            {question?.kind==="date"&&<form className={s.dateAnswer} onSubmit={event=>{event.preventDefault();const value=(event.currentTarget.elements.namedItem("answerDate") as HTMLInputElement).value;if(value)void ask(field,value);}}><label htmlFor="intake-date">Elige la fecha</label><div><svg className={s.dateIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M8 3v4m8-4v4M3.5 10h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><input id="intake-date" name="answerDate" type="date" required min={futureDate ? today : "1900-01-01"} max={futureDate ? "2100-12-31" : today} defaultValue="" disabled={locked}/><span className={s.datePlaceholder} aria-hidden="true">Elige día, mes y año</span><button type="submit" disabled={locked} aria-label="Confirmar fecha"><Icon name="arrow"/></button></div>{futureDate&&noticeHint(question?.minNotice)&&<p className={s.dateHint}>{noticeHint(question?.minNotice)}</p>}</form>}
+            {question?.kind==="state"&&question.options?.length?<div className={s.binaryChoices}><button type="button" disabled={locked} onClick={()=>setStatePicker(true)}>Elegir mi estado<Icon name="pin"/></button></div>:null}
+            {escalated&&<div className={s.escalate} role="status"><span>Para este servicio te ayudamos por WhatsApp.</span><a href={helpLink} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a></div>}
+            {mode==="voice"&&!escalated&&<div className={s.voiceAnswer}><button type="button" data-recording={microphone.status==="recording"} disabled={busy||microphone.status==="processing"} onClick={()=>{voice.stop();if(microphone.status==="recording")microphone.stop();else void microphone.start();}}><Icon name="mic"/>{microphone.status==="recording"?`Terminar respuesta · ${microphone.seconds}s`:"Toca para hablar"}</button><button type="button" className={s.changeMode} onClick={()=>{microphone.cancel();setMode("text");}}>Prefiero escribir</button></div>}
+            {!escalated&&<div className={s.composerDock} data-processing={busy}>
               <div className={s.replySignal} role="status" aria-live="polite">{busy&&<><span className={s.replyPearls} aria-hidden="true"><i/><i/><i/></span><span>Preparando tu siguiente paso…</span></>}</div>
               <form className={s.composer} onSubmit={event=>{event.preventDefault();if(draft.trim()&&!locked)void ask(field,draft.trim());}}><LiquidGlassPlate radius={30} strength={26} tone="dark"/><input ref={textInput} aria-label="Escribe tu respuesta al asistente" maxLength={1000} placeholder={busy?"Un momento, estoy contigo…":"Escribe tu respuesta…"} value={draft} disabled={locked} onChange={e=>setDraft(e.target.value)}/><button type="button" className={s.voiceSwitch} onClick={voice.toggleMute} aria-label={voice.muted?"Activar voz del asistente":"Silenciar voz del asistente"}><Icon name={voice.muted?"mute":"volume"}/></button><button type="button" className={s.inputMic} disabled={locked} aria-label="Responder por voz" onClick={()=>{setMode("voice");voice.stop();void microphone.start();}}><Icon name="mic"/></button><button type="submit" disabled={locked||!draft.trim()} aria-label="Enviar respuesta"><Icon name="send"/></button><span className={s.replyShine} aria-hidden="true"/></form>
-            </div>
+            </div>}
           </div>}
         </div>}
         {error&&<div className={s.notice} role="alert"><p>{error}</p><button type="button" onClick={()=>{setError("");void ask();}}>Recuperar pregunta</button></div>}
@@ -422,8 +449,10 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
         {session.messages.length>1&&!session.complete&&<button type="button" className={s.historyButton} disabled={busy} onClick={()=>setShowHistory(!showHistory)} aria-expanded={showHistory}>{showHistory?"Volver a la pregunta":"Ver conversación"}</button>}
       </div>
     </section>
+    {statePicker&&question?.kind==="state"&&question.options?.length?<VisaStatePicker options={question.options} allowUnknown={false} description="Elige el estado que corresponde a tu caso." onClose={()=>setStatePicker(false)} onChoose={code=>{setStatePicker(false);if(field)void ask(field,code);}}/>:null}
     {journey==="gathering"&&<div ref={completionSeed} className={s.completionSeed} aria-hidden="true"><img src="/contygo/brand/symbol-light.png" alt=""/></div>}
-    {phase==="interview"&&journey!=="chat"&&<VisaJourneyReveal serviceName={serviceName} displayName={session.displayName} onDisplayNameChange={displayName=>updateSession({...sessionRef.current,displayName})} phone={session.phone} onPhoneChange={phone=>updateSession({...sessionRef.current,phone})} guidance={session.guidance} onContinue={continueToFilm} onEdit={restartAnswers} departing={departing} pending={journey==="gathering"} fromChat={hasGathered.current} guide={guide}/>}
+    {phase==="interview"&&journey!=="chat"&&<VisaJourneyReveal serviceName={serviceName} unavailableOnline={Boolean(session.unavailableOnline || session.escalate)} helpHref={helpLink} displayName={session.displayName} onDisplayNameChange={displayName=>updateSession({...sessionRef.current,displayName})} phone={session.phone} onPhoneChange={phone=>updateSession({...sessionRef.current,phone})} guidance={session.guidance} onContinue={continueToFilm} onEdit={restartAnswers} departing={departing} pending={journey==="gathering"} fromChat={hasGathered.current} guide={guide}/>}
+    {phase==="interview"&&journey!=="chat"&&<div ref={leadCaptcha.container} className={s.leadCaptcha}/>}
     <div className={s.unfoldLine} data-unfold-line aria-hidden="true"/>
     <div ref={portalAtmosphere} className={s.portalAtmosphere} aria-hidden="true">{journey!=="chat"&&<>
       <div className={s.portalGlowTop}><LiquidGlow className={s.portalGlowSurface} intensity={.78}/></div>

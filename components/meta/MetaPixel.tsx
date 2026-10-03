@@ -2,20 +2,39 @@
 
 /* ============================================================
    Meta Pixel — snippet base.
-   - `init` + `PageView` van DENTRO del script inline (no en useEffect) para
-     no duplicarse con React StrictMode en desarrollo.
-   - Esta landing es una SPA de una sola URL → no se necesita tracker de ruta.
-   - Variante B (consentimiento): si REQUIRE_CONSENT, arranca con consent
-     "revoke" y NO dispara PageView aquí (lo hace ConsentBanner al aceptar).
+   CONSENTIMIENTO PRIMERO (decisión del dueño, 02-10-2026): mientras la persona no acepte el banner
+   (ConsentBanner) NO se carga nada de Meta: ni el script connect.facebook.net ni cookies. Al aceptar
+   (evento CONSENT_EVENT, o una elección guardada de una visita anterior) se inyecta el snippet, que
+   hace `init` + `PageView` DENTRO del script inline (no en useEffect) para no duplicarse con
+   React StrictMode en desarrollo. Solo NEXT_PUBLIC_META_REQUIRE_CONSENT === "0" lo carga sin pedir.
    ============================================================ */
+import { useEffect, useState } from "react";
 import Script from "next/script";
-import { PIXEL_ID, REQUIRE_CONSENT } from "@/lib/meta/events";
+import { CONSENT_EVENT, CONSENT_STORAGE_KEY, PIXEL_ID, REQUIRE_CONSENT } from "@/lib/meta/events";
+
+function storedConsent(): boolean {
+  try {
+    return window.localStorage.getItem(CONSENT_STORAGE_KEY) === "granted";
+  } catch {
+    return false;
+  }
+}
 
 export function MetaPixel() {
-  if (!PIXEL_ID) return null;
+  const [enabled, setEnabled] = useState(false);
 
-  const consentLine = REQUIRE_CONSENT ? "fbq('consent', 'revoke');" : "";
-  const pageViewLine = REQUIRE_CONSENT ? "" : "fbq('track', 'PageView');";
+  useEffect(() => {
+    if (!PIXEL_ID) return;
+    if (!REQUIRE_CONSENT || storedConsent()) {
+      setEnabled(true);
+      return;
+    }
+    const onGrant = () => setEnabled(true);
+    window.addEventListener(CONSENT_EVENT, onGrant);
+    return () => window.removeEventListener(CONSENT_EVENT, onGrant);
+  }, []);
+
+  if (!PIXEL_ID || !enabled) return null;
 
   return (
     <Script id="meta-pixel-base" strategy="afterInteractive">
@@ -28,9 +47,8 @@ export function MetaPixel() {
         t.src=v;s=b.getElementsByTagName(e)[0];
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
-        ${consentLine}
         fbq('init', '${PIXEL_ID}');
-        ${pageViewLine}
+        fbq('track', 'PageView');
       `}
     </Script>
   );

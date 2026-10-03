@@ -33,10 +33,10 @@ test('cliente: clave Bearer, JSON e Idempotency-Key; sin clave no llama a nadie'
   assert.equal(net.calls.length, 1);
 });
 
-test('cliente: un corte de red repite con la MISMA clave y los MISMOS bytes', async () => {
+test('cliente: un corte de red en la 2.ª llamada repite con la MISMA clave y los MISMOS bytes', async () => {
   const net = mockFetch();
   net.on('POST', '/contracts', (call, n) => n === 1 ? new TypeError('fetch failed') : { status: 201, body: { clientCreated: true, signingUrl: SIGNING_URL, contractId: 'c', caseId: 'k', caseNumber: 'U26-1', clientId: 'x', warnings: [] } });
-  const result = await contygoApi.createContract({ externalRef: 'web-a', b: [1, 2] }, 'alta-a-2-1-1');
+  const result = await contygoApi.createContract({ externalRef: 'web-a', b: [1, 2], verificationId: 'v', verificationCode: '481920' }, 'alta-a-2-1-1');
   assert.equal(result.status, 201);
   assert.equal(net.calls.length, 2);
   assert.equal(net.calls[0].headers['Idempotency-Key'], net.calls[1].headers['Idempotency-Key']);
@@ -157,9 +157,9 @@ test('cada respuesta de POST /contracts lleva a su pantalla; el sobre no sale de
   assert.deepEqual(map(422, 'PLAN_NOT_CONTRACTABLE'), { step: 'UNAVAILABLE' });
   assert.deepEqual(map(422, 'INVALID_PARTIES', { role: 'minor' }), { step: 'INVALID_PARTIES', role: 'minor' });
   assert.deepEqual(map(429, 'DESTINATION_RATE_LIMITED', undefined, 300), { step: 'RETRY_LATER', reason: 'destination', retryAfter: 300 });
-  assert.deepEqual(map(429, 'VERIFICATION_RATE_LIMITED', undefined, 60), { step: 'RETRY_LATER', reason: 'destination', retryAfter: 60 });
+  assert.deepEqual(map(429, 'VERIFICATION_RATE_LIMITED', undefined, 60), { step: 'RETRY_LATER', reason: 'verification', retryAfter: 60 });
   assert.deepEqual(map(429, 'RATE_LIMITED', undefined, 30), { step: 'RETRY_LATER', reason: 'general', retryAfter: 30 });
-  assert.deepEqual(map(422, 'CONSENT_CHANNEL_MISMATCH'), { step: 'ERROR', code: 'CONSENT_CHANNEL_MISMATCH' });
+  assert.deepEqual(map(422, 'CONSENT_CHANNEL_MISMATCH'), { step: 'UNAVAILABLE_ONLINE', code: 'CONSENT_CHANNEL_MISMATCH' }, 'configuración: ya no es un error genérico');
   assert.deepEqual(map(503, 'INTERNAL', undefined, 2), { step: 'RETRY_LATER', reason: 'busy', retryAfter: 2 });
   assert.deepEqual(map(409, 'IN_PROGRESS', undefined, 1), { step: 'RETRY_LATER', reason: 'busy', retryAfter: 1 }, 'misma clave');
   assert.deepEqual(map(409, 'IDEMPOTENCY_MISMATCH'), { step: 'RETRY_LATER', reason: 'conflict', retryAfter: null }, 'la próxima vez, clave nueva');
@@ -168,7 +168,8 @@ test('cada respuesta de POST /contracts lleva a su pantalla; el sobre no sale de
   assert.equal(sign.step, 'SIGN');
   assert.equal(sign.serviceAlreadyLive, 'U26-000123');
   const foreign = checkout.mapContractResponse({ status: 201, data: { ...created, signingUrl: 'https://evil.example/firma/x' }, error: null, retryAfter: null });
-  assert.deepEqual(foreign, { step: 'ERROR', code: 'BAD_SIGNING_URL' }, 'solo se muestra una URL de firma de contygo');
+  assert.equal(foreign.step, 'SIGN_LINK_PENDING', 'solo se muestra una URL de firma de contygo: con otra, la persona pide el enlace por /reenviar');
+  assert.equal(JSON.stringify(foreign).includes('evil.example') && foreign.step === 'SIGN', false);
 });
 
 test('token del contrato de la guía (§2 bis) y ticket de la verificación: firmados, sin base de datos', () => {
@@ -191,10 +192,31 @@ test('token del contrato de la guía (§2 bis) y ticket de la verificación: fir
   assert.ok(!checkout.isIdempotencyKey('alta-web-1') && !checkout.isIdempotencyKey(undefined));
 });
 
-test('el texto de aceptación y su versión cambian juntos', () => {
-  // Si cambias el texto, cambia CONTRACT_TERMS.version y actualiza esta huella.
-  const fingerprint = crypto.createHash('sha256').update(CONTRACT_TERMS.es + '\n' + CONTRACT_TERMS.en).digest('hex').slice(0, 16);
-  assert.deepEqual({ version: CONTRACT_TERMS.version, fingerprint }, { version: 'terminos-web-2026-09-28', fingerprint: '09c02063e3add444' });
+test('el texto de aceptación, /terminos, /privacidad y la versión cambian juntos', () => {
+  // Si cambias el texto de la casilla O el de cualquiera de las dos páginas, sube CONTRACT_TERMS.version y actualiza estas huellas.
+  const { TERMINOS } = require('../lib/legal/terminos.ts');
+  const { PRIVACIDAD } = require('../lib/legal/privacidad.ts');
+  const sha = value => crypto.createHash('sha256').update(value).digest('hex').slice(0, 16);
+  const fingerprints = {
+    version: CONTRACT_TERMS.version,
+    checkbox: sha(CONTRACT_TERMS.es + '\n' + CONTRACT_TERMS.en),
+    terminos: sha(JSON.stringify(TERMINOS)),
+    privacidad: sha(JSON.stringify(PRIVACIDAD)),
+  };
+  assert.deepEqual(fingerprints, { version: 'terminos-web-2026-10-03', checkbox: '6f02897c8a009f41', terminos: '307dd08a855f6468', privacidad: '851555cf90c6d719' });
+});
+
+test('las páginas legales: contacto solo por el WhatsApp único y contygo.app, sin correos ni TODO', () => {
+  const { TERMINOS } = require('../lib/legal/terminos.ts');
+  const { PRIVACIDAD } = require('../lib/legal/privacidad.ts');
+  const { WHATSAPP_DISPLAY } = require('../lib/config.ts');
+  for (const doc of [TERMINOS, PRIVACIDAD]) {
+    const text = JSON.stringify(doc);
+    assert.ok(text.includes(WHATSAPP_DISPLAY), doc.title);
+    assert.ok(text.includes('contygo.app'), doc.title);
+    assert.doesNotMatch(text, /@[a-z0-9-]+\.[a-z]{2,}|\bTODO\b|COMPLETAR/, doc.title);
+  }
+  assert.match(JSON.stringify(PRIVACIDAD), /solo si aceptas el aviso de cookies/);
 });
 
 test('fuera de producción, contra el contygo real, solo se lee salvo prueba coordinada', async () => {

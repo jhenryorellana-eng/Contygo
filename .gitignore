@@ -45,3 +45,6 @@ next-env.d.ts
 /.claude/
 # documentación interna de contygo (su guía y su OpenAPI): se queda en local, el repositorio es público
 /docs/fuentes-contygo/
+
+# el ejemplo de variables sí se versiona
+!.env.example

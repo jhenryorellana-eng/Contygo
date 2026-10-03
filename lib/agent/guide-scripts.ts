@@ -24,7 +24,7 @@ export const GUIDE_LINES = {
   contractContact: [
     { text: "Ahora, tu correo electrónico.", target: "email" },
     { text: "Ahí te enviaremos un código para confirmar que eres tú.", target: "email" },
-    { text: "Y tu teléfono, con el país correcto.", target: "phone" },
+    { text: "Y tu teléfono de Estados Unidos.", target: "phone" },
   ],
   contractAddress: [
     { text: "Escribe la dirección donde vives:", target: "line1" },

@@ -24,14 +24,32 @@ export interface CatalogPlan {
   extraPartyPriceCents: number;
 }
 
-/** kind dice cómo se responde: yes_no → booleano; date → "YYYY-MM-DD" (guía §4, paso 0). Obligatorio en el OpenAPI de producción. */
-export interface CatalogQuestion { id: string; kind: "yes_no" | "date"; prompt: I18nText }
+/** Una opción de una pregunta us_state: la respuesta es el código de 2 letras ("TX"). */
+export interface QuestionOption { code: string; /** El rótulo real de contygo: {es, en}. */ name?: I18nText | string | null; /** Respaldo de catálogos antiguos. */ label?: I18nText | string | null; [extra: string]: unknown }
+
+/**
+ * kind dice cómo se responde: yes_no → booleano; date → "YYYY-MM-DD"; us_state → código de 2 letras
+ * de `options` (guía §4, paso 0; OpenAPI X3). Obligatorio en el OpenAPI de producción. Un kind que
+ * no está en esta lista no se adivina: se escala (el tipo lo deja pasar a propósito con `string`).
+ * dateMode: past/birthdate → hasta hoy; future_event → desde hoy. minNotice es solo informativo:
+ * quien decide es contygo.
+ */
+export interface CatalogQuestion {
+  id: string;
+  kind: "yes_no" | "date" | "us_state" | (string & {});
+  prompt: I18nText;
+  dateMode?: "past" | "future_event" | "birthdate" | (string & {});
+  minNotice?: Record<string, unknown> | null;
+  options?: QuestionOption[];
+}
 
 export interface PartyRole {
   roleKey: string;
   label: I18nText;
   cardinality: "single" | "multiple" | string;
   isRequired: boolean;
+  /** Si el rol queda vacío, el titular ocupa su lugar (OpenAPI X3). */
+  principalFallbackWhenEmpty?: boolean;
 }
 
 export interface CatalogService {
@@ -79,12 +97,17 @@ export interface UpsertLeadResult {
 
 export type AnswerValue = boolean | string;
 
+/** Por qué una pregunta descalifica (lista abierta): answer, deadline_passed, deadline_too_close, future_date, event_too_close, age_limit_too_close, age_limit_passed… */
+export type DisqualifiedReason = "answer" | "deadline_passed" | "deadline_too_close" | "future_date" | "event_too_close" | "age_limit_too_close" | "age_limit_passed" | (string & {});
+
 export interface EligibilityResult {
   eligible: boolean;
   missingQuestionIds: string[];
   disqualifiedQuestionIds: string[];
+  disqualified?: { questionId: string; reason: DisqualifiedReason }[];
   notices: { questionId: string; message: { es?: string; en?: string } | null }[];
   anchorYmd: string | null;
+  anchorWaived?: boolean;
 }
 
 export interface ContractParty {

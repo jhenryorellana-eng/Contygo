@@ -135,7 +135,7 @@
 .signAction .primary{width:min(100%,380px)}
 .caseNumber{margin:0;font-size:17px}
 .warning{margin:0;padding:12px 16px;border-radius:16px;background:color-mix(in srgb,#f5b400 16%,transparent);font-size:15px}
-.links{display:flex;justify-content:center}
+.links{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}
 
 .loading{display:flex;align-items:center;gap:8px;font-size:17px;color:rgba(var(--ink-rgb),.75)}
 .loading i{width:9px;height:9px;border-radius:50%;background:var(--green);animation:dot 1s ease-in-out infinite}

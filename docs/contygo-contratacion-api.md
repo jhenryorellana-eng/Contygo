@@ -76,7 +76,7 @@ La persona contrata dentro del recorrido de cada servicio y firma en contygo. Nu
 | `POST /api/contratar/servicio` | `GET /catalog`: caché de 5 min, o de hasta 1 h si contygo no responde | Devuelve el servicio (paquetes, personas y preguntas con `kind`, `dateMode`, `minNotice` y `options`), además de `checkoutEnabled`, el texto de la casilla y la site key de Turnstile |
 | `GET /api/contratar/precios` | `GET /catalog` | El precio «desde» y los paquetes de cada servicio. Es público, con caché de CDN de 5 min. Sin catálogo responde 503 y la UI oculta los precios |
 | `POST /api/agent/service-intake` | `GET /catalog`, y `POST /eligibility/evaluate` al terminar | Las respuestas viajan en cada turno y vuelven al navegador. Devuelve `escalate: true` si hay una pregunta que la web no sabe responder |
-| `POST /api/contratar/lead` | `PUT /leads/{externalRef}` | El veredicto para ventas lo da contygo, no la UI. No tiene CAPTCHA |
+| `POST /api/contratar/lead` | `PUT /leads/{externalRef}` | El veredicto para ventas lo da contygo, no la UI. Exige un token de Turnstile con la acción `lead` (`captchaToken`; invisible en el navegador) |
 | `POST /api/contratar/iniciar` | `POST /eligibility/evaluate`, `PUT /leads/{externalRef}` y `POST /contracts` (1.ª llamada) | Pasa por el interruptor, el **CAPTCHA (Turnstile)** y el límite propio. Reenvía la clave de la UI. Devuelve `verificationId`, cuerpo y ticket |
 | `POST /api/contratar/confirmar` | `POST /contracts` (2.ª llamada) | Solo funciona con un ticket válido. Reenvía la clave de la UI. Con 201, devuelve el token del contrato |
 | `POST /api/contratar/estado` | `GET /contracts/{id}` | Solo con el token firmado; si no cuadra, 404. Caché de 60 s |
@@ -211,7 +211,7 @@ La UI genera una clave con `crypto.randomUUID()` para cada intento y la ruta la 
 |---|---|
 | `/iniciar` («Enviar mi código») | 10 por hora por IP, y CAPTCHA en cada envío |
 | `/confirmar` | 30 por hora por IP, y 8 cada 15 min por verificación |
-| `/lead` | 20 por hora por IP, sin CAPTCHA |
+| `/lead` | 20 por hora por IP, con Turnstile (acción `lead`) |
 | `/servicio` | 60 cada 10 min por IP |
 | `/estado` | 40 cada 10 min por IP; caché de 60 s por contrato |
 | `/reenviar` | 10 por hora por IP y 3 por hora por contrato |
@@ -334,7 +334,7 @@ En Vercel, un cambio de variable solo se aplica a un despliegue nuevo: después 
 | `CONTYGO_CHECKOUT_ENABLED` | `0` apaga la contratación (ver el runbook). Vacía, o con cualquier otro valor, queda encendida |
 | `CONTYGO_WEBHOOK_SECRET` | Enciende `/api/webhooks/contygo`. Hoy está apagada a propósito |
 | `GEMINI_CHAT_MODEL`, `GEMINI_LIVE_MODEL`, `GEMINI_SERVICE_INTAKE_MODEL`, `GEMINI_VISA_INTAKE_MODEL`, `GEMINI_TTS_MODEL`, `GEMINI_TTS_VOICE`, `GEMINI_VOICE` | Cambian el modelo o la voz; todas tienen un valor por defecto en el código |
-| `NEXT_PUBLIC_FACEBOOK_PIXEL_ID`, `FACEBOOK_CONVERSION_API_TOKEN` (secreto), `FACEBOOK_GRAPH_API_VERSION`, `FACEBOOK_TEST_EVENT_CODE`, `NEXT_PUBLIC_META_REQUIRE_CONSENT` | Meta Pixel y CAPI (ver el README). Sin Pixel ID se usa el de UsaLatinoPrime. La política de privacidad dice que el Pixel se carga «solo con tu consentimiento donde se pida»: hay que confirmar qué valor lleva `NEXT_PUBLIC_META_REQUIRE_CONSENT` en producción |
+| `NEXT_PUBLIC_FACEBOOK_PIXEL_ID`, `FACEBOOK_CONVERSION_API_TOKEN` (secreto), `FACEBOOK_GRAPH_API_VERSION`, `FACEBOOK_TEST_EVENT_CODE`, `NEXT_PUBLIC_META_REQUIRE_CONSENT` | Meta Pixel y CAPI (ver el README). Sin Pixel ID se usa el de UsaLatinoPrime. Desde el 2026-10-02 el consentimiento se pide SIEMPRE: el Pixel y la CAPI solo cargan después de aceptar el banner de cookies. Solo `NEXT_PUBLIC_META_REQUIRE_CONSENT=0` lo desactiva (no lo pongas en producción) |
 | `NEXT_PUBLIC_VIDEO_URL`, `NEXT_PUBLIC_VIDEO_POSTER` | Vídeo del embudo heredado |
 | `AGENT_PREVIEW` | `1` muestra el widget de Prime sin Gemini, para vistas previas |
 | `NEXT_DIST_DIR` | Solo en local: carpeta de build alternativa |
@@ -427,7 +427,7 @@ Ya no hay base de datos. Se retiraron `store.ts` y `supabase/contygo-contratacio
 
 ## APUESTAS (sin respaldo todavía)
 
-- **Texto de la casilla de aceptación** (`terms.ts`, versión `terminos-web-2026-10-02`).
+- **Texto de la casilla de aceptación** (`terms.ts`, versión `terminos-web-2026-10-03`) y los textos de `/terminos` y `/privacidad` (`lib/legal/*.ts`): la huella de `tests/contygo-api.test.cjs` cubre los tres y tocar cualquiera obliga a subir la versión.
   - Nombra a «ContyGo, marca de USA LATINO PRIME LLC» y se muestra en español o en inglés según el idioma elegido en la ficha.
   - Es un borrador **PENDIENTE DE APROBACIÓN LEGAL DEL DUEÑO**, igual que `/terminos` y `/privacidad`.
   - Si cambia una palabra, cambia la versión: el test «el texto de aceptación y su versión cambian juntos» (`tests/contygo-api.test.cjs`) compara la huella del texto.
@@ -604,7 +604,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 - [x] La clave vive solo en una variable de entorno del servidor, nunca en el navegador ni en git (`.env*` está en `.gitignore`).
 - [x] CAPTCHA (Turnstile) y límites propios delante de «Enviar mi código».
   - Test: «CAPTCHA, clave de la UI y límite propio por IP delante del envío del código».
-- [x] Texto de aceptación versionado en `consent.textVersion` (`terminos-web-2026-10-02`), en español o inglés según el idioma. `consent.at` nunca va en el futuro (`tests/contygo-api.test.cjs`). El texto sigue pendiente de aprobación legal (abajo).
+- [x] Texto de aceptación versionado en `consent.textVersion` (`terminos-web-2026-10-03`), en español o inglés según el idioma. `consent.at` nunca va en el futuro (`tests/contygo-api.test.cjs`). El texto sigue pendiente de aprobación legal (abajo).
 - [x] 1.ª llamada → código → 2.ª llamada con el mismo cuerpo byte a byte, `verificationId`, código y una clave nueva.
   - Tests de `tests/contygo-contratacion.test.cjs`: «Contratar en dos pasos sin estado…» y «solo se canjea un código con el cuerpo y el sobre que firmó este servidor».
 - [x] «Ya eres cliente» solo después del código, y `CLIENT_NEEDS_HUMAN` con texto neutro (`contygo-contratacion` y `contygo-ui`).

@@ -16,6 +16,7 @@ import LiquidGlassPlate from "./LiquidGlassPlate";
 import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import type { IntakeQuestion, JourneyGuidance, ServiceAnswers } from "@/lib/agent/service-intake";
 import { newExternalRef, pageAttribution } from "@/lib/contygo-api/browser";
+import { useLeadCaptcha } from "./useLeadCaptcha";
 import shared from "../rebuild/ServiceIntroFilm.module.css";
 import s from "./VisaJuvenilExperience.module.css";
 
@@ -53,6 +54,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
   const [phase, setPhase] = useState<Phase>(initialSession?.watched ? "interview" : "watch");
   const [busy, setBusy] = useState(false);
   const [journey, setJourney] = useState<"chat" | "gathering" | "reveal">(initialSession?.complete ? "reveal" : "chat");
+  // Turnstile invisible del lead: se resuelve mientras la persona está en el paso de contacto (revelación).
+  const leadCaptcha = useLeadCaptcha(phase === "interview" && journey !== "chat");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"text" | "voice" | null>(replayCompletion ? "text" : null);
   const [previewDone, setPreviewDone] = useState(false);
@@ -316,14 +319,16 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     return () => { tl.kill(); window.removeEventListener("resize", settle); gsap.set([panel,target,...Array.from(stages)], { clearProps:"opacity,visibility,transform,filter,clipPath" }); };
   }, [phase]);
 
-  /** Con nombre y teléfono, el lead entra en el tablero de ventas de contygo (PUT /leads/{externalRef}). */
+  /** Con nombre y teléfono, el lead entra en el tablero de ventas de contygo (PUT /leads/{externalRef}).
+   *  Lleva el token del Turnstile invisible (acción «lead»); si no llega a tiempo sale sin él. Nunca detiene el recorrido. */
   function registerLead() {
     const { displayName, phone, answers } = sessionRef.current;
     if (!displayName?.trim() || !phone?.trim()) return;
     const externalRef = sessionRef.current.externalRef ?? newExternalRef();
     if (!sessionRef.current.externalRef) updateSession({ ...sessionRef.current, externalRef });
-    void fetch("/api/contratar/lead", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
-      body: JSON.stringify({ serviceId, externalRef, displayName, phone, answers, attribution: pageAttribution() }) }).catch(() => {});
+    const attribution = pageAttribution();
+    void leadCaptcha.take().then(captchaToken => fetch("/api/contratar/lead", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ serviceId, externalRef, displayName, phone, answers, attribution, ...(captchaToken ? { captchaToken } : {}) }) })).catch(() => {});
   }
 
   function continueToFilm(button: HTMLButtonElement) {
@@ -446,7 +451,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     </section>
     {statePicker&&question?.kind==="state"&&question.options?.length?<VisaStatePicker options={question.options} allowUnknown={false} description="Elige el estado que corresponde a tu caso." onClose={()=>setStatePicker(false)} onChoose={code=>{setStatePicker(false);if(field)void ask(field,code);}}/>:null}
     {journey==="gathering"&&<div ref={completionSeed} className={s.completionSeed} aria-hidden="true"><img src="/contygo/brand/symbol-light.png" alt=""/></div>}
-    {phase==="interview"&&journey!=="chat"&&<VisaJourneyReveal serviceName={serviceName} displayName={session.displayName} onDisplayNameChange={displayName=>updateSession({...sessionRef.current,displayName})} phone={session.phone} onPhoneChange={phone=>updateSession({...sessionRef.current,phone})} guidance={session.guidance} onContinue={continueToFilm} onEdit={restartAnswers} departing={departing} pending={journey==="gathering"} fromChat={hasGathered.current} guide={guide}/>}
+    {phase==="interview"&&journey!=="chat"&&<VisaJourneyReveal serviceName={serviceName} unavailableOnline={Boolean(session.unavailableOnline || session.escalate)} helpHref={helpLink} displayName={session.displayName} onDisplayNameChange={displayName=>updateSession({...sessionRef.current,displayName})} phone={session.phone} onPhoneChange={phone=>updateSession({...sessionRef.current,phone})} guidance={session.guidance} onContinue={continueToFilm} onEdit={restartAnswers} departing={departing} pending={journey==="gathering"} fromChat={hasGathered.current} guide={guide}/>}
+    {phase==="interview"&&journey!=="chat"&&<div ref={leadCaptcha.container} className={s.leadCaptcha}/>}
     <div className={s.unfoldLine} data-unfold-line aria-hidden="true"/>
     <div ref={portalAtmosphere} className={s.portalAtmosphere} aria-hidden="true">{journey!=="chat"&&<>
       <div className={s.portalGlowTop}><LiquidGlow className={s.portalGlowSurface} intensity={.78}/></div>

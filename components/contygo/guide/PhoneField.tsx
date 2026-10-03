@@ -83,6 +83,13 @@ function usDigits(typed: string): { digits: string; foreign: boolean } {
   return { digits: (all.length === 11 && all.startsWith("1") ? all.slice(1) : all).slice(0, 10), foreign: false };
 }
 
+/** What the +1-only field reports to the form. A foreign number goes out as its own international value ("+" + digits), never as "+1" + foreign digits:
+ *  +32 12345678 (Belgium) or +53 5 234 5678 (Cuba) are 10 digits long and would otherwise pass as a valid US number. The contract validator rejects it. */
+export function usOnlyPhone(typed: string): { digits: string; foreign: boolean; value: string } {
+  const { digits, foreign } = usDigits(typed);
+  return { digits, foreign, value: !digits ? "" : foreign ? `+${digits}` : `+1${digits}` };
+}
+
 export default function PhoneField({ value, onChange, onBlur, disabled, invalid, id, describedBy, autoFocus, usOnly }: Props) {
   const initial = useMemo(() => usOnly ? { country: US, national: usDigits(value).digits } : splitPhone(value), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [country, setCountry] = useState<Country>(initial.country);
@@ -92,7 +99,7 @@ export default function PhoneField({ value, onChange, onBlur, disabled, invalid,
 
   // A value set from outside (prefill from the chat, a correction) replaces what is shown.
   useEffect(() => {
-    const own = national ? `+${country.dial}${national}` : "";
+    const own = !national ? "" : usOnly && foreign ? `+${national}` : `+${country.dial}${national}`;
     if (value === own) return;
     if (usOnly) { const next = usDigits(value); setNational(next.digits); setForeign(next.foreign); return; }
     const next = splitPhone(value);
@@ -126,7 +133,7 @@ export default function PhoneField({ value, onChange, onBlur, disabled, invalid,
       onBlur={onBlur}
       onChange={event => {
         const typed = event.target.value;
-        if (usOnly) { const next = usDigits(typed); setNational(next.digits); setForeign(next.foreign); emit(US, next.digits); return; }
+        if (usOnly) { const next = usOnlyPhone(typed); setNational(next.digits); setForeign(next.foreign); onChange(next.value); return; }
         // Someone who types the full international number (+52…) gets their country picked for them.
         if (typed.trim().startsWith("+")) { const next = splitPhone(typed); setCountry(next.country); setNational(next.national); emit(next.country, next.national); return; }
         const digits = typed.replace(/\D/g, "").slice(0, country.dial === "1" ? 10 : 13);

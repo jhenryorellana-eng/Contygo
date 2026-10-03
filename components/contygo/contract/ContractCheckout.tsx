@@ -22,6 +22,7 @@ import {
   clearDraft, newExternalRef, newIdempotencyKey, pageAttribution, readContract, readDraft, saveContract, saveDraft,
   type DraftForm, type DraftPerson, type SentVerification,
 } from "@/lib/contygo-api/browser";
+import { confirmKey, keepsKey, startKey, type Pending } from "@/lib/contygo-api/checkout-keys";
 import type { GuideLineId } from "@/lib/agent/guide-scripts";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
 import type { ClosingVoice } from "../juvenil/closingSpeech";
@@ -42,8 +43,6 @@ type ApiOutcome = ScreenOutcome & {
   errors?: FieldErrors; maskedEmail?: string; expiresAt?: string | null; caseNumber?: string; signingUrl?: string; token?: string;
   verificationId?: string; body?: SentVerification["body"]; ticket?: string; role?: string | null; retryAfter?: number | null; ref?: string; code?: string; clientCreated?: boolean; firstName?: string;
 };
-/** The key of an attempt that may be repeated as it is after a cut: same key, same body (guía §8). */
-type Pending = { op: "start"; key: string; fingerprint: string } | { op: "confirm"; key: string; code: string; verificationId: string };
 type Step = "name" | "contact" | "address" | "people" | "plan" | "review";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -285,15 +284,15 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
 
   function handle(status: number, body: Awaited<ReturnType<typeof postJson>>["data"], retryAfter: number | null = null) {
     const outcome = body?.outcome;
-    // contygo answered for good: the next attempt gets a new key. Only «busy» (IN_PROGRESS, 503, a cut)
-    // lets the same key and body be repeated as they are (guía §8).
-    if (outcome && !(outcome.step === "RETRY_LATER" && outcome.reason === "busy")) pending.current = null;
+    // contygo answered for good: the next attempt gets a new key. Only «busy» (IN_PROGRESS, 503, a cut, our own 429)
+    // lets the same key and body be repeated as they are (guía §8). The decision is keepsKey (unit-tested).
+    if (!keepsKey({ status, outcome, error: body?.error })) pending.current = null;
     if (status === 429) { show({ step: "RETRY_LATER", reason: "destination", retryAfter }); return; }
     if (status === 403 && body?.error?.startsWith("captcha")) { setNotice({ tone: "error", title: "No pudimos confirmar que no eres un robot.", detail: "Espera a que se complete la verificación e inténtalo de nuevo." }); return; }
     // 502, 504, 503 or a page that is not JSON: our own route did not answer. It is «busy»: same key, same body.
     if (!outcome && (status >= 500 || status === 200)) { show({ step: "RETRY_LATER", reason: "busy" }); return; }
     // Anything else without an outcome (400, 404, 413…): not transient, but the person can still try again or write.
-    if (status !== 200 || !outcome) { pending.current = null; setRetryable(true); setStage("blocked"); show({ step: "ERROR" }); return; }
+    if (status !== 200 || !outcome) { setRetryable(true); setStage("blocked"); show({ step: "ERROR" }); return; }
     if (outcome.ref) setHelpRef(outcome.ref);
     switch (outcome.step) {
       case "INVALID":
@@ -362,8 +361,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     // After a cut, the same form and answers go again with the same key: contygo answers the same
     // and nothing is sent twice. Anything else is a new attempt with a new key.
     const fingerprint = JSON.stringify([input, answersNow]);
-    const last = pending.current;
-    const key = last?.op === "start" && last.fingerprint === fingerprint ? last.key : newIdempotencyKey();
+    const key = startKey(pending.current, fingerprint, newIdempotencyKey);
     pending.current = { op: "start", key, fingerprint };
     setErrors({}); setBusy(true);
     try {
@@ -389,8 +387,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     if (clean.length !== 6) { setNotice({ tone: "error", title: "El código tiene 6 números." }); return; }
     if (!sent) { show({ step: "RESTART" }); setPendingRestart(true); return; }
     // The same code again after a cut reuses its key; a new code gets a new one (guía §4, paso 4).
-    const last = pending.current;
-    const key = last?.op === "confirm" && last.code === clean && last.verificationId === sent.verificationId ? last.key : newIdempotencyKey();
+    const key = confirmKey(pending.current, clean, sent.verificationId, newIdempotencyKey);
     pending.current = { op: "confirm", key, code: clean, verificationId: sent.verificationId };
     setBusy(true);
     try {

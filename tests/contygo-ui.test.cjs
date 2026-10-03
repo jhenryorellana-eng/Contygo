@@ -86,3 +86,50 @@ test('precios: solo salen del mapa vivo; sin mapa no hay precio', () => {
   assert.equal(prices.planPriceCents(map, 'visa-juvenil-basico', 'Cualquiera', 1), 250000);
   assert.equal(prices.planPriceCents(null, 'i-360', 'Con abogado', 2), null);
 });
+
+test('F1: un número extranjero pegado en el campo +1 sale internacional y el validador del contrato lo rechaza', () => {
+  const { usOnlyPhone } = require('../components/contygo/guide/PhoneField.tsx');
+  const { normalizeContractPhone } = require('../lib/contygo-api/checkout.ts');
+  // Belgium and Cuba add up to exactly 10 digits: they must not become a valid +1 number.
+  for (const typed of ['+32 12345678', '+53 5 234 5678', '0032 12345678']) {
+    const out = usOnlyPhone(typed);
+    assert.equal(out.foreign, true, typed);
+    assert.ok(!out.value.startsWith('+1'), `${typed} → ${out.value}`);
+    assert.equal(normalizeContractPhone(out.value), null, typed);
+  }
+  // A valid US paste keeps working in every shape.
+  for (const typed of ['+1 (305) 555-0199', '1-305-555-0199', '3055550199', '(305) 555-0199']) {
+    const out = usOnlyPhone(typed);
+    assert.equal(out.foreign, false, typed);
+    assert.equal(out.value, '+13055550199', typed);
+    assert.equal(normalizeContractPhone(out.value), '+13055550199', typed);
+  }
+  assert.equal(usOnlyPhone('').value, '');
+});
+
+test('SEC-03: el consentimiento de Meta es obligatorio por defecto; solo "0" lo apaga', () => {
+  const path = require.resolve('../lib/meta/events.ts');
+  const saved = process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT;
+  const load = value => {
+    delete require.cache[path];
+    if (value === undefined) delete process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT; else process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT = value;
+    return require(path).REQUIRE_CONSENT;
+  };
+  try {
+    assert.equal(load(undefined), true, 'sin variable se pide');
+    assert.equal(load('1'), true);
+    assert.equal(load(''), true);
+    assert.equal(load('false'), true, 'solo "0" lo desactiva');
+    assert.equal(load('0'), false);
+  } finally {
+    delete require.cache[path];
+    if (saved === undefined) delete process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT; else process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT = saved;
+  }
+});
+
+test('SEC-03: el Pixel no se renderiza (ni su script) antes de que haya consentimiento', () => {
+  const { MetaPixel } = require('../components/meta/MetaPixel.tsx');
+  assert.equal(renderToStaticMarkup(React.createElement(MetaPixel)), '', 'el primer render no trae nada de Meta');
+  const { shouldTrack } = require('../lib/meta/pixel-client.ts');
+  assert.equal(shouldTrack(), false, 'sin navegador no hay consentimiento');
+});

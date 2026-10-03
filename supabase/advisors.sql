@@ -33,9 +33,12 @@ drop policy if exists "ulp_advisors_select_active" on public.ulp_advisors;
 create policy "ulp_advisors_select_active" on public.ulp_advisors
   for select to anon using (active);
 
+-- LEGADO ULP. Desde el 02-10-2026 la web usa un ÚNICO número de WhatsApp (el de lib/config.ts) y esta
+-- rotación de asesoras ya no se usa. Los números personales de las asesoras se retiraron del repo público:
+-- ambas filas apuntan al número único. Nada en la web actual lee esta tabla para elegir a quién escribir.
 insert into public.ulp_advisors (id, name, whatsapp) values
-  ('vanessa', 'Vanessa', '17633422258'),
-  ('jazmin',  'Jazmín',  '18083018276')
+  ('vanessa', 'Vanessa', '13853927656'),
+  ('jazmin',  'Jazmín',  '13853927656')
 on conflict (id) do nothing;
 
 create table if not exists public.ulp_leads (

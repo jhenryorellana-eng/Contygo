@@ -200,7 +200,7 @@ Copia `.env.example` → `.env.local` (local) o configúralas en Vercel:
 | `FACEBOOK_CONVERSION_API_TOKEN` | **Secreto** | Token de la CAPI. Sin él, el CAPI hace _no-op_ seguro. |
 | `FACEBOOK_GRAPH_API_VERSION` | Servidor | Opcional (default `v23.0`). |
 | `FACEBOOK_TEST_EVENT_CODE` | Servidor | Solo QA. **Vacío en producción.** |
-| `NEXT_PUBLIC_META_REQUIRE_CONSENT` | Público | `"1"` activa el banner opt-in (GDPR). Vacío = disparo directo (EE.UU.). |
+| `NEXT_PUBLIC_META_REQUIRE_CONSENT` | Público | El consentimiento se pide por defecto: el Pixel solo carga tras aceptar el banner. Solo `"0"` lo desactiva. |
 
 ### Cómo obtener el token de la CAPI
 

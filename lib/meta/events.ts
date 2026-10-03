@@ -12,9 +12,18 @@
 export const PIXEL_ID =
   process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || "1489091455876816";
 
-/** Variante B (banner opt-in GDPR) activa cuando vale exactamente "1". */
+/**
+ * Consentimiento OBLIGATORIO por defecto (decisión del dueño, 02-10-2026): el Pixel y la Conversions API
+ * solo cargan después de que la persona acepta el banner. Solo NEXT_PUBLIC_META_REQUIRE_CONSENT === "0"
+ * lo desactiva (por ejemplo, en una prueba local). Sin variable, o con cualquier otro valor, se pide.
+ */
 export const REQUIRE_CONSENT =
-  process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT === "1";
+  process.env.NEXT_PUBLIC_META_REQUIRE_CONSENT !== "0";
+
+/** Dónde se guarda la elección ('granted' | 'denied'): localStorage y cookie del mismo nombre (la lee /api/meta). */
+export const CONSENT_STORAGE_KEY = "meta_consent";
+/** Evento de window que el banner lanza al aceptar, para que MetaPixel cargue el Pixel en ese momento. */
+export const CONSENT_EVENT = "meta-consent-granted";
 
 /** Eventos estándar de Meta + customs del embudo de esta landing. */
 export type MetaEventName =

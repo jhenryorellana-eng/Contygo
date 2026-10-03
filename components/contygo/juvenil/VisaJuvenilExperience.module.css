@@ -296,3 +296,7 @@
 :global([data-contygo-theme=light]) .notice a,:global([data-contygo-theme=light]) .escalate a{color:#087f46}
 :global([data-contygo-theme=light]) .escalate{color:rgb(6 27 61 / 80%)}
 :global([data-contygo-theme=light]) .dateHint{color:rgb(6 27 61 / 67%)}
+
+/* 02-10-2026 · Turnstile invisible del lead: no ocupa lugar; si Cloudflare pide una interacción, aparece abajo. */
+.leadCaptcha{position:fixed;inset-inline:0;bottom:12px;z-index:30;display:flex;justify-content:center;pointer-events:none}
+.leadCaptcha>*{pointer-events:auto}

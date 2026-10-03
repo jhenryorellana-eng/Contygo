@@ -5,6 +5,7 @@
    Client Components que sí lo llevan.
    ============================================================ */
 import {
+  CONSENT_STORAGE_KEY,
   CONTENT_CATEGORY,
   REQUIRE_CONSENT,
   isStandardEvent,
@@ -67,11 +68,15 @@ export function getOrCreateExternalId(): string | undefined {
   return id;
 }
 
-/** ¿Está concedido el seguimiento? En Variante A siempre; en B exige opt-in. */
+/** ¿Está concedido el seguimiento? Por defecto exige que la persona haya aceptado el banner. */
 export function shouldTrack(): boolean {
   if (!REQUIRE_CONSENT) return true;
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem("meta_consent") === "granted";
+  try {
+    return window.localStorage.getItem(CONSENT_STORAGE_KEY) === "granted";
+  } catch {
+    return false; // sin almacenamiento no hay prueba de consentimiento
+  }
 }
 
 /**

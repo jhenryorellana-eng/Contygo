@@ -192,10 +192,31 @@ test('token del contrato de la guía (§2 bis) y ticket de la verificación: fir
   assert.ok(!checkout.isIdempotencyKey('alta-web-1') && !checkout.isIdempotencyKey(undefined));
 });
 
-test('el texto de aceptación y su versión cambian juntos', () => {
-  // Si cambias el texto, cambia CONTRACT_TERMS.version y actualiza esta huella.
-  const fingerprint = crypto.createHash('sha256').update(CONTRACT_TERMS.es + '\n' + CONTRACT_TERMS.en).digest('hex').slice(0, 16);
-  assert.deepEqual({ version: CONTRACT_TERMS.version, fingerprint }, { version: 'terminos-web-2026-10-02', fingerprint: '6f02897c8a009f41' });
+test('el texto de aceptación, /terminos, /privacidad y la versión cambian juntos', () => {
+  // Si cambias el texto de la casilla O el de cualquiera de las dos páginas, sube CONTRACT_TERMS.version y actualiza estas huellas.
+  const { TERMINOS } = require('../lib/legal/terminos.ts');
+  const { PRIVACIDAD } = require('../lib/legal/privacidad.ts');
+  const sha = value => crypto.createHash('sha256').update(value).digest('hex').slice(0, 16);
+  const fingerprints = {
+    version: CONTRACT_TERMS.version,
+    checkbox: sha(CONTRACT_TERMS.es + '\n' + CONTRACT_TERMS.en),
+    terminos: sha(JSON.stringify(TERMINOS)),
+    privacidad: sha(JSON.stringify(PRIVACIDAD)),
+  };
+  assert.deepEqual(fingerprints, { version: 'terminos-web-2026-10-03', checkbox: '6f02897c8a009f41', terminos: '307dd08a855f6468', privacidad: '851555cf90c6d719' });
+});
+
+test('las páginas legales: contacto solo por el WhatsApp único y contygo.app, sin correos ni TODO', () => {
+  const { TERMINOS } = require('../lib/legal/terminos.ts');
+  const { PRIVACIDAD } = require('../lib/legal/privacidad.ts');
+  const { WHATSAPP_DISPLAY } = require('../lib/config.ts');
+  for (const doc of [TERMINOS, PRIVACIDAD]) {
+    const text = JSON.stringify(doc);
+    assert.ok(text.includes(WHATSAPP_DISPLAY), doc.title);
+    assert.ok(text.includes('contygo.app'), doc.title);
+    assert.doesNotMatch(text, /@[a-z0-9-]+\.[a-z]{2,}|\bTODO\b|COMPLETAR/, doc.title);
+  }
+  assert.match(JSON.stringify(PRIVACIDAD), /solo si aceptas el aviso de cookies/);
 });
 
 test('fuera de producción, contra el contygo real, solo se lee salvo prueba coordinada', async () => {

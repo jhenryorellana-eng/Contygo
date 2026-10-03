@@ -403,5 +403,8 @@ test('SEC-09 · verifyCaptcha exige action exacta y hostname permitido', async (
   // Las claves de prueba de Cloudflare (solo fuera de producción) devuelven su propio hostname.
   const dummy = '1x0000000000000000000000000000000AA';
   assert.equal((await verify({ ...ok, hostname: 'example.com' }, { env: { NODE_ENV: 'development', TURNSTILE_SECRET_KEY: dummy } })).ok, true);
+  // …y tampoco devuelven acción: la receta de desarrollo con las claves de prueba tiene que pasar.
+  assert.equal((await verify({ success: true, hostname: 'example.com' }, { env: { NODE_ENV: 'development', TURNSTILE_SECRET_KEY: dummy }, action: 'lead' })).ok, true, 'clave de prueba sin acción');
   assert.equal((await verify({ ...ok, hostname: 'example.com' }, { env: { TURNSTILE_SECRET_KEY: dummy } })).ok, false, 'en producción no hay excepción');
+  assert.equal((await verify({ success: true, hostname: 'landing.contygo.app' }, { env: { TURNSTILE_SECRET_KEY: dummy } })).ok, false, 'en producción, sin acción no vale');
 });

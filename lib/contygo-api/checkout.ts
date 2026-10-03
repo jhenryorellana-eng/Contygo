@@ -466,8 +466,9 @@ export function mapInvalidFields(details: Record<string, unknown> | undefined): 
 }
 
 /**
- * phase "first": 500 INTERNAL es un fallo de nuestra configuración (UNAVAILABLE_ONLINE). phase "second": un
- * 500 viene de DESPUÉS de crear al cliente y se repite con la misma clave; si sigue fallando, busy.
+ * phase "first": un 500 puede ser transitorio (contygo no lo guarda: lectura del catálogo caída en la
+ * prevalidación) y no creó nada; se reintenta con clave NUEVA (fresh_key). phase "second": un 500 viene de
+ * DESPUÉS de crear al cliente y se repite con la misma clave; si sigue fallando, busy.
  */
 export function mapContractResponse(response: ApiResponse<ContractCreated>, phase: "first" | "second" = "first"): ContractOutcome {
   const { status, data, error } = response;
@@ -481,7 +482,7 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
   const code = error?.code ?? `HTTP_${status}`;
   const details = error?.details ?? {};
   if (isConfigFailure(status, code)) return { step: "UNAVAILABLE_ONLINE", code };
-  if (status === 500) return phase === "first" ? { step: "UNAVAILABLE_ONLINE", code } : { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 5 };
+  if (status === 500) return phase === "first" ? { step: "RETRY_LATER", reason: "fresh_key", retryAfter: response.retryAfter ?? 5 } : { step: "RETRY_LATER", reason: "busy", retryAfter: response.retryAfter ?? 5 };
   switch (code) {
     case "INVALID_REQUEST": {
       const errors = mapInvalidFields(details);

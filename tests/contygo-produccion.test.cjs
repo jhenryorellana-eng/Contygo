@@ -326,7 +326,7 @@ test('B3 · /iniciar reabre el campo que contygo señala; /confirmar con INVALID
 });
 
 test('B3 · errores de configuración → UNAVAILABLE_ONLINE con console.error de formato fijo y sin PII', async () => {
-  const cases = [[401, 'UNAUTHORIZED'], [403, 'FORBIDDEN'], [422, 'COMPLIANCE_INCOMPLETE'], [422, 'COMPLIANCE_EXPIRED'], [422, 'CASE_PAYMENT_PLAN_INVALID'], [422, 'CONSENT_CHANNEL_MISMATCH'], [422, 'NO_SALES_OWNER'], [500, 'INTERNAL']];
+  const cases = [[401, 'UNAUTHORIZED'], [403, 'FORBIDDEN'], [422, 'COMPLIANCE_INCOMPLETE'], [422, 'COMPLIANCE_EXPIRED'], [422, 'CASE_PAYMENT_PLAN_INVALID'], [422, 'CONSENT_CHANNEL_MISMATCH'], [422, 'NO_SALES_OWNER']];
   for (const [status, code] of cases) {
     freshModules(); net.reset(); contygoDefaults(net);
     net.on('POST', '/contracts', { status, body: { error: { code, message: 'ana.perez@e2e.local 305' } } });
@@ -424,8 +424,8 @@ test('B3 · si el 500 de la 2.ª llamada persiste: RETRY_LATER busy (el navegado
   assert.equal(leadPuts(net).filter(call => /\(INTERNAL\)/.test(call.json.aiSummary ?? '')).length, 0, 'un fallo transitorio no avisa a ventas');
 });
 
-test('B3 · un 500 en la 1.ª llamada es configuración (no se reintenta)', () => {
-  assert.deepEqual(map(500, 'INTERNAL', undefined, 'first'), { step: 'UNAVAILABLE_ONLINE', code: 'INTERNAL' });
+test('B3 · un 500 en la 1.ª llamada no creó nada y se reintenta con clave nueva; en la 2.ª, con la misma', () => {
+  assert.deepEqual(map(500, 'INTERNAL', undefined, 'first'), { step: 'RETRY_LATER', reason: 'fresh_key', retryAfter: 5 });
   assert.deepEqual(map(500, 'INTERNAL', undefined, 'second'), { step: 'RETRY_LATER', reason: 'busy', retryAfter: 5 });
 });
 

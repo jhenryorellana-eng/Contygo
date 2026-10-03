@@ -178,10 +178,12 @@ export async function verifyCaptcha(token: unknown, ip: string, action: string =
     });
     const data = await response.json() as { success?: boolean; action?: string; hostname?: string };
     if (data.success !== true) return { ok: false, code: "captcha_failed" };
+    // Las claves de prueba de Cloudflare no devuelven acción ni nuestro hostname: solo fuera de producción.
+    const testKey = process.env.NODE_ENV !== "production" && isCloudflareTestSecret(secret);
+    if (testKey) return { ok: true, code: "captcha_ok" };
     // Un token sin acción (widget sin action) o de otra acción no vale: cada paso tiene la suya.
     if (data.action !== action) return { ok: false, code: "captcha_failed" };
-    const testKey = process.env.NODE_ENV !== "production" && isCloudflareTestSecret(secret);
-    if (!testKey && !(typeof data.hostname === "string" && allowedCaptchaHosts().includes(normalizeHost(data.hostname)))) return { ok: false, code: "captcha_failed" };
+    if (!(typeof data.hostname === "string" && allowedCaptchaHosts().includes(normalizeHost(data.hostname)))) return { ok: false, code: "captcha_failed" };
     return { ok: true, code: "captcha_ok" };
   } catch {
     return { ok: false, code: "captcha_unavailable" };

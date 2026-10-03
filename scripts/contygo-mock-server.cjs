@@ -14,6 +14,7 @@
 //   hasaccount@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'email_has_account', phoneHint:'42'} (la ficha pide corregir el teléfono)
 //   hasaccountsame@… → tras el código, 409 email_has_account con phoneHint IGUAL a los 2 últimos dígitos del teléfono tecleado (la landing lo trata como HUMAN)
 //   hasaccountnohint@… → tras el código, 409 email_has_account SIN phoneHint (la cuenta no tiene teléfono: HUMAN)
+//   existing@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'existing_client'} (la ficha manda a WhatsApp: EXISTING_CLIENT)
 //   phoneinuse@… → tras el código, 409 CLIENT_NEEDS_HUMAN con details {resolution:'phone_in_use'}
 //   returning@… → tras el código, 201 con clientCreated:false («Te reconocimos»)
 //   slow502@… → la 1.ª llamada con ese correo corta la conexión (la ficha reintenta con clave nueva)
@@ -65,6 +66,7 @@ http.createServer((req, res) => {
       if (!body.verificationId) return send(409, { error: { code: 'CLIENT_VERIFICATION_REQUIRED', message: 'Code sent', details: { verificationId: VERIFICATION_ID, maskedEmail: body.client.email.replace(/^(.).*@/, '$1***@'), expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() } } });
       if (body.verificationCode !== '481920') return send(409, { error: { code: 'VERIFICATION_INVALID', message: 'Wrong code', details: { attemptsLeft: 4 } } });
       // Como x-legal: la pista solo llega tras un código válido, y el teléfono 555-0142 es el «de la cuenta» (termina en 42).
+      if (/^existing@/i.test(email)) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'existing_client' } } });
       if (/^hasaccount@/i.test(email) && !body.client.phoneE164.endsWith('42')) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account', phoneHint: '42' } } });
       if (/^hasaccountsame@/i.test(email)) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account', phoneHint: body.client.phoneE164.slice(-2) } } });
       if (/^hasaccountnohint@/i.test(email)) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person', details: { resolution: 'email_has_account' } } });

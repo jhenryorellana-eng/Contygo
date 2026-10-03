@@ -368,6 +368,7 @@ export type ContractOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN" }
+  | { step: "EXISTING_CLIENT" }
   | FixContact
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
@@ -383,6 +384,15 @@ export type ContractOutcome =
 export type FixContact =
   | { step: "FIX_CONTACT"; reason: "email_has_account"; phoneHint?: string }
   | { step: "FIX_CONTACT"; reason: "phone_in_use" };
+
+/**
+ * CLIENT_NEEDS_HUMAN con details.resolution = "existing_client": el teléfono o el correo son de una cuenta que x-legal
+ * no enlaza sola (solo enlaza las que la landing o el bot crearon, con sus datos de nacimiento y la contraseña inicial
+ * sin cambiar). Sale por WhatsApp y el equipo adopta el teléfono; no arrastra ningún dato de la cuenta.
+ */
+function readExistingClient(details: Record<string, unknown>): { step: "EXISTING_CLIENT" } | null {
+  return details.resolution === "existing_client" ? { step: "EXISTING_CLIENT" } : null;
+}
 
 /** Lo que la API manda en error.details de CLIENT_NEEDS_HUMAN; cualquier otra cosa es el HUMAN opaco de siempre. */
 function readFixContact(details: Record<string, unknown>): FixContact | null {
@@ -522,7 +532,7 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
     }
     case "VERIFICATION_INVALID": return { step: "WRONG_CODE", attemptsLeft: typeof details.attemptsLeft === "number" ? details.attemptsLeft : null };
     case "VERIFICATION_EXPIRED": return { step: "RESTART" };
-    case "CLIENT_NEEDS_HUMAN": return readFixContact(details) ?? { step: "HUMAN" };
+    case "CLIENT_NEEDS_HUMAN": return readExistingClient(details) ?? readFixContact(details) ?? { step: "HUMAN" };
     case "NOT_ELIGIBLE": return { step: "NOT_ELIGIBLE" };
     case "PLAN_NOT_CONTRACTABLE": return { step: "UNAVAILABLE" };
     case "INVALID_PARTIES": return { step: "INVALID_PARTIES", role: typeof details.role === "string" ? details.role : null };

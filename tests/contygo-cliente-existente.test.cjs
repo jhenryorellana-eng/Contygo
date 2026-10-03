@@ -189,3 +189,63 @@ test('afterOutcome: tras FIX_CONTACT no queda clave pendiente y la siguiente lla
   const busy = keys.afterOutcome(pend, { status: 200, outcome: { step: 'RETRY_LATER', reason: 'busy' } });
   assert.equal(busy, pend, 'busy conserva la clave pendiente');
 });
+
+// EXISTING_CLIENT (decisión del 03-10-2026, ronda de seguridad): x-legal solo enlaza solo las cuentas que la landing o el bot
+// crearon (mismo correo y teléfono de nacimiento, contraseña inicial sin cambiar). Cualquier otra cuenta responde
+// 409 CLIENT_NEEDS_HUMAN con details { resolution: 'existing_client' }: la persona sale por WhatsApp y el equipo adopta el teléfono.
+test('mapContractResponse: existing_client pasa a EXISTING_CLIENT, sin arrastrar nada más', () => {
+  assert.deepEqual(map({ resolution: 'existing_client' }), { step: 'EXISTING_CLIENT' });
+  assert.deepEqual(map({ resolution: 'existing_client', phoneHint: '42', accountId: 'x' }), { step: 'EXISTING_CLIENT' });
+  // Una resolución que no conocemos sigue siendo el HUMAN opaco.
+  assert.deepEqual(map({ resolution: 'existing_clients' }), { step: 'HUMAN' });
+  assert.deepEqual(map({ resolution: 'EXISTING_CLIENT' }), { step: 'HUMAN' });
+});
+
+test('2.ª llamada: EXISTING_CLIENT llega al navegador con su ref y SÍ avisa a ventas (código EXISTING_CLIENT)', async () => {
+  const b = browser();
+  const ask = await start(b);
+  assert.equal(ask.step, 'ASK_CODE');
+  net.on('POST', '/contracts', needsHuman({ resolution: 'existing_client' }));
+  const before = attemptPuts().length;
+  const out = await confirm(b, ask);
+  assert.equal(out.step, 'EXISTING_CLIENT');
+  assert.match(out.ref, /^WEB-/);
+  assert.deepEqual(Object.keys(out).sort(), ['ref', 'step']);
+  assert.equal(attemptPuts().length, before + 1);
+  assert.match(leadPuts(net).at(-1).json.aiSummary, /\(EXISTING_CLIENT\)\.$/);
+});
+
+test('1.ª llamada (simetría): EXISTING_CLIENT también avisa a ventas y devuelve la ref', async () => {
+  net.on('POST', '/contracts', needsHuman({ resolution: 'existing_client' }));
+  const before = attemptPuts().length;
+  const out = await start(browser());
+  assert.equal(out.step, 'EXISTING_CLIENT');
+  assert.match(out.ref, /^WEB-/);
+  assert.equal(attemptPuts().length, before + 1);
+  assert.match(attemptPuts().at(-1).json.aiSummary, /\(EXISTING_CLIENT\)\.$/);
+});
+
+test('EXISTING_CLIENT: respuesta definitiva para las claves de idempotencia', () => {
+  const answer = { status: 200, outcome: { step: 'EXISTING_CLIENT', ref: 'WEB-AB12CD' } };
+  assert.equal(keys.keepsKey(answer), false);
+  assert.equal(keys.retriesConfirmAlone(answer), false);
+});
+
+test('textos de EXISTING_CLIENT: exactos, sin prometer llamada, con la salida a la cuenta', () => {
+  assert.equal(messages.EXISTING_CLIENT_MESSAGE, 'Ya eres cliente de ContyGo.');
+  assert.deepEqual(messages.outcomeMessage({ step: 'EXISTING_CLIENT' }), {
+    title: 'Ya eres cliente de ContyGo.',
+    detail: 'Para añadir este servicio a tu cuenta, escríbenos por WhatsApp y lo hacemos contigo.',
+  });
+  assert.equal(messages.ACCOUNT_LOGIN_URL, 'https://contygo.app/entrar');
+});
+
+test('ContractCheckout: EXISTING_CLIENT es una pantalla bloqueada con WhatsApp y «Entrar a mi cuenta»', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../components/contygo/contract/ContractCheckout.tsx'), 'utf8');
+  assert.match(source, /case "EXISTING_CLIENT"/);
+  assert.match(source, /Entrar a mi cuenta/);
+  // El caso no puede caer en el default silencioso: debe fijar la ref para el mensaje de WhatsApp (outcome.ref ya lo hace) y bloquear.
+  const branch = source.slice(source.indexOf('case "EXISTING_CLIENT"'));
+  assert.match(branch.slice(0, 400), /setStage\("blocked"\)/);
+  assert.match(branch.slice(0, 400), /setRetryable\(false\)/);
+});

@@ -13,6 +13,7 @@ export type ScreenOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN" }
+  | { step: "EXISTING_CLIENT" }
   | { step: "FIX_CONTACT"; reason: "email_has_account" | "phone_in_use"; phoneHint?: string }
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
@@ -24,6 +25,10 @@ export type ScreenOutcome =
 
 /** Texto neutro para CLIENT_NEEDS_HUMAN: nunca se explica el motivo ni se promete que alguien llamará. */
 export const HUMAN_MESSAGE = "Para terminar tu contratación, escríbenos por WhatsApp.";
+
+/** Cuenta que x-legal no enlaza sola: se dice sin rodeos que ya es cliente y se la manda a WhatsApp para que el equipo la una. */
+export const EXISTING_CLIENT_MESSAGE = "Ya eres cliente de ContyGo.";
+export const EXISTING_CLIENT_DETAIL = "Para añadir este servicio a tu cuenta, escríbenos por WhatsApp y lo hacemos contigo.";
 
 /** Dónde se aprende a entrar a la cuenta (el aviso de «Ya tienes una cuenta» enlaza aquí). */
 export const ACCOUNT_LOGIN_URL = "https://contygo.app/entrar";
@@ -75,6 +80,7 @@ export function outcomeMessage(outcome: ScreenOutcome, roleLabel?: string): { ti
     case "WRONG_CODE": return { title: "El código no es correcto.", detail: outcome.attemptsLeft === null ? "Revísalo e inténtalo de nuevo." : `Te ${outcome.attemptsLeft === 1 ? "queda 1 intento" : `quedan ${outcome.attemptsLeft} intentos`}.` };
     case "RESTART": return { title: "El código caducó. Te enviamos uno nuevo." };
     case "HUMAN": return { title: HUMAN_MESSAGE };
+    case "EXISTING_CLIENT": return { title: EXISTING_CLIENT_MESSAGE, detail: EXISTING_CLIENT_DETAIL };
     case "FIX_CONTACT": { const { title, detail } = fixContactMessages(outcome); return { title, detail }; }
     case "NOT_ELIGIBLE": return { title: "Con estas respuestas no podemos iniciar este servicio en línea.", detail: "¿Tienes dudas? Escríbenos por WhatsApp." };
     case "UNAVAILABLE_ONLINE": return { title: "La contratación en línea no está disponible en este momento.", detail: "Escríbenos por WhatsApp y te ayudamos a terminar." };

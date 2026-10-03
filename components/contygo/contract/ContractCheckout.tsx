@@ -319,6 +319,12 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "success", ...outcomeMessage(outcome) });
         return;
       }
+      case "EXISTING_CLIENT": {
+        // An account the checkout cannot link by itself (decision 2026-10-03): info screen with the WhatsApp CTA (prefilled with the
+        // service and the WEB ref, already in helpRef) and the login link. No retry: only the team can adopt the phone.
+        finish(); setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage(outcome), action: "login" });
+        return;
+      }
       case "FIX_CONTACT": {
         // The code was used and the data does not fit an account: not a dead end. The used verification is dropped
         // (the next «Enviar mi código» is a normal first call: new key, new code) and the person goes back to the phone.

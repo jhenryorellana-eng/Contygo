@@ -8,6 +8,7 @@
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { contygoApi, type CallBudget } from "./client";
 import { isConfigFailure, partyRolesToAsk, questionKind } from "./checkout";
+import { normalizeCatalog } from "./payment-options";
 import type { CatalogQuestion, CatalogService, I18nText } from "./types";
 
 export { partyRolesToAsk, questionKind, text, type QuestionKind } from "./checkout";
@@ -55,8 +56,10 @@ export async function loadCatalog(budget: CallBudget = {}): Promise<CatalogServi
         throw new CatalogUnavailableError(code, response.status);
       }
       failure = null;
-      cache = { at: Date.now(), services };
-      return services;
+      // Se valida ANTES de cachear: listas por defecto [], opciones inválidas fuera (un paquete sin arrays ya no tumba /servicio).
+      const valid = normalizeCatalog(services);
+      cache = { at: Date.now(), services: valid };
+      return valid;
     } finally {
       inflight = null;
     }
@@ -131,6 +134,8 @@ export function publicServiceView(service: CatalogService) {
       priceCents: plan.priceCents,
       extraPartyPriceCents: plan.extraPartyPriceCents,
       installmentOptions: plan.installmentOptions.map(option => ({ ...option })),
+      // Aditivo: el desglose lo calcula contygo; la landing solo lo muestra. [] = API antigua o paquete sin plan publicado.
+      paymentOptions: (plan.paymentOptions ?? []).map(option => ({ ...option, ...(option.byExtraParties ? { byExtraParties: option.byExtraParties.map(row => ({ ...row })) } : {}) })),
     })),
     questions: service.eligibilityQuestions.map(publicQuestion),
     partyRoles: partyRolesToAsk(service.partyRoles).map(role => ({ ...role })),

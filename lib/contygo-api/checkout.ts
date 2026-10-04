@@ -236,7 +236,7 @@ export interface NormalizedContractForm {
 export type FieldErrors = Record<string, string>;
 
 type ServiceForForm = {
-  plans: { id: string; installmentOptions: { id: string }[] }[];
+  plans: { id: string; installmentOptions?: { id: string }[]; paymentOptions?: { installmentOptionId: string | null }[] }[];
   partyRoles: Pick<PartyRole, "roleKey" | "cardinality" | "isRequired" | "label">[];
 };
 
@@ -279,7 +279,9 @@ export function validateContractForm(input: unknown, service: ServiceForForm, no
   if (!plan) errors.servicePlanId = "Elige un paquete.";
   let installmentOptionId: string | undefined;
   if (form.installmentOptionId) {
-    if (plan?.installmentOptions.some(option => option.id === form.installmentOptionId)) installmentOptionId = form.installmentOptionId;
+    // Un id publicado en paymentOptions (el nuevo contrato) o, en un catálogo antiguo, en installmentOptions.
+    const offered = plan?.paymentOptions?.some(option => option.installmentOptionId === form.installmentOptionId) || plan?.installmentOptions?.some(option => option.id === form.installmentOptionId);
+    if (offered) installmentOptionId = form.installmentOptionId;
     else errors.installmentOptionId = "Elige una opción de pago de este paquete.";
   }
 

@@ -15,13 +15,46 @@ export interface InstallmentOption {
   frequency: "weekly" | "monthly";
 }
 
+/** Desglose precalculado por el motor de contygo. La landing solo elige la fila; nunca calcula dinero. */
+export interface CatalogPaymentBreakdown {
+  /** Precio base + extraPartyPriceCents × personas adicionales. */
+  totalCents: number;
+  /** Igual a totalCents cuando installmentCount === 1. */
+  downpaymentCents: number;
+  /** INCLUYE el anticipo: «6» = anticipo + 5 cuotas. */
+  installmentCount: number;
+  /** installmentCount - 1. */
+  installmentsAfterDownpayment: number;
+  /** 0 cuando installmentCount === 1. */
+  perInstallmentCents: number;
+  /** 0 cuando installmentCount === 1; la última absorbe el resto de centavos. */
+  lastInstallmentCents: number;
+}
+
+/** Fila de personas adicionales: extraPartyCount = k (1..maxRows). */
+export type CatalogPaymentRow = CatalogPaymentBreakdown & { extraPartyCount: number };
+
+/** Una forma de pagar un paquete. Los números base son para 0 personas adicionales. */
+export interface CatalogPaymentOption extends CatalogPaymentBreakdown {
+  /** null ⇒ el plan por defecto del paquete (sin opciones activas): en POST /contracts se OMITE installmentOptionId (null es un 400). */
+  installmentOptionId: string | null;
+  /** La que usa POST /contracts cuando se omite installmentOptionId. */
+  isDefault: boolean;
+  frequency: "weekly" | "monthly";
+  /** Solo si el paquete cobra por persona adicional y el servicio declara roles. */
+  byExtraParties?: CatalogPaymentRow[];
+}
+
 export interface CatalogPlan {
   id: string;
   name: I18nText;
   /** Centavos de USD. Solo para mostrar: nunca se envía a la API. */
   priceCents: number;
+  /** Se conserva tal cual (el bot de WhatsApp y landings viejas lo leen). La landing nueva pinta paymentOptions. */
   installmentOptions: InstallmentOption[];
   extraPartyPriceCents: number;
+  /** Aditivo. Ausente o [] en una API antigua o un paquete no contratable. */
+  paymentOptions?: CatalogPaymentOption[];
 }
 
 /** Una opción de una pregunta us_state: la respuesta es el código de 2 letras ("TX"). */

@@ -5,6 +5,13 @@
 // Catálogo: copia del real del 29-09-2026 (scripts/fixtures), con el kind de cada pregunta. El resto: ejemplos de la guía y del OpenAPI.
 // Para ver las preguntas nuevas del catálogo de producción (us_state y future_event), el servicio visa-juvenil-basico
 // recibe dos preguntas más (solo en este simulador). Desactívalo con MOCK_PLAIN_CATALOG=1.
+// Formas de pago (GET /catalog → plans[].paymentOptions, campo aditivo; installmentOptions se conserva). El simulador calcula los
+// desgloses como lo haría el motor de contygo (la última cuota absorbe el resto de centavos); la landing NO los calcula. Solo aquí:
+//   visa-juvenil-basico · Básico $2,500  → 3 opciones: 6 pagos mensuales (por defecto), 8 mensuales con resto de centavos, 11 semanales
+//   taxes · Individual $100              → sin opciones activas: UNA opción por defecto (installmentOptionId null → la landing OMITE el id)
+//   taxes · Familiar $150 (+$50 por persona adicional) → una opción por defecto con byExtraParties k=1..10
+//   llc-florida · Constitución $500      → 2 opciones (3 mensuales por defecto y pago único); «+ Identidad de Marca» $1,000 → sin opciones (una por defecto)
+// Los demás paquetes salen con paymentOptions [] (API antigua: la ficha dice que el plan aparece en el contrato).
 // Correos mágicos (cualquier dominio) para recorrer los caminos raros desde la pantalla:
 //   nolink@…  → 201 sin signingUrl (la ficha ofrece «Enviarme el enlace»)
 //   ratelimit@… → 429 VERIFICATION_RATE_LIMITED (3 códigos por hora)
@@ -30,6 +37,39 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'aaaaaaaa-0000-4000-8000-000000000001', kind: 'us_state', prompt: { es: '¿En qué estado vive el menor?', en: 'Which state does the minor live in?' }, options: STATES.map(code => ({ code, label: { es: STATE_NAMES[code] ?? code, en: STATE_NAMES[code] ?? code } })) },
     { id: 'aaaaaaaa-0000-4000-8000-000000000002', kind: 'date', dateMode: 'future_event', minNotice: { days: 30 }, prompt: { es: '¿Cuándo es la próxima audiencia en la corte?', en: 'When is the next court hearing?' } },
   );
+}
+// ---- formas de pago simuladas (ver cabecera) ----
+const breakdown = (totalCents, installmentCount, downpaymentCents) => {
+  if (installmentCount === 1) return { totalCents, downpaymentCents: totalCents, installmentCount, installmentsAfterDownpayment: 0, perInstallmentCents: 0, lastInstallmentCents: 0 };
+  const rest = totalCents - downpaymentCents, after = installmentCount - 1, per = Math.floor(rest / after);
+  return { totalCents, downpaymentCents, installmentCount, installmentsAfterDownpayment: after, perInstallmentCents: per, lastInstallmentCents: rest - per * (after - 1) };
+};
+const payOption = (plan, { id, count, down, frequency = 'monthly', isDefault = false, maxRows = 0 }) => {
+  const option = { installmentOptionId: id, isDefault, frequency, ...breakdown(plan.priceCents, count, down) };
+  if (plan.extraPartyPriceCents > 0 && maxRows > 0) option.byExtraParties = Array.from({ length: maxRows }, (_, index) => ({ extraPartyCount: index + 1, ...breakdown(plan.priceCents + plan.extraPartyPriceCents * (index + 1), count, down) }));
+  return option;
+};
+const addPayments = (slug, planName, specs, extra = 0) => {
+  const plan = catalog.services.find(service => service.slug === slug)?.plans.find(item => item.name.es === planName);
+  if (!plan) return;
+  if (extra) plan.extraPartyPriceCents = extra;
+  plan.paymentOptions = specs.map(spec => payOption(plan, spec));
+  plan.installmentOptions = specs.filter(spec => spec.id).map(spec => ({ id: spec.id, installmentCount: spec.count, downpaymentCents: spec.down, frequency: spec.frequency ?? 'monthly' }));
+};
+for (const service of catalog.services) for (const plan of service.plans) plan.paymentOptions = [];
+if (!process.env.MOCK_PLAIN_CATALOG) {
+  addPayments('visa-juvenil-basico', 'Básico', [
+    { id: 'cccccccc-0000-4000-8000-000000000001', count: 6, down: 50000, isDefault: true },
+    { id: 'cccccccc-0000-4000-8000-000000000002', count: 8, down: 50000 },
+    { id: 'cccccccc-0000-4000-8000-000000000003', count: 11, down: 50000, frequency: 'weekly' },
+  ]);
+  addPayments('taxes', 'Individual', [{ id: null, count: 2, down: 5000, isDefault: true }]);
+  addPayments('taxes', 'Familiar', [{ id: null, count: 3, down: 5000, isDefault: true, maxRows: 10 }], 5000);
+  addPayments('llc-florida', 'Constitución', [
+    { id: 'cccccccc-0000-4000-8000-000000000004', count: 3, down: 20000, isDefault: true },
+    { id: 'cccccccc-0000-4000-8000-000000000005', count: 1, down: 50000 },
+  ]);
+  addPayments('llc-florida', 'Constitución + Identidad de Marca', [{ id: null, count: 4, down: 30000, isDefault: true }]);
 }
 const log = path.join(require('node:os').tmpdir(), 'contygo-mock.log');
 fs.writeFileSync(log, '');

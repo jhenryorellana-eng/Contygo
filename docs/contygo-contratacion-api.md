@@ -119,6 +119,39 @@ Esto evita también un fallo real del diseño anterior. Reconstruir el cuerpo en
 - **Motivos de descarte.** `disqualified[].reason` (`answer`, `deadline_passed`, `event_too_close`, `age_limit_passed`…) se traduce a un texto neutro, sin «no aplica» y sin prometer un asesor.
 - **`principalFallbackWhenEmpty`** de `partyRoles` está tipado y llega a la ficha, pero la ficha todavía no lo usa.
 
+### Formas de pago: `plans[].paymentOptions` (campo aditivo)
+
+contygo publica en cada paquete del `GET /catalog` el desglose de cuotas calculado por su propio motor. `installmentOptions` **no cambia** (el bot de WhatsApp y las landings viejas lo leen); la landing nueva pinta `paymentOptions`.
+
+```ts
+interface CatalogPaymentBreakdownDto {
+  totalCents: number;                   // base + extraPartyPriceCents × personas adicionales
+  downpaymentCents: number;             // = totalCents si installmentCount === 1
+  installmentCount: number;             // INCLUYE el anticipo: «6» = anticipo + 5 cuotas
+  installmentsAfterDownpayment: number; // installmentCount - 1
+  perInstallmentCents: number;          // 0 si installmentCount === 1
+  lastInstallmentCents: number;         // 0 si installmentCount === 1; la última absorbe el resto de centavos
+}
+interface CatalogPaymentOptionDto extends CatalogPaymentBreakdownDto { // números base = 0 personas adicionales
+  installmentOptionId: string | null;   // null ⇒ plan por defecto del paquete (sin opciones activas)
+  isDefault: boolean;                   // la que usa POST /contracts si se omite installmentOptionId
+  frequency: "weekly" | "monthly";
+  byExtraParties?: Array<CatalogPaymentBreakdownDto & { extraPartyCount: number }>; // k = 1..maxRows; solo con extraPartyPriceCents > 0 y roles
+}
+```
+
+**Reglas que la landing respeta:**
+- **`installmentCount` incluye el anticipo.** El texto es «Cuota inicial $D, luego {count−1} pagos mensuales de $P»; nunca «{count} pagos» además del anticipo. «el último de $L» solo si `L ≠ P`. `installmentCount === 1` → «Pago único» + total.
+- **La landing nunca calcula dinero.** Solo elige la fila: k=0 → los números base de la opción; k>0 → la fila `byExtraParties` con `extraPartyCount === k`. k es el número de personas de la ficha (`parties.length`, igual que `resolveContractedMoney` en contygo). Con `extraPartyPriceCents = 0` valen los números base. Si no hay fila (k mayor que las publicadas) la tarjeta muestra la forma sin importes y «Tu contrato mostrará tu plan de pagos exacto.».
+- **Orden = el del administrador, sin insignias.** Se preselecciona la `isDefault` (si ninguna, la primera). Con una sola opción, tarjeta informativa sin radio; con varias, `radiogroup`. Cambiar de paquete reinicia la selección a la de ese paquete.
+- **`POST /contracts` no cambia:** solo viaja `installmentOptionId`, y **se omite cuando el id es `null`** (null es un 400). Nunca se envían montos. `/iniciar` acepta ids presentes en `paymentOptions` o, en un catálogo antiguo, en `installmentOptions`.
+- **API antigua** (sin `paymentOptions` o `[]`, p. ej. precio 0): se conserva la nota «El plan de pagos aparece en tu contrato antes de firmar.» y no se muestran las `installmentOptions` crudas.
+- **Borrador restaurado** (`lib/contygo-api/payment-options.ts` → `reconcileSelection`): paquete que ya no existe → el primero; opción inválida o ausente → la por defecto; id `null` → `""`.
+- **Normalizador** (`normalizeCatalog`, antes de cachear): listas ausentes → `[]`, opciones o filas con forma inválida se descartan. Un paquete sin `installmentOptions` ya no tumba `/servicio`.
+- Los precios «desde» (`priceSummary`, B7) no cambian.
+
+**El simulador publica** (`scripts/contygo-mock-server.cjs`, no con `MOCK_PLAIN_CATALOG=1`): `visa-juvenil-basico` con 3 opciones (6 mensuales por defecto, 8 mensuales con resto de centavos, 11 semanales); `taxes` Individual (una opción por defecto con id `null`) y Familiar (+$50 por persona adicional, `byExtraParties` k=1..10); `llc-florida` con dos paquetes, solo «Constitución» con opciones (3 mensuales y pago único). El resto sale con `paymentOptions: []` (API antigua).
+
 ### Teléfono del contrato: solo +1
 
 - **Lo que hace contygo.** Rechaza un teléfono que no sea +1 en la 1.ª llamada, antes de enviar ningún código: responde 400 `INVALID_REQUEST` con `details.fields[{path: "client.phoneE164", reason: "unsupported_country"}]`. Los leads sí aceptan teléfonos internacionales.
@@ -521,7 +554,8 @@ Estos cambios están en una rama de contygo (`fix/web-contract-email-and-handoff
    | `slow502@…` | Corta la 1.ª llamada, una sola vez por proceso | `fresh_key`; usa un dominio distinto en cada pasada |
 
    Un teléfono que no es +1 recibe 400 `unsupported_country`, aunque la ficha ya lo frena antes.
-6. El servicio `visa-juvenil-basico` recibe una pregunta `us_state` y otra `future_event`, solo en el simulador. `MOCK_PLAIN_CATALOG=1` las quita.
+6. Formas de pago simuladas: ver «Formas de pago» arriba (3 opciones en `visa-juvenil-basico`, `taxes`, `llc-florida`).
+   El servicio `visa-juvenil-basico` además recibe una pregunta `us_state` y otra `future_event`, solo en el simulador. `MOCK_PLAIN_CATALOG=1` las quita.
 7. Para probar el interruptor: `CONTYGO_CHECKOUT_ENABLED=0` y reinicia `npm run dev`.
 8. El límite de `/iniciar` es de 10 por hora por IP y vive en memoria. Reinicia el servidor entre pasadas largas.
 
@@ -649,6 +683,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
   - el proxy no guarda nada;
   - `/estado` y `/reenviar` solo aceptan el token firmado del contrato;
   - la UI borra su `sessionStorage` al terminar.
+- [x] Formas de pago: la ficha pinta `paymentOptions` de contygo, preselecciona la `isDefault`, omite el id cuando es `null` y nunca calcula dinero (`tests/contygo-formas-de-pago.test.cjs`). Depende del PR de contygo que publica el campo.
 - [x] CI con tests, tipos y build en cada PR (`.github/workflows/ci.yml`).
 
 **Pendiente.** Nada de esto está hecho:

@@ -19,6 +19,10 @@ import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
 import {
+  PAYMENT_NOTE_NO_OPTIONS, PAYMENT_NOTE_NO_ROW, breakdownForPlan, defaultPaymentOption, extraPartiesNote, formatMoney, installmentIdForRequest,
+  optionForSelection, paymentLabel, paymentOptionsOf, paymentShape, reconcileSelection, selectionOf,
+} from "@/lib/contygo-api/payment-options";
+import {
   clearDraft, newExternalRef, newIdempotencyKey, pageAttribution, readContract, readDraft, saveContract, saveDraft,
   type DraftForm, type DraftPerson, type SentVerification,
 } from "@/lib/contygo-api/browser";
@@ -46,8 +50,8 @@ type ApiOutcome = ScreenOutcome & {
 };
 type Step = "name" | "contact" | "address" | "people" | "plan" | "review";
 
-const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const cents = (value: number) => money.format(value / 100);
+/** Whole dollars when exact, two decimals otherwise (an installment is never rounded). */
+const cents = formatMoney;
 /** The contract phone is US only (+1). A value that is not +1 (the reveal phone may be international) is not carried over. */
 const isUsPhone = (value: string) => /^\+1\d{0,10}$/.test(value.trim());
 /** «Confirmar» goes alone up to this many times while contygo is still creating the contract. */
@@ -202,7 +206,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         // A draft from before the US-only phone may carry a foreign number: it does not go in the contract.
         const usable = isUsPhone(mine.form.phone) ? mine.form.phone : "";
         if (mine.form.phone && !usable) setPhoneHint(true);
-        setForm({ ...mine.form, phone: usable }); setPersons(mine.persons); setConsent(mine.consent);
+        // A restored plan or payment option that contygo no longer offers falls back to the first plan / its default option.
+        setForm({ ...mine.form, ...reconcileSelection(next.service.plans, mine.form.planId, mine.form.installmentId), phone: usable }); setPersons(mine.persons); setConsent(mine.consent);
         personKey.current = Math.max(personKey.current, ...mine.persons.map(person => person.key));
       } else {
         const plan = next.service.plans[0];
@@ -210,7 +215,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
         const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
         if (from.phone?.trim() && !prefill) setPhoneHint(true);
-        setForm(current => ({ ...current, planId: current.planId || plan?.id || "", firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
+        setForm(current => ({ ...current, ...reconcileSelection(next.service.plans, current.planId || plan?.id || "", current.installmentId), firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
         setPersons(current => current.length ? current : next.service.partyRoles.filter(role => role.isRequired).map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" })));
       }
       setKeeping(true);
@@ -239,13 +244,16 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const steps = useMemo<Step[]>(() => ["name", "contact", "address", ...(roles.length ? ["people" as const] : []), "plan", "review"], [roles.length]);
   const stepIndex = Math.max(0, steps.indexOf(step));
   const plan = data?.service.plans.find(item => item.id === form.planId) ?? data?.service.plans[0];
+  const installmentOptionId = installmentIdForRequest(plan, form.installmentId);
   const input = useMemo(() => ({
     firstName: form.firstName, middleName: form.middleName, lastName: form.lastName, email: form.email, phone: form.phone,
     address: { line1: form.line1, apartment: form.apartment, city: form.city, state: form.state, zip: form.zip },
-    locale: form.locale, servicePlanId: form.planId, ...(form.installmentId ? { installmentOptionId: form.installmentId } : {}),
+    locale: form.locale, servicePlanId: form.planId,
+    // Only a chosen option WITH an id travels; the package's own default plan (id null) omits it. Amounts never travel.
+    ...(installmentOptionId ? { installmentOptionId } : {}),
     parties: persons.map(({ role, firstName, middleName, lastName, dateOfBirth }) => ({ role, firstName, ...(middleName.trim() ? { middleName } : {}), lastName, ...(dateOfBirth ? { dateOfBirth } : {}) })),
     consent,
-  }), [form, persons, consent]);
+  }), [form, persons, consent, installmentOptionId]);
 
   // The guide speaks when a step (or the code / done screen) appears, once the screen has settled.
   const spokenFor = useRef("");
@@ -473,13 +481,23 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     if (!data) { void load(); return; }
     setStage("form"); goTo("review");
   }
+  const extraCount = persons.length;
+  const chosenOption = plan ? optionForSelection(plan, form.installmentId) ?? defaultPaymentOption(plan) : null;
+  const chosenRow = plan && chosenOption ? breakdownForPlan(plan, chosenOption, extraCount) : null;
+  const payOptions = paymentOptionsOf(plan);
   const stateName = US_STATES.find(item => item.code === form.state)?.name ?? (form.state === "PR" ? "Puerto Rico" : form.state);
+  /** Review: «{name} · Total $T», the chosen breakdown and the extra people included. Old API (no paymentOptions): name · base price. */
+  const planSummary: string[] = !plan ? [] : chosenOption
+    ? chosenRow
+      ? [`${text(plan.name)} · Total ${cents(chosenRow.totalCents)}`, paymentLabel(chosenRow, chosenOption.frequency).line, ...(extraPartiesNote(extraCount, plan.extraPartyPriceCents) ? [extraPartiesNote(extraCount, plan.extraPartyPriceCents) as string] : [])]
+      : [text(plan.name), PAYMENT_NOTE_NO_ROW]
+    : [`${text(plan.name)} · ${cents(plan.priceCents)}`];
   const summary: { step: Step; title: string; lines: string[] }[] = [
     { step: "name", title: "Tu nombre", lines: [[form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ")] },
     { step: "contact", title: "Contacto", lines: [form.email, form.phone ? phoneLabel(form.phone) : ""] },
     { step: "address", title: "Dirección", lines: [[form.line1, form.apartment].filter(Boolean).join(", "), [form.city, stateName, form.zip].filter(Boolean).join(", ")] },
     ...(roles.length ? [{ step: "people" as const, title: "Personas", lines: persons.map(person => `${text(roles.find(role => role.roleKey === person.role)?.label)}: ${[person.firstName, person.lastName].filter(Boolean).join(" ") || "—"}`) }] : []),
-    { step: "plan", title: "Paquete", lines: [plan ? `${text(plan.name)} · ${cents(plan.priceCents)}` : "", form.locale === "es" ? "Contrato y correos en español" : "Contract and emails in English"] },
+    { step: "plan", title: "Paquete", lines: [...planSummary, form.locale === "es" ? "Contrato y correos en español" : "Contract and emails in English"] },
   ];
   const title = stage === "done" ? "Tu contrato está listo para firmar." : stage === "code" ? "Confirma que eres tú." : stage === "form" ? STEPS[step].title : "Preparemos tu contrato.";
 
@@ -562,23 +580,33 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
 
           {step === "plan" && <div className={s.fields}>
             <div className={s.options} role="radiogroup" aria-label="Tu paquete" data-guided-zone={guide.target === "plan" || undefined}>
-              {data.service.plans.map(item => <label key={item.id} className={s.option} data-selected={form.planId === item.id}>
-                <input type="radio" name={`${uid}-plan`} checked={form.planId === item.id} onChange={() => setForm(current => ({ ...current, planId: item.id, installmentId: "" }))} />
-                <span className={s.optionMark} aria-hidden="true" />
-                <span className={s.optionText}>{text(item.name)}{item.extraPartyPriceCents > 0 && <small>+ {cents(item.extraPartyPriceCents)} por persona adicional</small>}</span>
-                <strong>{cents(item.priceCents)}</strong>
-              </label>)}
+              {data.service.plans.map(item => {
+                const itemOption = defaultPaymentOption(item);
+                const itemRow = itemOption ? breakdownForPlan(item, itemOption, extraCount) : null;
+                return <label key={item.id} className={s.option} data-selected={form.planId === item.id}>
+                  <input type="radio" name={`${uid}-plan`} checked={form.planId === item.id} onChange={() => setForm(current => ({ ...current, planId: item.id, installmentId: selectionOf(defaultPaymentOption(item)) }))} />
+                  <span className={s.optionMark} aria-hidden="true" />
+                  <span className={s.optionText}>{text(item.name)}{item.extraPartyPriceCents > 0 && (!itemRow || extraCount === 0) && <small>+ {cents(item.extraPartyPriceCents)} por persona adicional</small>}</span>
+                  <strong>{cents(itemRow ? itemRow.totalCents : item.priceCents)}</strong>
+                </label>;
+              })}
             </div>
             {errors.servicePlanId && <small className={s.error} role="alert">{errors.servicePlanId}</small>}
-            {plan && plan.installmentOptions.length > 0 ? <div className={s.options} role="radiogroup" aria-label="Cómo prefieres pagar" data-guided-zone={guide.target === "pay" || undefined}>
-              <p className={s.groupTitle}>¿Cómo prefieres pagar?</p>
-              <label className={s.option} data-selected={!form.installmentId}><input type="radio" name={`${uid}-pay`} checked={!form.installmentId} onChange={() => setForm(current => ({ ...current, installmentId: "" }))} /><span className={s.optionMark} aria-hidden="true" /><span className={s.optionText}>Plan de pagos del paquete</span></label>
-              {plan.installmentOptions.map(option => <label key={option.id} className={s.option} data-selected={form.installmentId === option.id}>
-                <input type="radio" name={`${uid}-pay`} checked={form.installmentId === option.id} onChange={() => setForm(current => ({ ...current, installmentId: option.id }))} />
-                <span className={s.optionMark} aria-hidden="true" />
-                <span className={s.optionText}>{option.installmentCount} {option.installmentCount === 1 ? "pago" : option.frequency === "weekly" ? "pagos semanales" : "pagos mensuales"}{option.downpaymentCents !== null && <small>Anticipo de {cents(option.downpaymentCents)}</small>}</span>
-              </label>)}
-            </div> : <p className={s.note} data-guided-zone={guide.target === "pay" || undefined}>El plan de pagos aparece en tu contrato antes de firmar.</p>}
+            {plan && payOptions.length > 0 ? <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : "group"} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
+              <p className={s.groupTitle} id={`${uid}-pay-title`}>¿Cómo prefieres pagar?</p>
+              {payOptions.map(option => {
+                const row = breakdownForPlan(plan, option, extraCount);
+                const label = row ? paymentLabel(row, option.frequency) : { title: paymentShape(option), detail: PAYMENT_NOTE_NO_ROW };
+                const card = <span className={s.optionText}>{label.title}<small>{label.detail}</small></span>;
+                if (payOptions.length === 1) return <div key={selectionOf(option) || "default"} className={`${s.option} ${s.optionStatic}`} data-selected="true">{card}</div>;
+                const value = selectionOf(option);
+                return <label key={value} className={s.option} data-selected={chosenOption === option}>
+                  <input type="radio" name={`${uid}-pay`} checked={chosenOption === option} onChange={() => setForm(current => ({ ...current, installmentId: value }))} />
+                  <span className={s.optionMark} aria-hidden="true" />
+                  {card}
+                </label>;
+              })}
+            </div> : <p className={s.note} data-guided-zone={guide.target === "pay" || undefined}>{PAYMENT_NOTE_NO_OPTIONS}</p>}
             {errors.installmentOptionId && <small className={s.error} role="alert">{errors.installmentOptionId}</small>}
             <div className={s.options} role="radiogroup" aria-label="Idioma de tu contrato">
               <p className={s.groupTitle}>Idioma de tu contrato y tus correos</p>

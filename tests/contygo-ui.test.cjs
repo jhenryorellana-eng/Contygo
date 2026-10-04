@@ -12,7 +12,7 @@ const { waLink } = require('../lib/config.ts');
 
 const EVERY_OUTCOME = [
   { step: 'INVALID' }, { step: 'NEEDS_ANSWERS' }, { step: 'ASK_CODE', maskedEmail: 'a***@e2e.local' }, { step: 'WRONG_CODE', attemptsLeft: 2 }, { step: 'RESTART' },
-  { step: 'HUMAN' }, { step: 'NOT_ELIGIBLE' }, { step: 'UNAVAILABLE' }, { step: 'UNAVAILABLE_ONLINE' }, { step: 'ERROR' },
+  { step: 'HUMAN' }, { step: 'FIX_CONTACT', reason: 'email_has_account', phoneHint: '42' }, { step: 'FIX_CONTACT', reason: 'phone_in_use' }, { step: 'NOT_ELIGIBLE' }, { step: 'UNAVAILABLE' }, { step: 'UNAVAILABLE_ONLINE' }, { step: 'ERROR' },
   { step: 'SIGN_LINK_PENDING', caseNumber: 'U26-000001' }, { step: 'INVALID_PARTIES', role: null },
   ...['destination', 'verification', 'general', 'busy', 'conflict', 'fresh_key'].map(reason => ({ step: 'RETRY_LATER', reason, retryAfter: 3600 })),
 ];
@@ -32,6 +32,20 @@ test('copias exactas de los bloqueos', () => {
   assert.match(outcomeMessage({ step: 'NOT_ELIGIBLE' }).detail, /¿Tienes dudas\? Escríbenos por WhatsApp/);
   assert.match(outcomeMessage({ step: 'RETRY_LATER', reason: 'fresh_key' }).detail, /usa el código más reciente/);
   assert.match(outcomeMessage({ step: 'SIGN_LINK_PENDING', caseNumber: 'U26-000001' }).title, /U26-000001/);
+});
+
+test('FIX_CONTACT: la copia exacta que ve la persona, con enlace a la cuenta y salida por WhatsApp',()=>{
+  const account = outcomeMessage({ step: 'FIX_CONTACT', reason: 'email_has_account', phoneHint: '42' });
+  assert.equal(account.title, 'Ya tienes una cuenta con este correo.');
+  assert.equal(account.detail, 'Escribe el teléfono que registraste y te enviaremos un código nuevo. O entra a tu cuenta.');
+  const inUse = outcomeMessage({ step: 'FIX_CONTACT', reason: 'phone_in_use' });
+  assert.equal(inUse.title, 'Revisa tu teléfono.');
+  assert.match(inUse.detail, /escríbenos por WhatsApp.$/);
+  assert.ok(waLink(whatsappHelpMessage('Visa Juvenil', 'WEB-AB12CD')).startsWith('https://wa.me/13853927656?text='));
+});
+
+test('un cliente reconocido (clientCreated=false) ve «Te reconocimos»',()=>{
+  assert.equal(outcomeMessage({ step: 'SIGN', clientCreated: false, serviceAlreadyLive: null, firstName: 'Ana' }).title, 'Te reconocimos: añadimos este servicio a tu cuenta de ContyGo.');
 });
 
 test('verification y destination hablan con el Retry-After', () => {

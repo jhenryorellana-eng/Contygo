@@ -33,6 +33,7 @@
 .notice{display:grid;gap:4px;padding:14px 16px;border-radius:18px;background:rgba(var(--ink-rgb),.07);box-shadow:inset 0 0 0 1px rgba(var(--ink-rgb),.12);font-size:16px;line-height:1.5}
 .notice strong{font-weight:800}
 .notice span{color:rgba(var(--ink-rgb),.8)}
+.noticeLink{justify-self:start;margin-top:4px;font-weight:800;text-decoration:underline;text-underline-offset:3px;color:inherit;min-height:44px;display:inline-flex;align-items:center;cursor:pointer}
 .notice[data-tone=error]{box-shadow:inset 0 0 0 1.5px var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}
 .notice[data-tone=success]{box-shadow:inset 0 0 0 1.5px var(--green);background:color-mix(in srgb,var(--green) 12%,transparent)}
 

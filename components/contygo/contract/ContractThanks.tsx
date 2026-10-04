@@ -6,7 +6,7 @@
    nada más de la persona. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clearContract, newIdempotencyKey, readContract, type SavedContract } from "@/lib/contygo-api/browser";
-import { readResend } from "@/lib/contygo-api/messages";
+import { RECOGNIZED_MESSAGE, readResend } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import s from "./ContractCheckout.module.css";
 
@@ -88,6 +88,7 @@ export default function ContractThanks() {
       {status?.contract === "sent" && (signingUrl
         ? <a className={s.primary} href={signingUrl} target="_blank" rel="noopener noreferrer"><span>Firmar mi contrato</span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></i></a>
         : <button type="button" className={s.primary} disabled={busy} onClick={() => void resend()}><span>{busy ? "Enviando…" : "Enviarme el enlace para firmar"}</span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></i></button>)}
+      {saved && !saved.clientCreated && state !== "missing" && <p className={s.note}>{RECOGNIZED_MESSAGE}</p>}
       {saved?.clientCreated && state !== "missing" && <p className={s.note}>Entra a tu app de ContyGo con tu correo. Tu contraseña inicial son los 10 dígitos de tu teléfono.</p>}
       <div className={s.links}>
         {state !== "missing" && <button type="button" className={s.linkButton} disabled={busy} onClick={() => void refresh(saved)}>Actualizar estado</button>}

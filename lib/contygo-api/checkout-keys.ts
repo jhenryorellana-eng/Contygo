@@ -26,7 +26,7 @@ export type AnswerShape = { status: number; outcome?: { step: string; reason?: s
  * After an answer: does the next attempt repeat the same key (true) or get a new one (false)?
  * Same key: «busy» (RETRY_LATER/busy), 502/503/504 or a page that is not JSON (our route did not answer),
  * a 429 or a captcha 403 from our own route (nothing reached contygo). New key: anything contygo answered
- * for good (fresh_key, WRONG_CODE, ERROR, RESTART…) and 4xx without an outcome (400, 404, 413…).
+ * for good (fresh_key, WRONG_CODE, ERROR, RESTART, FIX_CONTACT…) and 4xx without an outcome (400, 404, 413…).
  */
 /**
  * After an answer to the code (2.ª llamada): retry it by itself, same key and same body? Only when contygo
@@ -40,6 +40,14 @@ export function retriesConfirmAlone({ status, outcome }: AnswerShape): boolean {
 
 /** Seconds to wait before that automatic retry: what the server asked, between 2 and 8. */
 export const confirmRetryDelay = (retryAfter: number | null | undefined) => Math.min(8, Math.max(2, retryAfter ?? 2));
+
+/**
+ * The pending attempt after an answer: kept (same key and body on the next call) or dropped (null, so the next call
+ * gets a new key). The component assigns this to its ref; FIX_CONTACT and every final answer drop it.
+ */
+export function afterOutcome(pending: Pending | null, answer: AnswerShape): Pending | null {
+  return keepsKey(answer) ? pending : null;
+}
 
 export function keepsKey({ status, outcome, error }: AnswerShape): boolean {
   const busy = outcome?.step === "RETRY_LATER" && outcome.reason === "busy";

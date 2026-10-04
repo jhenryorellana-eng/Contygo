@@ -24,13 +24,16 @@
      2.ª llamada: corte, 503, 500 o IN_PROGRESS repiten con la MISMA clave.
    · HUMAN, UNAVAILABLE_ONLINE y los errores no transitorios dejan, sin PII,
      un resumen en el lead (PUT /leads) y una referencia corta WEB-XXXXXX.
+   · EXISTING_CLIENT (CLIENT_NEEDS_HUMAN con resolution existing_client) se avisa como HUMAN, con su propio código.
+   · FIX_CONTACT (CLIENT_NEEDS_HUMAN con una pista segura: solo canal web y tras un código válido) NO es
+     un fallo: la persona corrige el teléfono y empieza otra vez; no se avisa a ventas.
    ============================================================ */
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, invalidateCatalog, localServiceNameFor, remoteServiceFor } from "./catalog";
 import {
   buildContractBody, checkoutEnabled, hasUnknownQuestion, isConfigFailure, mapContractResponse, normalizeContractPhone, publicRef,
   sanitizeAnswers, toContractAnswers, toEvaluateAnswers, validateContractForm,
-  type ContractOutcome, type FieldErrors, type RetryReason,
+  type ContractOutcome, type FieldErrors, type FixContact, type RetryReason,
 } from "./checkout";
 import { contygoApi } from "./client";
 import { buildAttemptBody, buildLeadBody, syncLead } from "./lead";
@@ -54,12 +57,25 @@ export type BrowserOutcome =
   | { step: "WRONG_CODE"; attemptsLeft: number | null }
   | { step: "RESTART" }
   | { step: "HUMAN"; ref: string }
+  | { step: "EXISTING_CLIENT"; ref: string }
+  | FixContact
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "UNAVAILABLE_ONLINE"; code: string; ref: string }
   | { step: "INVALID_PARTIES"; role: string | null }
   | { step: "RETRY_LATER"; reason: RetryReason; retryAfter: number | null }
   | { step: "ERROR"; code: string; ref: string };
+
+/**
+ * email_has_account cuya pista no puede ayudar: sin phoneHint (la cuenta no tiene teléfono) o con un phoneHint IGUAL
+ * a los 2 últimos dígitos que la persona ya tecleó (una cuenta que x-legal no reconoció sola). Corregir el teléfono
+ * no sirve: sale por WhatsApp (HUMAN) y se avisa a ventas. phone_in_use y una pista distinta siguen en FIX_CONTACT.
+ */
+function fixCannotHelp(outcome: FixContact, typedPhoneE164: string | null | undefined): boolean {
+  if (outcome.reason !== "email_has_account") return false;
+  if (!outcome.phoneHint) return true;
+  return typeof typedPhoneE164 === "string" && typedPhoneE164.slice(-2) === outcome.phoneHint;
+}
 
 const logCode = (where: string, code: string) => console.warn(`[contygo] ${where}: ${code}`);
 
@@ -100,6 +116,12 @@ async function reportAttempt(attempt: Attempt, code: string) {
 async function human(attempt: Attempt, code: string): Promise<BrowserOutcome> {
   await reportAttempt(attempt, code);
   return { step: "HUMAN", ref: publicRef(attempt.externalRef) };
+}
+
+/** Cuenta que x-legal no enlaza sola: WhatsApp, y ventas se entera (código EXISTING_CLIENT) para adoptar el teléfono. */
+async function existingClient(attempt: Attempt): Promise<BrowserOutcome> {
+  await reportAttempt(attempt, "EXISTING_CLIENT");
+  return { step: "EXISTING_CLIENT", ref: publicRef(attempt.externalRef) };
 }
 
 async function unavailableOnline(attempt: Attempt, code: string): Promise<BrowserOutcome> {
@@ -247,6 +269,10 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
+    case "EXISTING_CLIENT":
+      return existingClient(attempt);
+    case "FIX_CONTACT": // La 1.ª llamada no lleva pista (es idéntica exista o no la persona); si llegara, pasa salvo que no pueda ayudar.
+      return fixCannotHelp(outcome, form.value.phoneE164) ? human(attempt, "CLIENT_NEEDS_HUMAN") : outcome;
     case "ERROR":
       // Sin respuesta de contygo: el código pudo salir o no. La misma clave daría IN_PROGRESS 120 s: clave nueva.
       if (outcome.code === "NETWORK") return { step: "RETRY_LATER", reason: "fresh_key", retryAfter: null };
@@ -312,6 +338,10 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
       return unavailableOnline(attempt, outcome.code);
     case "HUMAN":
       return human(attempt, "CLIENT_NEEDS_HUMAN");
+    case "EXISTING_CLIENT":
+      return existingClient(attempt);
+    case "FIX_CONTACT": // La persona corrige el teléfono: no es un fallo que avisar a ventas, salvo que corregirlo no pueda ayudar.
+      return fixCannotHelp(outcome, body.client?.phoneE164) ? human(attempt, "CLIENT_NEEDS_HUMAN") : outcome;
     case "ERROR":
       // Corte, timeout o plazo agotado: la MISMA clave y los mismos bytes retoman desde el cliente ya creado.
       if (outcome.code === "NETWORK" || outcome.code === "DEADLINE") return { step: "RETRY_LATER", reason: "busy", retryAfter: 5 };

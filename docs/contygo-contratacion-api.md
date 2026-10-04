@@ -191,6 +191,22 @@ La UI genera una clave con `crypto.randomUUID()` para cada intento y la ruta la 
 - **Techo diario de códigos.** Cuando un correo lo supera, contygo también responde `409 CLIENT_NEEDS_HUMAN`, no 429.
 - **En el humo de producción**, no reutilices el correo ni el teléfono de una prueba anterior.
 
+#### Decisión del 03-10-2026: reconocer al cliente y corregir el teléfono (`FIX_CONTACT`)
+
+Contrato compartido con x-legal (la landing lo implementa; el lado servidor es otro cambio):
+
+- **Cliente reconocido (regla de x-legal tras la revisión de seguridad del 03-10-2026).** x-legal enlaza solo, con 201 y `clientCreated: false`, **únicamente** una cuenta que la landing o el bot crearon, cuando llegan el mismo correo y el mismo teléfono con los que nació y su contraseña inicial **nadie la ha cambiado todavía**. Cualquier otra cuenta (la contraseña ya cambió, el correo o el teléfono no son los de nacimiento, la creó el equipo o `/registro`) responde `409 CLIENT_NEEDS_HUMAN` con `{ resolution: "existing_client" }`: la persona sale por WhatsApp y el equipo adopta el teléfono; a partir de ahí, los contratos siguientes sí se enlazan solos. Así quien reclama un teléfono ajeno desde la web no puede quedarse con el contrato de otra persona, y una cuenta cuya contraseña inicial es el teléfono deja de servir en cuanto su dueño la cambia. La landing muestra «Te reconocimos: añadimos este servicio a tu cuenta de ContyGo.» (en la pantalla final y en `/contratar/gracias`). La nota de la contraseña inicial solo sale con `clientCreated: true`.
+- **Pista segura, solo canal web y solo tras un código válido.** El 409 `CLIENT_NEEDS_HUMAN` puede traer `error.details`:
+  - `{ resolution: "email_has_account", phoneHint?: "NN" }`: el correo probado es el de acceso de una cuenta y el teléfono escrito no es el suyo. `phoneHint` son los 2 últimos dígitos del teléfono de esa cuenta (nunca más; se omite si no tiene).
+  - `{ resolution: "phone_in_use" }`: el teléfono escrito es de una cuenta y el correo probado no es de nadie.
+  - `{ resolution: "existing_client" }`: la cuenta existe pero x-legal no la enlaza sola (regla de arriba). No lleva ningún dato de la cuenta. La landing la convierte en `EXISTING_CLIENT`.
+  - Cualquier otro motivo: sin `details`, como siempre. La 1.ª llamada no cambia (idéntica exista o no la persona) y el bot de WhatsApp conserva su cuerpo opaco. La repetición idempotente de un 409 guardado repite los mismos `details`.
+- **`EXISTING_CLIENT`.** `mapContractResponse` lo produce con `existing_client` (una resolución que no conoce sigue en `HUMAN`). `flow.ts` lo pasa al navegador con la referencia `WEB-XXXXXX` y, como `HUMAN`, avisa a ventas con el código `EXISTING_CLIENT` (en la 1.ª y en la 2.ª llamada). Pantalla de bloqueo: «Ya eres cliente de ContyGo.» / «Para añadir este servicio a tu cuenta, escríbenos por WhatsApp y lo hacemos contigo.», con el botón de WhatsApp (único número, mensaje con el servicio y la referencia `WEB`) y el enlace «Entrar a mi cuenta» (https://contygo.app/entrar). Sin «Reintentar»: solo el equipo puede adoptar el teléfono. Es respuesta definitiva para las claves de idempotencia.
+- **Lo que hace la landing con las pistas de corrección.** `mapContractResponse` convierte esas pistas en el paso `FIX_CONTACT` (`reason`: `email_has_account` | `phone_in_use`, y `phoneHint` solo si son exactamente 2 dígitos; si no, se descarta). Sin `details`, o con algo desconocido, sigue el `HUMAN` de hoy. `FIX_CONTACT` **no es un fallo**: no avisa a ventas (sin `PUT /leads` de intento) y sí lleva clave nueva.
+- **Dos casos límite (DOC-76 §6.2): corregir el teléfono no puede ayudar.** `email_has_account` puede llegar con un `phoneHint` IGUAL a los 2 últimos dígitos del teléfono que la persona ya escribió (una cuenta que x-legal no reconoce sola: nacida en `/registro` o antes del PR #452), o SIN `phoneHint` (la cuenta no tiene teléfono). En ambos la landing lo trata como `HUMAN`, no como `FIX_CONTACT`: WhatsApp neutro al único número del bot con la referencia `WEB` y sí avisa a ventas, igual que cualquier `HUMAN`. Se decide en el servidor (`lib/contygo-api/flow.ts`, donde se conoce el `client.phoneE164` fijado por el ticket) en `confirmContract` y, por simetría, en `startContract`; `mapContractResponse` sigue puro. Una pista DISTINTA al teléfono escrito sigue siendo `FIX_CONTACT` sin aviso, y `phone_in_use` también.
+- **Aviso accesible.** En `FIX_CONTACT` el campo «Teléfono» conserva el error con `role=alert`; el aviso de arriba usa el tono `info`, para que un lector de pantalla no anuncie dos alertas.
+- **Riesgo residual aceptado por el dueño.** `phone_in_use` le dice a quien probó un correo ajeno que un teléfono está registrado. Los frenos reales son el CAPTCHA, el límite por IP y la cuota del principal web (60 por hora y 300 por día), que el sondeo consume. Lo que se filtra de más respecto de main es casi nada.
+
 ### Límites
 
 **Los de contygo** (código de contygo, 02-10-2026):
@@ -251,7 +267,7 @@ Si la elegibilidad es negativa, el recorrido continúa: el segundo vídeo sigue 
 - Todo enlace de WhatsApp lleva un mensaje prellenado con el servicio y la referencia corta del intento, sin datos de la persona: «Hola, estaba contratando <servicio> en la web de ContyGo y necesito ayuda (ref. WEB-XXXXXX).».
 - La referencia es `WEB-` más los 6 últimos caracteres del `externalRef`.
 
-**El aviso a ventas.** Ante `HUMAN`, `UNAVAILABLE_ONLINE` y los `ERROR` no transitorios se repite `PUT /leads/{externalRef}` con este `aiSummary`: «Web · <servicio>. Intentó contratar en línea y necesita ayuda (<CÓDIGO>).».
+**El aviso a ventas.** Ante `HUMAN`, `EXISTING_CLIENT`, `UNAVAILABLE_ONLINE` y los `ERROR` no transitorios se repite `PUT /leads/{externalRef}` con este `aiSummary`: «Web · <servicio>. Intentó contratar en línea y necesita ayuda (<CÓDIGO>).».
 - Solo lleva el nombre, el teléfono, el origen y ese resumen.
 - Es best-effort: si falla, la persona igual ve su salida por WhatsApp.
 
@@ -266,9 +282,11 @@ Si la elegibilidad es negativa, el recorrido continúa: el segundo vídeo sigue 
 | `UNAVAILABLE` | El servicio no está en el catálogo, o contygo responde 422 `PLAN_NOT_CONTRACTABLE` (se invalida la caché del catálogo) | «Este servicio no está disponible ahora mismo.» | Bloqueo con WhatsApp; se borra la ficha |
 | `UNAVAILABLE_ONLINE` | Cualquiera de estos:<br>• el interruptor (`CHECKOUT_DISABLED`);<br>• `DEV_WRITES_DISABLED`;<br>• un 401 o 403;<br>• `COMPLIANCE_INCOMPLETE` o `COMPLIANCE_EXPIRED`;<br>• `CASE_PAYMENT_PLAN_INVALID`, `CONSENT_CHANNEL_MISMATCH` o `NO_SALES_OWNER`;<br>• un 500 en la 1.ª llamada;<br>• un 401 o 403 del catálogo o de la elegibilidad | «La contratación en línea no está disponible en este momento.» / «Escríbenos por WhatsApp y te ayudamos a terminar.» | Bloqueo con WhatsApp; se borra la ficha. Deja el log `[contygo:config] <dónde> <código>` y el aviso en el lead, salvo con `CHECKOUT_DISABLED` y `DEV_WRITES_DISABLED` |
 | `INVALID_PARTIES` | 422 `INVALID_PARTIES` | «Revisa las personas del expediente: falta <rol>.» | Vuelve al paso «Personas»; el código enviado se descarta |
-| `SIGN` | 201 con un `signingUrl` de confianza | Con cuenta nueva: «¡Listo, <nombre>! Tu contrato está preparado.». Si ya era cliente: «¡Ya eres cliente nuestro!» / «Añadimos este servicio a tu cuenta.». Además: botón «Firmar mi contrato» y número de caso. Con el aviso `SERVICE_ALREADY_LIVE`: «Ya tienes este trámite en curso (caso …). Abrimos uno nuevo como pediste.» | Se borra la ficha; solo queda el token del contrato para `/contratar/gracias` |
+| `SIGN` | 201 con un `signingUrl` de confianza | Con cuenta nueva: «¡Listo, <nombre>! Tu contrato está preparado.». Si ya era cliente (`clientCreated: false`): «Te reconocimos: añadimos este servicio a tu cuenta de ContyGo.» (sin la nota de la contraseña inicial). Además: botón «Firmar mi contrato» y número de caso. Con el aviso `SERVICE_ALREADY_LIVE`: «Ya tienes este trámite en curso (caso …). Abrimos uno nuevo como pediste.» | Se borra la ficha; solo queda el token del contrato para `/contratar/gracias` |
 | `SIGN_LINK_PENDING` | 201 con `contractId` pero sin un `signingUrl` de confianza; por ejemplo, la repetición de un 201 | «Tu contrato está preparado (caso …).» / «Toca «Enviarme el enlace» para recibir el enlace de firma.» | El botón llama a `/reenviar` con el token |
 | `HUMAN` | 409 `CLIENT_NEEDS_HUMAN` en cualquiera de las dos llamadas, o una pregunta de `kind` desconocido (`UNKNOWN_QUESTION_KIND`) | «Para terminar tu contratación, escríbenos por WhatsApp.». Nunca se explica el motivo ni se promete que alguien llamará | Bloqueo con WhatsApp y la referencia; se borra la ficha; aviso en el lead |
+| `EXISTING_CLIENT` | 409 `CLIENT_NEEDS_HUMAN` con `details.resolution: "existing_client"` en cualquiera de las dos llamadas | «Ya eres cliente de ContyGo.» / «Para añadir este servicio a tu cuenta, escríbenos por WhatsApp y lo hacemos contigo.» | Bloqueo (sin «Reintentar») con WhatsApp y la referencia, y el enlace «Entrar a mi cuenta»; se borra la ficha; aviso en el lead con el código `EXISTING_CLIENT` |
+| `FIX_CONTACT` | 409 `CLIENT_NEEDS_HUMAN` con `details.resolution` `email_has_account` o `phone_in_use` (solo canal web, tras el código) | Error del campo «Teléfono» y un aviso. `email_has_account`: «Este correo ya tiene una cuenta en ContyGo. Usa el teléfono de tu cuenta (termina en NN).» (sin el paréntesis si no hay pista) / «Ya tienes una cuenta con este correo.» «Escribe el teléfono que registraste y te enviaremos un código nuevo. O entra a tu cuenta.» con enlace a https://contygo.app/entrar. `phone_in_use`: «Con este correo no podemos usar este teléfono.» / «Revisa tu teléfono.» «Si ya eres cliente, usa el correo y el teléfono de tu cuenta; si no, prueba con otro teléfono o escríbenos por WhatsApp.» con el botón de WhatsApp | Vuelve al paso «Contacto» con el código descartado; al corregir y tocar «Enviar mi código» es una 1.ª llamada normal (clave y código nuevos). No avisa a ventas |
 | `ERROR` | Cualquier otro código: uno desconocido, `BAD_SIGNING_URL`, `BAD_VERIFICATION` o un `INVALID_REQUEST` sin campos de la ficha | «No pudimos completar tu solicitud.» / «Puedes intentarlo de nuevo o escribirnos por WhatsApp.» | Bloqueo con «Escribir por WhatsApp» y «Reintentar», que vuelve al código (si ya se envió) o a la revisión. La ficha **no** se borra. Aviso en el lead |
 | `RETRY_LATER` | Ver la tabla siguiente | Ver la tabla siguiente | La persona se queda en la misma pantalla |
 
@@ -414,7 +432,7 @@ Ya no hay base de datos. Se retiraron `store.ts` y `supabase/contygo-contratacio
   - El texto solo se usa como defensa, si una pregunta llegara sin `kind`.
   - Un `kind` desconocido no se adivina: se escala.
 - **La `signingUrl` nunca se guarda ni se registra.** Solo viaja en la respuesta al navegador de la persona, y solo si es de confianza. El modelo de IA solo ve la pregunta y la respuesta de elegibilidad.
-- **«¡Ya eres cliente nuestro!» solo aparece con `clientCreated: false`, en el 201 posterior al código.** La 1.ª respuesta es idéntica para cualquiera (§3.3). `CLIENT_NEEDS_HUMAN` usa siempre el mismo texto neutro.
+- **«Te reconocimos» solo aparece con `clientCreated: false`, en el 201 posterior al código.** La 1.ª respuesta es idéntica para cualquiera (§3.3). `CLIENT_NEEDS_HUMAN` usa el mismo texto neutro, salvo la pista segura de `FIX_CONTACT` (solo web, tras el código).
 - **Ningún texto promete que un asesor llamará ni dice «no aplica».** Un test lo comprueba (`tests/contygo-ui.test.cjs`).
 - **Nunca se envían importes.** El cuerpo solo lleva los campos del OpenAPI, y un test comprueba las claves. Los precios que se muestran salen de `GET /catalog`, nunca de listas locales.
 - **`consent.channel` es siempre `"web"`**, el único valor válido con una clave web (§9).
@@ -492,6 +510,12 @@ Estos cambios están en una rama de contygo (`fix/web-contract-email-and-handoff
    | `nolink@…` | 201 sin `signingUrl` | `SIGN_LINK_PENDING` y «Enviarme el enlace» |
    | `ratelimit@…` | 429 `VERIFICATION_RATE_LIMITED` | «Ya te enviamos varios códigos…» |
    | `human@…` | 409 `CLIENT_NEEDS_HUMAN` | `HUMAN` |
+   | `existing@…` | Tras el código, 409 `CLIENT_NEEDS_HUMAN` con `existing_client` | `EXISTING_CLIENT` (WhatsApp y «Entrar a mi cuenta»; aviso a ventas) |
+   | `hasaccount@…` | Tras el código, 409 `CLIENT_NEEDS_HUMAN` con `email_has_account` y `phoneHint: "42"`, salvo que el teléfono termine en 42 | `FIX_CONTACT`; con el teléfono corregido, firma |
+   | `hasaccountsame@…` | Tras el código, 409 `email_has_account` con `phoneHint` igual a los 2 últimos dígitos del teléfono escrito | `HUMAN` (y aviso a ventas) |
+   | `hasaccountnohint@…` | Tras el código, 409 `email_has_account` sin `phoneHint` | `HUMAN` (y aviso a ventas) |
+   | `phoneinuse@…` | Tras el código, 409 `CLIENT_NEEDS_HUMAN` con `phone_in_use`, salvo que el teléfono termine en 77 | `FIX_CONTACT`; con otro teléfono, firma |
+   | `returning@…` | Tras el código, 201 con `clientCreated: false` | «Te reconocimos…» |
    | `error@…` | 422 con un código desconocido | `ERROR` con «Reintentar» |
    | `forbidden@…` | 403 `FORBIDDEN` | `UNAVAILABLE_ONLINE` |
    | `slow502@…` | Corta la 1.ª llamada, una sola vez por proceso | `fresh_key`; usa un dominio distinto en cada pasada |
@@ -607,7 +631,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 - [x] Texto de aceptación versionado en `consent.textVersion` (`terminos-web-2026-10-03`), en español o inglés según el idioma. `consent.at` nunca va en el futuro (`tests/contygo-api.test.cjs`). El texto sigue pendiente de aprobación legal (abajo).
 - [x] 1.ª llamada → código → 2.ª llamada con el mismo cuerpo byte a byte, `verificationId`, código y una clave nueva.
   - Tests de `tests/contygo-contratacion.test.cjs`: «Contratar en dos pasos sin estado…» y «solo se canjea un código con el cuerpo y el sobre que firmó este servidor».
-- [x] «Ya eres cliente» solo después del código, y `CLIENT_NEEDS_HUMAN` con texto neutro (`contygo-contratacion` y `contygo-ui`).
+- [x] «Te reconocimos» solo con `clientCreated: false` en el 201 posterior al código; antes del código nada distingue a un cliente, y `CLIENT_NEEDS_HUMAN` usa texto neutro salvo la pista segura de `FIX_CONTACT` (y `HUMAN` si la pista no puede ayudar) (`contygo-contratacion` y `contygo-ui`).
 - [x] La `signingUrl` queda fuera de los logs, de `sessionStorage` y del modelo de IA (`browser.ts`, `client.ts`, `tests/contygo-navegador.test.cjs`).
 - [x] Claves de idempotencia según la llamada:
   - 1.ª llamada cortada: clave nueva.

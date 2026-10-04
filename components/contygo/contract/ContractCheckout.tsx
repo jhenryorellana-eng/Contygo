@@ -592,8 +592,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
               })}
             </div>
             {errors.servicePlanId && <small className={s.error} role="alert">{errors.servicePlanId}</small>}
-            {plan && payOptions.length > 0 ? <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : "group"} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
+            {plan && payOptions.length > 0 ? <div className={s.options}>
               <p className={s.groupTitle} id={`${uid}-pay-title`}>¿Cómo prefieres pagar?</p>
+              {/* The guide highlights only the cards: the title stays outside the glowing zone. */}
+              <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : "group"} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
               {payOptions.map(option => {
                 const row = breakdownForPlan(plan, option, extraCount);
                 const label = row ? paymentLabel(row, option.frequency) : { title: paymentShape(option), detail: PAYMENT_NOTE_NO_ROW };
@@ -606,6 +608,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
                   {card}
                 </label>;
               })}
+              </div>
             </div> : <p className={s.note} data-guided-zone={guide.target === "pay" || undefined}>{PAYMENT_NOTE_NO_OPTIONS}</p>}
             {errors.installmentOptionId && <small className={s.error} role="alert">{errors.installmentOptionId}</small>}
             <div className={s.options} role="radiogroup" aria-label="Idioma de tu contrato">

@@ -244,15 +244,16 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const steps = useMemo<Step[]>(() => ["name", "contact", "address", ...(roles.length ? ["people" as const] : []), "plan", "review"], [roles.length]);
   const stepIndex = Math.max(0, steps.indexOf(step));
   const plan = data?.service.plans.find(item => item.id === form.planId) ?? data?.service.plans[0];
+  const installmentOptionId = installmentIdForRequest(plan, form.installmentId);
   const input = useMemo(() => ({
     firstName: form.firstName, middleName: form.middleName, lastName: form.lastName, email: form.email, phone: form.phone,
     address: { line1: form.line1, apartment: form.apartment, city: form.city, state: form.state, zip: form.zip },
     locale: form.locale, servicePlanId: form.planId,
     // Only a chosen option WITH an id travels; the package's own default plan (id null) omits it. Amounts never travel.
-    ...(installmentIdForRequest(plan, form.installmentId) ? { installmentOptionId: installmentIdForRequest(plan, form.installmentId) } : {}),
+    ...(installmentOptionId ? { installmentOptionId } : {}),
     parties: persons.map(({ role, firstName, middleName, lastName, dateOfBirth }) => ({ role, firstName, ...(middleName.trim() ? { middleName } : {}), lastName, ...(dateOfBirth ? { dateOfBirth } : {}) })),
     consent,
-  }), [form, persons, consent, plan]);
+  }), [form, persons, consent, installmentOptionId]);
 
   // The guide speaks when a step (or the code / done screen) appears, once the screen has settled.
   const spokenFor = useRef("");
@@ -591,7 +592,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
               })}
             </div>
             {errors.servicePlanId && <small className={s.error} role="alert">{errors.servicePlanId}</small>}
-            {plan && payOptions.length > 0 ? <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : undefined} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
+            {plan && payOptions.length > 0 ? <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : "group"} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
               <p className={s.groupTitle} id={`${uid}-pay-title`}>¿Cómo prefieres pagar?</p>
               {payOptions.map(option => {
                 const row = breakdownForPlan(plan, option, extraCount);

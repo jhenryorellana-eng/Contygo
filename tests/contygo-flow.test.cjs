@@ -65,15 +65,23 @@ test('los doce servicios usan el cierre aprobado, su nombre, vídeo y destino pr
   }
 });
 
-test('el clip provisional del segundo paso no sustituye los vídeos introductorios aprobados',()=>{
+test('el segundo vídeo no sustituye los vídeos introductorios aprobados',()=>{
   const intros=['visa-juvenil','apelacion','reforzar-asilo'].map(id=>getRebuildServiceFilm(id).src);
   assert.equal(new Set(intros).size,3);
   for(const id of ['visa-juvenil','apelacion','reforzar-asilo']){
     const intro=getRebuildServiceFilm(id),second=getRebuildPlatformFilm(id);
     assert(fs.existsSync(path.join(root,'public',intro.src)));
     assert.notEqual(intro.src,second.src);
-    assert.equal(second.provisional,true);
+    assert.equal(Boolean(second.provisional),id!=='visa-juvenil',id);
   }
+});
+
+test('Visa Juvenil usa su segundo vídeo final, con su propio póster',()=>{
+  const second=getRebuildPlatformFilm('visa-juvenil');
+  assert.equal(second.src,'/contygo/films/visa-juvenil-video2-v1-720p.mp4');
+  assert(fs.existsSync(path.join(root,'public',second.src)));
+  assert(fs.existsSync(path.join(root,'public',second.poster)));
+  assert.notEqual(second.poster,getRebuildServiceFilm('visa-juvenil').poster);
 });
 
 test('los doce servicios públicos enlazan a su ficha específica en ContyGo', () => {

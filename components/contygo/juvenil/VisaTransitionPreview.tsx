@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { getContygoServiceUrl } from "@/lib/contygo";
-import { getRebuildPlatformFilm } from "@/lib/contygo-rebuild-media";
+import { PROVISIONAL_PLATFORM_FILM } from "@/lib/contygo-rebuild-media";
 import ServiceCinemaDialog from "../rebuild/ServiceCinemaDialog";
 import { LiquidGlow } from "./ThinkingOverlay";
 import ThinkingOverlayDemo from "./ThinkingOverlayDemo";
@@ -158,7 +158,7 @@ export default function VisaTransitionPreview() {
 
     <footer className={s.footer}><span>SIEMPRE CONTIGO. PASO A PASO.</span><p>ContyGo · Luz que acompaña la voz</p></footer>
     <div className={themeStyles.surface} data-contygo-theme={appearance} data-contygo-dia={day}>
-      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? getRebuildPlatformFilm("visa-juvenil") : undefined} previewCompletedIntake={previewMode === "completed"} visualTheme="lagoon" />
+      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? PROVISIONAL_PLATFORM_FILM : undefined} previewCompletedIntake={previewMode === "completed"} visualTheme="lagoon" />
       {responseDemo && <ThinkingOverlayDemo onClose={() => setResponseDemo(false)} />}
       {statePickerDemo && <VisaStatePicker onChoose={() => setStatePickerDemo(false)} onClose={() => setStatePickerDemo(false)} />}
     </div>

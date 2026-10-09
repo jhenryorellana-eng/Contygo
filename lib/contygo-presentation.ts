@@ -6,6 +6,13 @@ export const VISA_JUVENIL_VIDEO = {
   duration: 125,
 };
 
+/** Second Visa Juvenil film (the proposal before the contract), compressed for on-demand playback. */
+export const VISA_JUVENIL_VIDEO_2 = {
+  src: "/contygo/films/visa-juvenil-video2-v1-720p.mp4",
+  poster: "/contygo/films/visa-juvenil-video2-v1-poster.webp",
+  duration: 920.92,
+};
+
 export const APELACION_VIDEO = {
   src: "/contygo/films/apelacion-v1-720p.mp4",
   poster: "/contygo/films/apelacion-v1-poster.webp",

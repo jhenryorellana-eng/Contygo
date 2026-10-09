@@ -1,5 +1,5 @@
 import { CONTYGO_SERVICES, type ContygoCategory } from "./contygo-catalog";
-import { APELACION_VIDEO, REFORZAMIENTO_ASILO_VIDEO, VISA_JUVENIL_VIDEO, getServicePresentation } from "./contygo-presentation";
+import { APELACION_VIDEO, REFORZAMIENTO_ASILO_VIDEO, VISA_JUVENIL_VIDEO, VISA_JUVENIL_VIDEO_2, getServicePresentation } from "./contygo-presentation";
 
 /** New films only; retained category artwork remains until its visual pilot is ready.
  * null means the owner has not supplied the Grok export. */
@@ -25,9 +25,10 @@ export const REBUILD_SERVICE_FILMS: Record<string, string | null> = {
 };
 export const REBUILD_PLATFORM_FILMS: Record<string, string | null> = {
   ...Object.fromEntries(CONTYGO_SERVICES.map(s => [s.id, null])),
-  // Temporary clip explicitly requested for testing the interview-to-video flow.
-  "visa-juvenil": "/contygo/hero-video-v2/01-elige-desktop.mp4",
+  "visa-juvenil": VISA_JUVENIL_VIDEO_2.src,
 };
+/** Shared app demonstration (6 s) until each service's final second film is supplied. */
+export const PROVISIONAL_PLATFORM_FILM: RebuildFilm = { src: "/contygo/hero-video-v2/01-elige-desktop.mp4", poster: "/contygo/hero-video-v2/01-elige-desktop.jpg", captions: "/contygo/hero-video-v2/01-elige.es.vtt", onScreenText: true, duration: 6, provisional: true };
 export function getRebuildServiceFilm(id: string): RebuildFilm {
   if (id === "visa-juvenil") return { ...VISA_JUVENIL_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
   if (id === "apelacion") return { ...APELACION_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
@@ -37,10 +38,9 @@ export function getRebuildServiceFilm(id: string): RebuildFilm {
   return { src: REBUILD_SERVICE_FILMS[id] ?? presentation?.src ?? null, poster: presentation?.poster ?? REBUILD_CATEGORIES[service?.category ?? "familia"].poster, duration: 0 };
 }
 export function getRebuildPlatformFilm(id: string): RebuildFilm {
+  if (id === "visa-juvenil") return { ...VISA_JUVENIL_VIDEO_2, src: REBUILD_PLATFORM_FILMS[id] };
   const src=REBUILD_PLATFORM_FILMS[id];
-  const temporary="/contygo/hero-video-v2/01-elige-desktop.mp4";
-  // Shared app demonstration until the final product films are supplied.
-  if(!src||src===temporary)return {src:temporary,poster:"/contygo/hero-video-v2/01-elige-desktop.jpg",captions:"/contygo/hero-video-v2/01-elige.es.vtt",onScreenText:true,duration:6,provisional:true};
+  if(!src||src===PROVISIONAL_PLATFORM_FILM.src)return PROVISIONAL_PLATFORM_FILM;
   return {src,poster:getRebuildServiceFilm(id).poster,duration:0};
 }
 

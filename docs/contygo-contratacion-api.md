@@ -707,7 +707,7 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 
 ## Qué queda fuera del recorrido
 
-- **La entrevista anterior de Visa Juvenil** (`/api/agent/visa-intake` y las reglas por estado) ya no la usa el recorrido. El código sigue en el proyecto y sus tests pasan. Se puede archivar cuando se decida.
+- **La entrevista original de Visa Juvenil** vuelve al recorrido desde el 09-10-2026: `/api/agent/service-intake` hace primero sus preguntas (vive en EE. UU., fecha de nacimiento, estado, pruebas y, sin pruebas, testigos; claves `visa.*`) y después las del catálogo, que el contrato exige. Las claves `visa.*` no salen hacia contygo: el contrato y el lead solo envían las del catálogo. Si contygo no dice que no, la orientación final es la original, con las reglas por estado. La ruta antigua `/api/agent/visa-intake` sigue sin usarse.
 - **`/servicios/[slug]`** sigue enlazando a `contygo.app/servicios/<slug>` y no llega a esta ficha. **`/[slug]`** (el link de cada servicio, destino de los anuncios) abre desde octubre de 2026 la guía de la landing, que termina en esta ficha; ya no muestra el embudo antiguo.
 - **No hay eventos de conversión** (Pixel o CAPI) en el envío del código ni en la firma.
 - **Las rutas heredadas de UsaLatinoPrime** (CRM, panel y reseñas) siguen en el código. Sin sus variables quedan apagadas.

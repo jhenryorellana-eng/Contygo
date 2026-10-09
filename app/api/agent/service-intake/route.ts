@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { CHAT_MODEL, agentEnabled, clientIp, getGenAI, rateLimit } from "@/lib/agent/server";
 import { isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
 import {
-  eligibilityGuidance, intakeQuestions, nextServiceQuestion, sanitizeServiceAnswers, serviceFollowup, serviceGreeting,
-  serviceVoiceScripts, INTAKE_NO_QUESTIONS_FINISH, SERVICE_FINISH, type IntakeQuestion, type ServiceAnswers,
+  eligibilityGuidance, intakeQuestions, nextServiceQuestion, normalizeIntakeAnswer, prefixVisaAnswers, questionFollowup, sanitizeServiceAnswers,
+  serviceGreeting, serviceVoiceScripts, visaAnswers, visaGuidance, visaQuestions, visaVoiceScripts, INTAKE_NO_QUESTIONS_FINISH, SERVICE_FINISH,
+  VISA_GREETING, VISA_INTERVIEW_SERVICE, type IntakeQuestion, type ServiceAnswers,
 } from "@/lib/agent/service-intake";
+import type { IntakeAnswers } from "@/lib/agent/visa-intake";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { loadCatalog } from "@/lib/contygo-api/catalog";
-import { isConfigFailure, normalizeAnswer, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
+import { isConfigFailure, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
 import { logConfig } from "@/lib/contygo-api/log";
 import type { CatalogService, EligibilityResult } from "@/lib/contygo-api/types";
@@ -19,6 +21,7 @@ import type { CatalogService, EligibilityResult } from "@/lib/contygo-api/types"
 // Gemini solo interpreta texto libre o audio
 // para la pregunta en curso; nunca decide elegibilidad: eso lo responde POST /eligibility/evaluate
 // al terminar. Sin estado (guía §2 bis): las respuestas viven en el navegador y viajan en cada turno.
+// Visa Juvenil antepone su entrevista original (lib/agent/service-intake.ts) a las preguntas del catálogo.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -42,13 +45,14 @@ function turn(questions: IntakeQuestion[], answers: ServiceAnswers, options: { r
     escalate,
     source: options.source ?? "guided",
     message: escalate ? ESCALATE_MESSAGE : question
-      ? `${options.retry ? `Necesito confirmar tu respuesta.${RETRY_HINT[question.kind]} ` : ""}${serviceFollowup(question)}`
+      ? `${options.retry ? `Necesito confirmar tu respuesta.${RETRY_HINT[question.kind]} ` : ""}${questionFollowup(question)}`
       : questions.length ? SERVICE_FINISH : INTAKE_NO_QUESTIONS_FINISH,
   };
 }
 
-/** Al terminar: contygo evalúa las respuestas. El contrato las vuelve a evaluar antes de enviar el código. */
-async function finish(remote: CatalogService, answers: ServiceAnswers) {
+/** Al terminar: contygo evalúa las respuestas. El contrato las vuelve a evaluar antes de enviar el código.
+ *  Con la entrevista de Visa Juvenil, su orientación original sustituye a la genérica salvo que contygo diga que no. */
+async function finish(remote: CatalogService, answers: ServiceAnswers, visa?: IntakeAnswers) {
   let result: EligibilityResult | null = null;
   let unavailableOnline = false;
   try {
@@ -60,7 +64,8 @@ async function finish(remote: CatalogService, answers: ServiceAnswers) {
       logConfig("eligibility", response.error?.code ?? `HTTP_${response.status}`);
     }
   } catch { /* Sin evaluación, la ficha la repite antes de contratar. */ }
-  return { eligible: result ? result.eligible : null, guidance: eligibilityGuidance(result, remote.eligibilityQuestions), ...(unavailableOnline ? { unavailableOnline: true } : {}) };
+  const guidance = visa && result?.eligible !== false ? visaGuidance(visa, result) : eligibilityGuidance(result, remote.eligibilityQuestions);
+  return { eligible: result ? result.eligible : null, guidance, ...(unavailableOnline ? { unavailableOnline: true } : {}) };
 }
 
 export async function POST(req: NextRequest) {
@@ -87,16 +92,21 @@ export async function POST(req: NextRequest) {
 
   const respond = json;
 
-  const questions = intakeQuestions(remote.eligibilityQuestions);
-  let answers = sanitizeServiceAnswers(remote.eligibilityQuestions, body.answers);
+  const catalog = intakeQuestions(remote.eligibilityQuestions);
+  const visa = local.id === VISA_INTERVIEW_SERVICE;
+  // The question list depends on the answers: the witness question only follows «no evidence».
+  const questionsFor = (current: ServiceAnswers) => visa ? [...visaQuestions(visaAnswers(current)), ...catalog] : catalog;
+  let answers: ServiceAnswers = { ...(visa ? prefixVisaAnswers(visaAnswers(body.answers)) : {}), ...sanitizeServiceAnswers(remote.eligibilityQuestions, body.answers) };
+  const questions = questionsFor(answers);
   const hasVideo = Boolean(getRebuildServiceFilm(local.id).src);
-  const complete = async (payload: ReturnType<typeof turn>) => payload.complete ? { ...payload, ...(await finish(remote!, payload.answers)) } : payload;
+  const complete = async (payload: ReturnType<typeof turn>) => payload.complete ? { ...payload, ...(await finish(remote!, payload.answers, visa ? visaAnswers(payload.answers) : undefined)) } : payload;
 
   const question = nextServiceQuestion(questions, answers);
   if (body.field === undefined) {
     if (body.answer !== undefined || body.audio !== undefined) return respond({ ok: false, error: "invalid_turn" }, 400);
     const opening = turn(questions, answers);
-    const greeting = { ...opening, scripts: serviceVoiceScripts(local.name, questions, hasVideo), message: opening.escalate ? opening.message : Object.keys(answers).length && question ? serviceFollowup(question) : serviceGreeting(local.name, questions, hasVideo) };
+    const scripts = visa ? visaVoiceScripts(catalog) : serviceVoiceScripts(local.name, questions, hasVideo);
+    const greeting = { ...opening, scripts, message: opening.escalate ? opening.message : Object.keys(answers).length && question ? questionFollowup(question) : visa ? VISA_GREETING : serviceGreeting(local.name, questions, hasVideo) };
     return respond(await complete(greeting));
   }
   if (!question) return respond(await complete(turn(questions, answers)));
@@ -114,8 +124,8 @@ export async function POST(req: NextRequest) {
     audio = { data: a.data, mimeType: mime === "audio/mp4" ? "audio/m4a" : mime };
   } else if (!(typeof body.answer === "boolean" || typeof body.answer === "string" && body.answer.trim().length > 0 && body.answer.length <= 2000)) return respond({ ok: false, error: "invalid_answer" }, 400);
 
-  const canonical = audio ? null : normalizeAnswer(question, typeof body.answer === "string" ? body.answer.trim() : body.answer);
-  if (canonical !== null) return respond(await complete(turn(questions, { ...answers, [question.id]: canonical })));
+  const canonical = audio ? null : normalizeIntakeAnswer(question, typeof body.answer === "string" ? body.answer.trim() : body.answer);
+  if (canonical !== null) { const next = { ...answers, [question.id]: canonical }; return respond(await complete(turn(questionsFor(next), next))); }
   if (!agentEnabled) return respond(turn(questions, answers, { retry: true }));
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -131,8 +141,8 @@ export async function POST(req: NextRequest) {
     });
     const parsed: unknown = JSON.parse(response.text ?? "");
     if (!record(parsed) || parsed.clear !== true || typeof parsed.value !== "string") return respond(turn(questions, answers, { retry: true, source: "gemini" }));
-    const value = normalizeAnswer(question, parsed.value.trim());
+    const value = normalizeIntakeAnswer(question, parsed.value.trim());
     if (value !== null) answers = { ...answers, [question.id]: value };
-    return respond(await complete(turn(questions, answers, { retry: value === null, source: "gemini" })));
+    return respond(await complete(turn(questionsFor(answers), answers, { retry: value === null, source: "gemini" })));
   } catch { return respond(turn(questions, answers, { retry: true })); }
 }

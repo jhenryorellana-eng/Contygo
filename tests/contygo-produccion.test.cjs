@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const Module = require('node:module');
 const { NextRequest } = require('next/server');
-const { ids, catalog, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules } = require('./helpers/contygo-harness.cjs');
+const { ids, catalog, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules, visaInterview } = require('./helpers/contygo-harness.cjs');
 
 // Pruebas de «contratación en producción» (plan B1-B10): preguntas us_state / future_event / kind desconocido,
 // teléfono +1, errores de la API bien mapeados, plazos y reintentos, aviso a ventas, precios vivos,
@@ -165,13 +165,14 @@ test('B1 · una pregunta de kind desconocido escala: HUMAN, sin evaluar ni manda
 test('B1 · el chat: las preguntas llevan kind, dateMode y options al navegador; el estado se responde con su código', async () => {
   net.on('GET', '/catalog', { status: 200, body: catalogWith([STATE_Q, FUTURE_Q]) });
   const b = browser(); b.newIp();
-  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body })).json();
+  // La entrevista propia de Visa Juvenil va ya respondida: estas pruebas son de las preguntas del catálogo.
+  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body, answers: { ...visaInterview, ...body.answers } })).json();
   const opening = await say({ answers: {} });
   assert.equal(opening.question.kind, 'state');
   assert.deepEqual(opening.question.options, [{ code: 'TX', label: 'Texas' }, { code: 'FL', label: 'Florida' }, { code: 'NY', label: 'Nueva York' }]);
   assert.equal(opening.escalate, false);
   const afterState = await say({ answers: {}, field: STATE_Q.id, answer: 'tx' });
-  assert.deepEqual(afterState.answers, { [STATE_Q.id]: 'TX' });
+  assert.deepEqual(afterState.answers, { ...visaInterview, [STATE_Q.id]: 'TX' });
   assert.equal(afterState.question.kind, 'date');
   assert.equal(afterState.question.dateMode, 'future_event');
   assert.deepEqual(afterState.question.minNotice, { days: 30 });
@@ -188,10 +189,11 @@ test('B1 · el chat: las preguntas llevan kind, dateMode y options al navegador;
 test('B1 · Gemini extrae el código de estado de texto libre y el prompt permite fechas futuras en future_event', async () => {
   net.on('GET', '/catalog', { status: 200, body: catalogWith([STATE_Q, FUTURE_Q]) });
   const b = browser(); b.newIp();
-  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body })).json();
+  // La entrevista propia de Visa Juvenil va ya respondida: estas pruebas son de las preguntas del catálogo.
+  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body, answers: { ...visaInterview, ...body.answers } })).json();
   provider = async () => ({ text: JSON.stringify({ clear: true, value: 'TX' }) });
   const state = await say({ answers: {}, field: STATE_Q.id, answer: 'vivo en Texas desde hace dos años' });
-  assert.deepEqual(state.answers, { [STATE_Q.id]: 'TX' });
+  assert.deepEqual(state.answers, { ...visaInterview, [STATE_Q.id]: 'TX' });
   assert.equal(state.source, 'gemini');
   const sent = JSON.parse(geminiCalls[0].contents[0].parts[0].text);
   assert.equal(sent.kind, 'state');
@@ -201,7 +203,7 @@ test('B1 · Gemini extrae el código de estado de texto libre y el prompt permit
   // Gemini inventa un estado que contygo no ofrece: no avanza.
   provider = async () => ({ text: JSON.stringify({ clear: true, value: 'CA' }) });
   const invalid = await say({ answers: {}, field: STATE_Q.id, answer: 'vivo en California' });
-  assert.deepEqual(invalid.answers, {});
+  assert.deepEqual(invalid.answers, visaInterview);
   // future_event: una fecha futura dicha con palabras se acepta.
   provider = async () => ({ text: JSON.stringify({ clear: true, value: ymd(90) }) });
   const future = await say({ answers: { [STATE_Q.id]: 'TX' }, field: FUTURE_Q.id, answer: 'dentro de tres meses, el día tal' });
@@ -211,14 +213,15 @@ test('B1 · Gemini extrae el código de estado de texto libre y el prompt permit
 test('B1 · el chat con una pregunta de kind desconocido escala sin llamar a Gemini', async () => {
   net.on('GET', '/catalog', { status: 200, body: catalogWith([WEIRD_Q]) });
   const b = browser(); b.newIp();
-  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body })).json();
+  // La entrevista propia de Visa Juvenil va ya respondida: estas pruebas son de las preguntas del catálogo.
+  const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body, answers: { ...visaInterview, ...body.answers } })).json();
   const opening = await say({ answers: {} });
   assert.equal(opening.escalate, true);
   assert.equal(opening.question.kind, 'unknown');
   assert.match(opening.message, /WhatsApp/);
   const turn = await say({ answers: {}, field: WEIRD_Q.id, answer: 'lo que sea' });
   assert.equal(turn.escalate, true);
-  assert.deepEqual(turn.answers, {});
+  assert.deepEqual(turn.answers, visaInterview);
   assert.equal(geminiCalls.length, 0);
 });
 
@@ -383,8 +386,8 @@ test('B3 · 401/403 del catálogo y de la elegibilidad ya no se disfrazan de «r
   log = captureConsole();
   let done;
   try {
-    const greeting = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: {} })).json();
-    done = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: {}, field: greeting.field, answer: true })).json();
+    const greeting = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: visaInterview })).json();
+    done = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: visaInterview, field: greeting.field, answer: true })).json();
   } finally { log.restore(); }
   assert.equal(done.complete, true);
   assert.equal(done.eligible, null);

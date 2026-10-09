@@ -23,6 +23,7 @@ import s from "./VisaJuvenilExperience.module.css";
 type Phase = "watch" | "packing" | "interview";
 type Message = { id: number; role: "agent" | "user"; text: string };
 // Las preguntas son las del catálogo de contygo: llegan del servidor (/api/agent/service-intake) con su tipo.
+// Visa Juvenil antepone su entrevista original (claves «visa.»), que el servidor mezcla con las del catálogo.
 // La conversación vive en este navegador (guía §2 bis): externalRef la identifica ante contygo (lead y alta).
 export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean };
 type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean };
@@ -132,7 +133,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       let label = audio ? "Respuesta por voz" : String(answer);
       if (typeof answer === "boolean") label = answer ? "Sí" : "No";
       const asked = sessionRef.current.question;
-      if (typeof answer === "string" && asked?.id === field && asked.kind === "state") label = asked.options?.find(option => option.code === answer)?.label ?? answer;
+      if (typeof answer === "string" && asked?.id === field && asked.kind === "state") label = asked.options?.find(option => option.code === answer)?.label ?? (answer === "UNKNOWN" ? "Aún no tengo un estado definido" : answer);
       if (typeof answer === "string" && /^\d{4}-\d{2}-\d{2}$/.test(answer)) { const [year, month, day] = answer.split("-"); label = `${day}/${month}/${year}`; }
       snapshot = { ...snapshot, messages: [...snapshot.messages, { id: ++counter.current, role: "user", text: label }] };
       updateSession(snapshot);
@@ -449,7 +450,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
         {session.messages.length>1&&!session.complete&&<button type="button" className={s.historyButton} disabled={busy} onClick={()=>setShowHistory(!showHistory)} aria-expanded={showHistory}>{showHistory?"Volver a la pregunta":"Ver conversación"}</button>}
       </div>
     </section>
-    {statePicker&&question?.kind==="state"&&question.options?.length?<VisaStatePicker options={question.options} allowUnknown={false} description="Elige el estado que corresponde a tu caso." onClose={()=>setStatePicker(false)} onChoose={code=>{setStatePicker(false);if(field)void ask(field,code);}}/>:null}
+    {statePicker&&question?.kind==="state"&&question.options?.length?<VisaStatePicker options={question.options} allowUnknown={Boolean(question.allowUnknown)} description={question.allowUnknown ? undefined : "Elige el estado que corresponde a tu caso."} onClose={()=>setStatePicker(false)} onChoose={code=>{setStatePicker(false);if(field)void ask(field,code);}}/>:null}
     {journey==="gathering"&&<div ref={completionSeed} className={s.completionSeed} aria-hidden="true"><img src="/contygo/brand/symbol-light.png" alt=""/></div>}
     {phase==="interview"&&journey!=="chat"&&<VisaJourneyReveal serviceName={serviceName} unavailableOnline={Boolean(session.unavailableOnline || session.escalate)} helpHref={helpLink} displayName={session.displayName} onDisplayNameChange={displayName=>updateSession({...sessionRef.current,displayName})} phone={session.phone} onPhoneChange={phone=>updateSession({...sessionRef.current,phone})} guidance={session.guidance} onContinue={continueToFilm} onEdit={restartAnswers} departing={departing} pending={journey==="gathering"} fromChat={hasGathered.current} guide={guide}/>}
     {phase==="interview"&&journey!=="chat"&&<div ref={leadCaptcha.container} className={s.leadCaptcha}/>}

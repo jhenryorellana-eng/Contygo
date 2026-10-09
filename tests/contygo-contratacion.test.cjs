@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const { ids, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules } = require('./helpers/contygo-harness.cjs');
+const { ids, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules, visaInterview } = require('./helpers/contygo-harness.cjs');
 const { signWebhook } = require('../lib/contygo-api/webhook.ts');
 const { signVerificationTicket } = require('../lib/contygo-api/tokens.ts');
 
@@ -49,10 +49,10 @@ const start = (b, patch) => post(startRoute, b, '/api/contratar/iniciar', startB
 const confirm = (b, ask, patch) => post(confirmRoute, b, '/api/contratar/confirmar', confirmBody(ask, patch));
 const contractCalls = net => net.calls.filter(call => call.path === '/contracts');
 
-/** Recorre el chat de Visa Juvenil hasta completar sus preguntas. */
+/** Recorre el chat de Visa Juvenil hasta completar sus preguntas (la entrevista propia ya respondida; `answer` es la del catálogo). */
 async function interview(b, answer = true) {
-  const greeting = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: {} })).json();
-  const done = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: {}, field: greeting.field, answer })).json();
+  const greeting = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: visaInterview })).json();
+  const done = await (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', answers: visaInterview, field: greeting.field, answer })).json();
   return { greeting, done };
 }
 
@@ -65,13 +65,13 @@ test('las preguntas del chat salen del catálogo con su kind y al terminar se ev
   assert.equal(greeting.question.id, ids.visaQ);
   assert.equal(greeting.question.text, '¿El menor tiene menos de 21 años y no está casado?');
   assert.equal(greeting.question.kind, 'yesno');
-  assert.equal(greeting.total, 1);
+  assert.equal(greeting.total, 5, 'cuatro de la entrevista de Visa Juvenil (con pruebas no hay testigos) y una del catálogo');
   assert.ok(greeting.message.includes(greeting.question.text));
   assert.ok(greeting.scripts.includes(greeting.message), 'la locución del saludo se precarga');
   assert.equal(done.complete, true);
   assert.equal(done.eligible, true);
   assert.equal(done.guidance.status, 'potential');
-  assert.deepEqual(done.answers, { [ids.visaQ]: true }, 'las respuestas vuelven al navegador, que es quien las guarda');
+  assert.deepEqual(done.answers, { ...visaInterview, [ids.visaQ]: true }, 'las respuestas vuelven al navegador, que es quien las guarda');
   const evaluate = net.calls.find(call => call.path === '/eligibility/evaluate');
   assert.deepEqual(evaluate.json, { serviceId: ids.visa, answers: [{ questionId: ids.visaQ, value: true }] });
   assert.equal(b.jar.size, 0, 'sin cookies ni sesión en el servidor');

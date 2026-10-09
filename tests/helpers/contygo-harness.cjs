@@ -135,4 +135,7 @@ function freshModules() {
   require(path.join(root, 'lib/contygo-api/catalog.ts')).resetCatalogCache();
 }
 
-module.exports = { root, ids, catalog, BASE, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules };
+/** La entrevista propia de Visa Juvenil ya respondida: el chat sigue con las preguntas del catálogo. */
+const visaInterview = { 'visa.residence': true, 'visa.birthDate': '2012-03-04', 'visa.state': 'TX', 'visa.evidence': true };
+
+module.exports = { root, ids, catalog, BASE, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules, visaInterview };

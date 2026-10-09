@@ -2,8 +2,8 @@
    Sitemap — home + una URL por servicio (clave para ads/SEO)
    ============================================================ */
 import type { MetadataRoute } from "next";
-import { SERVICES } from "@/lib/services";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { getServiceGuideUrl } from "@/lib/contygo";
 import { SITE_URL } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -11,8 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     ...CONTYGO_SERVICES.map(service => ({ url: `${SITE_URL}/servicios/${service.slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.9 })),
-    ...SERVICES.map((s) => ({
-      url: `${SITE_URL}/${s.slug}`,
+    ...CONTYGO_SERVICES.map(service => ({
+      url: `${SITE_URL}${getServiceGuideUrl(service.id)}`,
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.9,

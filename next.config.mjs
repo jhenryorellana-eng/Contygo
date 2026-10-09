@@ -24,10 +24,13 @@ const nextConfig = {
     ];
   },
 
-  // Variantes de URL → slug canónico (para que ningún anuncio caiga en 404).
+  // Variantes de URL → slug canónico (para que ningún anuncio caiga en 404). Cada servicio del catálogo
+  // también responde a su slug de contygo.app (p. ej. visa-juvenil-basico, apelacion, taxes).
   async redirects() {
     const map = {
-      "visa-juvenil": ["visajuvenil", "sijs"],
+      "visa-juvenil": ["visajuvenil", "sijs", "visa-juvenil-basico"],
+      "reapertura-in-absentia": ["reapertura"],
+      "llc-florida": ["llc"],
       "peticion-i-360": ["i-360", "i360", "peticioni360"],
       "ajuste-de-estatus": ["i-485", "i485", "ajustedeestatus", "ajuste-estatus"],
       "asilo-politico": ["asilo", "asilopolitico"],

@@ -365,7 +365,7 @@ export default function CallView({ onExit }: CallViewProps) {
                 <ServiceLink key={slug} href={`/${svc.slug}`} video={svc.video} className="pa-card pa-pop">
                   <span className="pa-card__t">
                     <span className="pa-card__name">{svc.name}</span>
-                    <span className="pa-card__sub">Calificar ahora · 2 min</span>
+                    <span className="pa-card__sub">Ver su guía en vídeo</span>
                   </span>
                   {Ico.arrow}
                 </ServiceLink>

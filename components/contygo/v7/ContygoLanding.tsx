@@ -9,6 +9,8 @@ import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
 import { formatCents, fromPriceLabel, lowestCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
+import { CONTENT_CATEGORY } from "@/lib/meta/events";
+import { trackBrowserWhenReady } from "@/lib/meta/pixel-client";
 import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
 import AppPhone from "./AppPhone";
@@ -97,14 +99,34 @@ function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-loop={loop || undefined}>{paths[kind] ?? paths.arrow}</svg>;
 }
 
-export default function ContygoLanding() {
+/** `initialServiceId`: the link of a service (/visa-juvenil, /apelacion-bia…) opens its guide on arrival, over the landing. */
+export default function ContygoLanding({ initialServiceId }: { initialServiceId?: string } = {}) {
   const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [headerCta, setHeaderCta] = useState(false);
   const [dock, setDock] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
-  const [service, setService] = useState<ContygoService | null>(null);
+  const [service, setService] = useState<ContygoService | null>(() => CONTYGO_SERVICES.find(item => item.id === initialServiceId) ?? null);
+  // A shared link hides the landing behind the brand navy until the guide has opened over it,
+  // so the person lands on the video, not on the hero. Closing the guide fades it out.
+  const [linked, setLinked] = useState(() => service !== null);
+  // If the guide does not open (a failed chunk, a very slow connection), the landing shows instead of a blank veil.
+  useEffect(() => {
+    if (!linked) return;
+    const timer = window.setTimeout(() => { if (!document.querySelector("dialog[open]")) setLinked(false); }, 8000);
+    return () => clearTimeout(timer);
+  }, [linked]);
+  // Meta: opening a service's guide is «chose a service» (ViewContent), from the page or from its link,
+  // the signal the old funnel sent on arrival. Arriving by link, the Pixel is not loaded yet: the event
+  // waits for it. Once per opening (StrictMode runs effects twice; the wait is not cancelled).
+  const tracked = useRef<ContygoService | null>(null);
+  useEffect(() => {
+    if (!service) { tracked.current = null; return; }
+    if (tracked.current === service) return;
+    tracked.current = service;
+    trackBrowserWhenReady("ViewContent", { content_ids: [service.id], content_name: service.name, content_category: CONTENT_CATEGORY });
+  }, [service]);
   const prices = useServicePrices();
   const fromCents = lowestCents(prices);
   const fromPrice = fromCents === null ? null : formatCents(fromCents);
@@ -279,6 +301,11 @@ export default function ContygoLanding() {
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
       <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Encontrar mi servicio</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
     </div>
+    {linked && <div className={s.linkVeil} data-open={Boolean(service)} aria-hidden="true" onTransitionEnd={event => { if (event.target === event.currentTarget && !service) setLinked(false); }}>
+      <span><Image src="/contygo/brand/symbol-dark.png" alt="" width={1024} height={1024} sizes="72px" priority /></span>
+      {/* Without JavaScript the guide never opens: the landing stays readable. */}
+      <noscript dangerouslySetInnerHTML={{ __html: `<style>.${s.linkVeil}{display:none}</style>` }} />
+    </div>}
     <ServiceCinemaDialog service={service} origin={origin} onClose={() => setService(null)} />
   </div>;
 }

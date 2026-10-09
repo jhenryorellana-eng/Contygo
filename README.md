@@ -4,6 +4,36 @@
 
 La dirección actual de prueba está en `/contygo-app`; `/` conserva la versión anterior para comparación. El objetivo comercial vigente es elegir un servicio, comprender su oferta mediante información y vídeo, y continuar a la contratación digital en ContyGo. Los documentos enlazados distinguen lo implementado de lo propuesto.
 
+## El link de cada servicio (anuncios y clientes)
+
+Cada servicio tiene su link, **`<dominio>/<servicio>`**: es el que se pone en los anuncios y el que se le manda a un cliente. Entra directo a la guía del servicio, sin pasar por la portada: vídeo → conversación → segundo vídeo → contrato, el mismo recorrido que abre la landing al elegir ese servicio. Si cierra la guía, queda en la landing.
+
+Desde octubre de 2026 estas direcciones abren la guía nueva en lugar del embudo antiguo de UsaLatinoPrime (vídeo → preguntas → resultado → WhatsApp). Los nueve servicios que ya tenían página conservan su dirección, así que los anuncios y los links ya enviados siguen funcionando.
+
+| Servicio | Link | También llegan aquí (308) | Qué ve al entrar |
+| --- | --- | --- | --- |
+| Visa Juvenil Básico | `/visa-juvenil` | `/visa-juvenil-basico`, `/visajuvenil`, `/sijs` | Guía en vídeo propia |
+| I-360 — Inmigrante Juvenil Especial (SIJS) | `/peticion-i-360` | `/i-360`, `/i360` | Vídeo de introducción de Visa Juvenil |
+| Ajuste de estatus I-485 (SIJ) | `/ajuste-de-estatus` | `/i-485`, `/i485` | Vídeo anterior del servicio |
+| Asilo Político | `/asilo-politico` | `/asilo`, `/asilopolitico` | Vídeo anterior del servicio |
+| Reforzar Asilo | `/reforzar-asilo` | `/reforzamiento-de-asilo`, … | Guía en vídeo propia |
+| Evaluación de Asilo | `/evaluacion-asilo` | — | Sin vídeo todavía: aviso y preguntas |
+| Apelación (BIA) | `/apelacion-bia` | `/apelacion`, `/apelacionbia` | Guía en vídeo propia |
+| Cambio de Corte | `/cambio-de-corte` | `/cambio-corte` | Vídeo anterior del servicio |
+| Apelación (Re-apertura) | `/reapertura-in-absentia` | `/reapertura` | Sin vídeo todavía: aviso y preguntas |
+| Número ITIN | `/itin` | `/itin-number` | Vídeo anterior del servicio |
+| Declaración de Impuestos | `/declaracion-de-impuestos` | `/taxes`, `/impuestos` | Vídeo anterior del servicio |
+| Creación de LLC | `/llc-florida` | `/llc` | Sin vídeo todavía: aviso y preguntas |
+
+El slug de contygo.app (`contygo.app/servicios/<slug>`) y el id del catálogo también llegan siempre al link. Los alias están en `next.config.mjs`, y el link sale de `legacySlug` (o de `slug`) en `lib/contygo-catalog.ts`.
+
+- **El vídeo empieza con un toque.** Los navegadores no reproducen solos un vídeo con sonido en la primera visita, así que la guía muestra «Comenzar». Ese toque también habilita la voz del asistente en la conversación.
+- **Vista previa en WhatsApp:** título y descripción del servicio, y su imagen de `public/contygo/compartir/`. Los tres servicios con guía propia usan un fotograma de su vídeo; los demás, su ilustración. Se regeneran con `node scripts/build-share-previews.mjs` (necesita ffmpeg).
+- **Meta:** abrir la guía de un servicio, desde el link o desde la landing, envía `ViewContent`, como hacía el embudo antiguo al llegar. **No hay todavía un `Lead`**: el embudo antiguo lo enviaba al tocar WhatsApp y el recorrido nuevo no tiene evento de conversión (ver `docs/contygo-contratacion-api.md`).
+- **Atribución:** la contratación guarda la ruta de origen (`sourceUrl`), así que los contratos que llegan por estos links se distinguen de los de la landing. Para separar canales, añade UTM: `/apelacion-bia?utm_source=whatsapp`.
+- `/servicios/<slug>` (la presentación sencilla) no cambia.
+- Al agregar un servicio al catálogo, su link existe solo; genera además su imagen de vista previa. El test `tests/contygo-links.test.cjs` lo exige y comprueba que ningún link choque con un alias o una ruta fija.
+
 ## Documentación técnica e histórica de UsaLatinoPrime
 
 El contenido siguiente conserva el contexto original del repositorio. Las referencias a WhatsApp como destino principal o a otro posicionamiento no sustituyen la dirección comercial actual indicada arriba.
@@ -12,32 +42,15 @@ Sitio web (Next.js 14 · App Router · TypeScript) con:
 
 - **Home de marca** (`/`): quiénes somos, grid de servicios, sección de la app móvil
   (App Store / Google Play) y opiniones de clientes.
-- **Una URL por servicio** (`/visa-juvenil`, `/asilo-politico`, `/apelacion-bia`, …):
-  cada anuncio de Meta aterriza directo en el embudo de su servicio
-  —**Video → Preguntas → Resultado**— y termina en WhatsApp.
+- **Una URL por servicio** (`/visa-juvenil`, `/asilo-politico`, `/apelacion-bia`, …): hoy abre la
+  guía nueva (ver «El link de cada servicio» arriba). Antes aterrizaba en el embudo
+  —**Video → Preguntas → Resultado**— que terminaba en WhatsApp.
 - **Reseñas de clientes**: `/califica` (formulario que se envía al cliente) →
   moderación en `/admin` → publicación automática en la home. Backend: Supabase.
 - Optimizado para **móvil**, que es donde está la mayoría de los clientes.
 
 > Implementada a partir del diseño exportado desde Claude Design (el bundle original
 > se conserva en `project/` como referencia).
-
-## URLs de servicios (para los ads)
-
-| Servicio | URL canónica | Alias que redirigen |
-| --- | --- | --- |
-| Visa Juvenil · SIJS | `/visa-juvenil` | `/visajuvenil`, `/sijs` |
-| Petición I-360 | `/peticion-i-360` | `/i-360`, `/i360` |
-| I-485 · Ajuste de Estatus | `/ajuste-de-estatus` | `/i-485`, `/ajustedeestatus` |
-| Asilo Político | `/asilo-politico` | `/asilo`, `/asilopolitico` |
-| Reforzar Asilo | `/reforzar-asilo` | `/reforzamientodeasilo`, … |
-| Apelación · BIA | `/apelacion-bia` | `/apelacion`, `/apelacionbia` |
-| Cambio de Corte | `/cambio-de-corte` | `/cambio-corte` |
-| ITIN Number | `/itin` | `/itin-number` |
-| Declaración de Impuestos | `/declaracion-de-impuestos` | `/impuestos`, `/taxes` |
-
-Los alias devuelven **308** a la canónica (configurados en `next.config.mjs`).
-Los slugs viven en `lib/services.ts` (campo `slug`).
 
 ## Stack
 
@@ -111,7 +124,7 @@ Las del video:
 app/
   layout.tsx           Tipografías, metadatos, tema (data-style="moderno")
   page.tsx             Home de marca (hero, servicios, app, opiniones, footer)
-  [slug]/page.tsx      Página de cada servicio → <ServiceFunnel />
+  [slug]/page.tsx      Link de cada servicio → landing con su guía abierta
   califica/page.tsx    Formulario de reseña para clientes
   admin/page.tsx       Panel de moderación de reseñas (contraseña)
   api/reviews/         POST reseña (queda pendiente)
@@ -119,7 +132,7 @@ app/
   sitemap.ts           Sitemap con todas las URLs de servicio
   globals.css          Sistema de estilos + rediseño móvil
 components/
-  ServiceFunnel.tsx    Embudo por servicio (video → quiz → resultado)
+  ServiceFunnel.tsx    Embudo antiguo por servicio (ya sin ruta; pendiente de retirar)
   SiteHeader.tsx       Barra superior compartida
   home/                Secciones de la home (hero, servicios, app, reseñas, footer)
   reviews/ admin/      Formulario de reseña y panel admin

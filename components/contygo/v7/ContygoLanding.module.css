@@ -423,3 +423,12 @@
   
 }
 
+
+/* Link de un servicio (/visa-juvenil, /apelacion-bia…): el marino de marca tapa la landing hasta que la guía se abre
+   encima (el diálogo vive en la capa superior, por encima de esto). El símbolo respira por si la guía tarda en
+   una conexión lenta. Al cerrar la guía, el velo se desvanece y deja ver la landing. */
+.linkVeil{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:#061B3D;transition:opacity .4s ease}
+.linkVeil[data-open=false]{opacity:0;pointer-events:none}
+.linkVeil span{width:72px;animation:veilBreath 1.6s ease-in-out infinite}
+.linkVeil img{display:block;width:100%;height:auto}
+@keyframes veilBreath{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1)}}

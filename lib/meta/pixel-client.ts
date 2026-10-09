@@ -99,6 +99,22 @@ export function trackBrowser(
   }
 }
 
+/**
+ * Como trackBrowser, para un evento que ocurre al llegar a la página: MetaPixel inyecta el snippet
+ * después de hidratar y solo con consentimiento, así que en el primer efecto `fbq` todavía no existe.
+ * Reintenta cada 250 ms hasta que haya consentimiento y Pixel (también si se acepta el banner en
+ * ese plazo); pasado `timeoutMs` el evento se descarta. Un solo disparo como mucho.
+ */
+export function trackBrowserWhenReady(name: MetaEventName, customData?: CustomData, timeoutMs = 30_000): void {
+  if (typeof window === "undefined") return;
+  const deadline = Date.now() + timeoutMs;
+  const attempt = () => {
+    if (shouldTrack() && typeof window.fbq === "function") trackBrowser(name, customData);
+    else if (Date.now() < deadline) window.setTimeout(attempt, 250);
+  };
+  attempt();
+}
+
 interface CapiPayload {
   eventName: MetaEventName;
   eventId: string;

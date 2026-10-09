@@ -193,6 +193,11 @@ test('Live protege origen y límites; las preguntas preparadas usan 3.8 y Laomed
   assert.equal(prepared.headers.get('x-voice-name'),'Laomedeia');assert.equal(prepared.headers.get('x-voice-prepared'),'1');
   assert.equal(prepared.headers.get('cache-control'),'no-store');assert.equal(providerCalls.length,before);
   const wav=Buffer.from(await prepared.arrayBuffer());assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.readUInt32LE(40),wav.length-44);
+  // The voice guide (name and phone, contract steps) is recorded too: it sounds from disk, without the provider.
+  const { GUIDE_LINES, guideText } = require('../lib/agent/guide-scripts.ts');
+  const guide=await liveSpeechRoute.POST(request({text:guideText(GUIDE_LINES.revealContact)},options));
+  assert.equal(guide.status,200);assert.equal(guide.headers.get('x-voice-prepared'),'1');assert.equal(guide.headers.get('content-type'),'audio/wav');
+  assert.equal(providerCalls.length,before);
 });
 
 test('audio inline se limita y normaliza sin aceptar URLs ni instrucciones MIME', async () => {

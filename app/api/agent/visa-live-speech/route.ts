@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { agentEnabled, clientIp, getGenAI, rateLimit } from "@/lib/agent/server";
 import { INTAKE_VOICE_SCRIPTS, isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
+import { GUIDE_VOICE_SCRIPTS } from "@/lib/agent/guide-scripts";
 import { liveSpeechStream } from "@/lib/agent/visa-live-audio";
 import { VISA_LIVE_MODEL, VISA_LIVE_VOICE, visaLiveSpeechIdentity } from "@/lib/agent/visa-live-config";
 
@@ -11,6 +12,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Voice-Model": VISA_LIVE_MODEL, "X-Voice-Name": VISA_LIVE_VOICE };
 const error = (code: string, status: number) => NextResponse.json({ ok:false, error:code }, { status, headers });
+/** Approved public lines recorded by scripts/prepare-visa-live-voice.cjs: the interview and the voice guide. */
+const PREPARED_SCRIPTS = new Set([...INTAKE_VOICE_SCRIPTS, ...GUIDE_VOICE_SCRIPTS]);
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginIntakeRequest(req)) return error("forbidden_origin",403);
@@ -32,7 +35,7 @@ export async function POST(req: NextRequest) {
   } catch {return error("bad_json",400);} finally {reader.releaseLock();}
   if(!body||typeof body!=="object"||Array.isArray(body)||!("text" in body)||typeof body.text!=="string"||!body.text.trim()||body.text.length>2000||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(body.text))return error("invalid_text",400);
   const text=body.text.trim();
-  if(INTAKE_VOICE_SCRIPTS.includes(text)) {
+  if(PREPARED_SCRIPTS.has(text)) {
     const hash=createHash("sha256").update(visaLiveSpeechIdentity(text)).digest("hex").slice(0,20);
     try {
       const wav=await readFile(join(process.cwd(),"public","contygo","audio","live",`${hash}.wav`));

@@ -25,6 +25,26 @@ export const REFORZAMIENTO_ASILO_VIDEO = {
   duration: 120,
 };
 
+/** Second Reforzamiento de Asilo film (the three stages, scope and price before the contract), compressed for on-demand playback. */
+export const REFORZAMIENTO_ASILO_VIDEO_2 = {
+  src: "/contygo/films/reforzamiento-asilo-video2-v1-720p.mp4",
+  poster: "/contygo/films/reforzamiento-asilo-video2-v1-poster.webp",
+  duration: 374.4583333333333,
+};
+
+export const AJUSTE_ESTATUS_VIDEO = {
+  src: "/contygo/films/ajuste-estatus-v1-720p.mp4",
+  poster: "/contygo/films/ajuste-estatus-v1-poster.webp",
+  duration: 145,
+};
+
+/** Second Ajuste de estatus film (the proposal and the early-contract offer before the contract), compressed for on-demand playback. */
+export const AJUSTE_ESTATUS_VIDEO_2 = {
+  src: "/contygo/films/ajuste-estatus-video2-v1-720p.mp4",
+  poster: "/contygo/films/ajuste-estatus-video2-v1-poster.webp",
+  duration: 392.625,
+};
+
 export function formatVideoDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.round(seconds) % 60).padStart(2, "0")}`;
 }
@@ -34,7 +54,7 @@ export function formatVideoDuration(seconds: number) {
 const PRESENTATIONS: Record<string, { src: string; poster?: string; caption: string }> = {
   "visa-juvenil": { ...VISA_JUVENIL_VIDEO, caption: "Conoce las tres etapas de Visa Juvenil · 2:05." },
   "i-360": { ...VISA_JUVENIL_VIDEO, caption: "Introducción general a Visa Juvenil. Este servicio se limita a la petición I-360; revisa el alcance de tu paquete." },
-  "i-485": { src: "/videos/ajuste-estatus.mp4", caption: "Presentación del ajuste de estatus." },
+  "i-485": { ...AJUSTE_ESTATUS_VIDEO, caption: "Conoce el Ajuste de estatus · 2:25." },
   "asilo": { src: "/videos/asilo-politico.mp4", caption: "Presentación de Asilo Político." },
   "reforzar-asilo": { ...REFORZAMIENTO_ASILO_VIDEO, caption: "Conoce el Reforzamiento de Asilo · 2:00." },
   "apelacion": { ...APELACION_VIDEO, caption: "Conoce el proceso de Apelación ante la BIA · 1:50." },

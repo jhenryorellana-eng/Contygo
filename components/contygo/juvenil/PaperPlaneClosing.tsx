@@ -8,7 +8,7 @@ import { useVisaVoice } from "./useVisaVoice";
 import { LiquidGlow } from "./ThinkingOverlay";
 import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import s from "./PaperPlaneClosing.module.css";
-import { closingName, closingScript, closingAction, closingLines, useClosingSpeechWarmup, type ClosingVoice } from "./closingSpeech";
+import { closingName, closingScript, closingAction, closingLines, closingVariant, useClosingSpeechWarmup, type ClosingVoice } from "./closingSpeech";
 
 export { closingName, closingScript } from "./closingSpeech";
 const wordCount=(text:string)=>text.trim()?text.trim().split(/\s+/).length:0;
@@ -22,7 +22,9 @@ function TouchHand(){return <svg viewBox="0 0 56 72" fill="none" aria-hidden="tr
 
 /** Shared service closing. Video stays untouched; animation starts at ended. */
 /** onContract: abre la ficha de contratación del recorrido; sin ella, el botón sigue enlazando a ContyGo. */
-type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void};
+/** priority: el resultado de la fecha de prioridad (Ajuste de estatus); asylum: el del plazo de pruebas (Reforzamiento
+ *  de Asilo). Cambian la invitación tras el vídeo. */
+type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null};
 export default function PaperPlaneClosing(props:ClosingProps){
   return props.preparedVoice?<ClosingScene {...props} voice={props.preparedVoice}/>:<LocalClosing {...props}/>;
 }
@@ -30,21 +32,21 @@ function LocalClosing(props:ClosingProps){
   const voice=useVisaVoice();
   return <ClosingScene {...props} voice={voice}/>;
 }
-function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract}:{voice:ClosingVoice}&ClosingProps){
+function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum}:{voice:ClosingVoice}&ClosingProps){
   const [serviceId,setServiceId]=useState(providedService?.id??"visa-juvenil"),[name,setName]=useState(closingName(displayName)),[take,setTake]=useState(0);
   const [phase,setPhase]=useState<"watch"|"flying"|"invitation">("watch"),[blocked,setBlocked]=useState(false),[failed,setFailed]=useState(false);
   const [calling,setCalling]=useState(false),[ctaInvited,setCtaInvited]=useState(false);
   const scene=useRef<HTMLDivElement>(null),frame=useRef<HTMLDivElement>(null),video=useRef<HTMLVideoElement>(null),plane=useRef<HTMLDivElement>(null),symbol=useRef<HTMLDivElement>(null),brand=useRef<HTMLDivElement>(null),cta=useRef<HTMLAnchorElement>(null),title=useRef<HTMLHeadingElement>(null);
   const context=useRef<gsap.Context|null>(null),flying=useRef(false),voiceRef=useRef(voice);voiceRef.current=voice;
   const service=providedService??options.find(item=>item.id===serviceId)!;
-  const film=providedFilm??getRebuildPlatformFilm(service.id),action=closingAction(service.id);
-  const script=closingScript(closingName(name),service.id),scriptRef=useRef(script);scriptRef.current=script;
+  const variant=closingVariant(service.id,priority,asylum),film=providedFilm??getRebuildPlatformFilm(service.id),action=closingAction(service.id,variant);
+  const script=closingScript(closingName(name),service.id,variant),scriptRef=useRef(script);scriptRef.current=script;
   const nameWords=wordCount(closingName(name)),totalWords=wordCount(script);
   // Follow the real audio clock. Word boundaries are proportional estimates:
   // the current voice endpoint does not return per-word alignment timestamps.
   const speechProgress=phase!=="invitation"?-1:calling||voice.muted||voice.status==="blocked"||voice.status==="unavailable"?1:voice.status==="speaking"?voice.progress:voice.status==="idle"?1:-1;
   let lineOffset=nameWords+7;
-  const cues=closingLines(service.id).map(text=>{const cue={text,offset:lineOffset};lineOffset+=wordCount(text);return cue;});
+  const cues=closingLines(service.id,variant).map(text=>{const cue={text,offset:lineOffset};lineOffset+=wordCount(text);return cue;});
   const currentCue=cues.filter(cue=>speechProgress>=cue.offset/totalWords).pop();
   useLayoutEffect(()=>{flying.current=false;const ctx=gsap.context(()=>{},scene);context.current=ctx;return()=>{ctx.revert();context.current=null;};},[take,serviceId]);
   // Coming from the chat portal: start exactly on the portal's frame and glide into place, so the

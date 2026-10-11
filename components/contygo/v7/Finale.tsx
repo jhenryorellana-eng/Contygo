@@ -2,7 +2,7 @@
 
 /* El cierre (V7, 28-09-2026). El hilo verde entra en un escenario marino y se convierte en el
    trazo largo del check de ContyGo; al llegar hay un destello, se abre la luz y se reparten las
-   tres guías en vídeo. Cada guía abre directamente su flujo (vídeo → conversación → contrato):
+   cuatro guías en vídeo. Cada guía abre directamente su flujo (vídeo → conversación → contrato):
    la página siempre termina en el flujo de un servicio, nunca en un botón que solo sube.
    Fotogramas sacados de las propias guías (public/contygo/films, ffmpeg). */
 import Image from "next/image";
@@ -16,6 +16,7 @@ const GUIDES = [
   { id: "visa-juvenil", name: "Visa Juvenil", label: "El siguiente paso de tu familia" },
   { id: "apelacion", name: "Apelación", label: "Entiende tus siguientes pasos" },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, bien organizada" },
+  { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia" },
 ];
 
 function Play() {

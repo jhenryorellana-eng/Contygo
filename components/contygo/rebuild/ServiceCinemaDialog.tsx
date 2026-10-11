@@ -14,7 +14,7 @@ import VisaJuvenilExperience, { type VisaIntakeSession } from "../juvenil/VisaJu
 import ContractCheckout from "../contract/ContractCheckout";
 import ContractClosingConcept from "../juvenil/PaperPlaneClosing";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
-import { closingName, closingScript, useClosingSpeechWarmup } from "../juvenil/closingSpeech";
+import { closingName, closingScript, closingVariant, useClosingSpeechWarmup } from "../juvenil/closingSpeech";
 import type { VisaVisualTheme } from "../juvenil/BrandLiquidSurface";
 import { LiquidGlow } from "../juvenil/ThinkingOverlay";
 import JourneyBackdrop from "../juvenil/JourneyBackdrop";
@@ -197,7 +197,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   // This owner survives the chat -> film switch, retaining decoded personalized speech.
   const closingVoice=useVisaVoice();
   useClosingSpeechWarmup(closingVoice,(visaSession?.complete||visaSession?.displayName!==undefined)
-    ?closingScript(closingName(visaSession?.displayName??""),service.id):null);
+    ?closingScript(closingName(visaSession?.displayName??""),service.id,closingVariant(service.id,visaSession?.priority,visaSession?.asylum)):null);
   const immersive = true;
   const previousStage = useRef(stage);
   const [planIndex, setPlanIndex] = useState(Math.max(0, service.plans.findIndex(plan => plan.name === initialPlanName)));
@@ -333,10 +333,10 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
 
         {stage === "service" && <VisaJuvenilExperience serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} preparedVoice={closingVoice} onContract={() => changeStage("decision")} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} preparedVoice={closingVoice} onContract={() => changeStage("decision")} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
-        {stage === "decision" && <ContractCheckout service={service} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={visaSession?.answers} eligible={visaSession?.eligible ?? null} externalRef={visaSession?.externalRef} voice={closingVoice} />}
+        {stage === "decision" && <ContractCheckout service={service} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={visaSession?.answers} eligible={visaSession?.eligible ?? null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} voice={closingVoice} />}
 
         {stage === "decision" && !immersive && <>
           <div className={s.decisionGrid}>

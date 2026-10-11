@@ -2,9 +2,38 @@ import { useEffect } from "react";
 import type { useVisaVoice } from "./useVisaVoice";
 
 export const closingName = (value:string) => value.replace(new RegExp("[^\\p{L}\\p{M} '-]", "gu"), "").trim().slice(0,32);
-export const closingAction=(serviceId:string)=>serviceId==="evaluacion-asilo"?"Conocer mi evaluación":"Revisar mi contrato";
-export const closingLines=(serviceId:string)=>[serviceId==="evaluacion-asilo"?"Conoce tu evaluación,":"Revisa tu contrato,","conoce nuestro compromiso","y, cuando estés listo,","avancemos juntos.","Tu historia sigue. ContyGo."];
-export const closingScript = (name:string,serviceId="visa-juvenil") => `${name ? `${name}, tu` : "Tu"} próximo paso merece claridad y compañía. ${closingLines(serviceId).join(" ")} Toca ${closingAction(serviceId)} y descubre cómo vamos a acompañarte. Tu siguiente paso empieza aquí.`;
+/** Ajuste de estatus: el cierre del segundo vídeo sigue lo que el agente dijo de la fecha de prioridad.
+ *  «current»: ya puede presentar → su contrato. «near» (próxima), «far» (aún en el futuro) y «unknown»
+ *  (sin la fecha a mano) → el contrato previo, cada uno con su forma de decirlo. El botón es siempre
+ *  «Revisar mi contrato»: el vídeo termina diciendo «Toca "Revisar mi contrato"» (guion v2, 10-10-2026). */
+/** Reforzamiento de Asilo: igual, sigue lo que el agente dijo del plazo para presentar pruebas. «asilo-tiempo»: hay
+ *  tiempo → su contrato. Sin fecha («asilo-sinfecha») o con la próxima audiencia en pocos días («asilo-pronto») → el
+ *  contrato con un asesor. El botón dice «Revisar mi contrato», como pide el final del vídeo 2. Con el plazo vencido
+ *  («asilo-asesor», y «asilo-apelacion» si el mérito final ya está encima) no hay contrato que revisar: «Hablar con un asesor». */
+export type ClosingVariant = "current" | "near" | "far" | "unknown" | "asilo-tiempo" | "asilo-sinfecha" | "asilo-pronto" | "asilo-asesor" | "asilo-apelacion" | null;
+type AsylumClosing = { kind: string; advisor: boolean; appeal: boolean };
+export const closingVariant = (serviceId:string, priority?:{status:string;previo:boolean;near?:boolean}|null, asylum?:AsylumClosing|null):ClosingVariant =>
+  serviceId==="reforzar-asilo"?!asylum?null:!asylum.advisor?"asilo-tiempo":asylum.appeal?"asilo-apelacion"
+  :asylum.kind==="nodate"?"asilo-sinfecha":asylum.kind==="soon"?"asilo-pronto":"asilo-asesor"
+  :serviceId!=="i-485"||!priority?null:priority.status==="current"?"current":!priority.previo?null
+  :priority.status==="unknown"?"unknown":priority.near?"near":"far";
+export const closingAction=(serviceId:string,variant:ClosingVariant=null)=>serviceId==="evaluacion-asilo"?"Conocer mi evaluación"
+  :variant==="asilo-asesor"||variant==="asilo-apelacion"?"Hablar con un asesor":"Revisar mi contrato";
+const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
+  current:["Tu fecha ya está vigente:","revisa tu contrato","y presentemos juntos","el ajuste del menor.","Tu historia sigue. ContyGo."],
+  near:["Tu fecha está muy cerca:","asegura hoy tu lugar","con el contrato previo","y llega listo a tu fecha.","Tu historia sigue. ContyGo."],
+  far:["Tu fecha aún está por llegar,","pero tu lugar puede quedar asegurado hoy","con el contrato previo","y sus garantías.","Tu historia sigue. ContyGo."],
+  unknown:["Busca tu fecha en el I-797","y, mientras tanto,","asegura tu lugar","con el contrato previo.","Tu historia sigue. ContyGo."],
+  "asilo-tiempo":["Todavía tienes tiempo:","revisa tu contrato","y reforcemos juntos","tu caso de asilo.","Tu historia sigue. ContyGo."],
+  "asilo-sinfecha":["Todavía tienes tiempo:","un asesor prepara tu contrato contigo","por WhatsApp","y empezamos a reforzar tu caso.","Tu historia sigue. ContyGo."],
+  "asilo-pronto":["Tu próxima audiencia es en pocos días:","un asesor prepara tu contrato contigo","por WhatsApp","para empezar cuanto antes.","Tu historia sigue. ContyGo."],
+  "asilo-asesor":["Tu fecha está muy cerca:","un asesor revisa tu caso contigo","por WhatsApp","y te dice cómo seguir.","Tu historia sigue. ContyGo."],
+  "asilo-apelacion":["Tu audiencia final está muy cerca:","un asesor revisa tu caso contigo","y, si el juez niega tu asilo,","te acompañamos en la apelación.","Tu historia sigue. ContyGo."],
+};
+export const closingLines=(serviceId:string,variant:ClosingVariant=null)=>
+  variant?CLOSING_LINES[variant]
+  :[serviceId==="evaluacion-asilo"?"Conoce tu evaluación,":"Revisa tu contrato,","conoce nuestro compromiso","y, cuando estés listo,","avancemos juntos.","Tu historia sigue. ContyGo."];
+export const closingScript = (name:string,serviceId="visa-juvenil",variant:ClosingVariant=null) => `${name ? `${name}, tu` : "Tu"} próximo paso merece claridad y compañía. ${closingLines(serviceId,variant).join(" ")} Toca ${closingAction(serviceId,variant)} y descubre cómo vamos a acompañarte. Tu siguiente paso empieza aquí.`;
 export type ClosingVoice = ReturnType<typeof useVisaVoice>;
 
 /** Keep the owner's cache alive between the name step, video and closing. */

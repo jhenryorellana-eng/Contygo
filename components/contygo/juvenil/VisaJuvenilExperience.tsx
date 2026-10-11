@@ -15,6 +15,8 @@ import { useGuide } from "../guide/useGuide";
 import LiquidGlassPlate from "./LiquidGlassPlate";
 import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import type { IntakeQuestion, JourneyGuidance, ServiceAnswers } from "@/lib/agent/service-intake";
+import type { PriorityOutcome } from "@/lib/agent/adjustment-intake";
+import type { AsylumOutcome } from "@/lib/agent/asylum-intake";
 import { newExternalRef, pageAttribution } from "@/lib/contygo-api/browser";
 import { useLeadCaptcha } from "./useLeadCaptcha";
 import shared from "../rebuild/ServiceIntroFilm.module.css";
@@ -25,8 +27,9 @@ type Message = { id: number; role: "agent" | "user"; text: string };
 // Las preguntas son las del catálogo de contygo: llegan del servidor (/api/agent/service-intake) con su tipo.
 // Visa Juvenil antepone su entrevista original (claves «visa.»), que el servidor mezcla con las del catálogo.
 // La conversación vive en este navegador (guía §2 bis): externalRef la identifica ante contygo (lead y alta).
-export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean };
-type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean };
+// Ajuste de estatus: priority dice si la fecha de prioridad está vigente (cierre del segundo vídeo y ficha del contrato).
+export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome };
+type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome };
 
 /** Hint under a future_event date. The shape of minNotice is not documented yet, so it is read defensively: no hint is better than a wrong one. */
 function noticeHint(minNotice: IntakeQuestion["minNotice"]): string | null {
@@ -134,6 +137,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       if (typeof answer === "boolean") label = answer ? "Sí" : "No";
       const asked = sessionRef.current.question;
       if (typeof answer === "string" && asked?.id === field && asked.kind === "state") label = asked.options?.find(option => option.code === answer)?.label ?? (answer === "UNKNOWN" ? "Aún no tengo un estado definido" : answer);
+      if (typeof answer === "string" && asked?.id === field && asked.kind === "choice") label = asked.options?.find(option => option.code === answer)?.label ?? answer;
+      if (answer === "UNKNOWN" && asked?.id === field && asked.kind === "date") label = asked.unknownLabel ?? "No la sé";
       if (typeof answer === "string" && /^\d{4}-\d{2}-\d{2}$/.test(answer)) { const [year, month, day] = answer.split("-"); label = `${day}/${month}/${year}`; }
       snapshot = { ...snapshot, messages: [...snapshot.messages, { id: ++counter.current, role: "user", text: label }] };
       updateSession(snapshot);
@@ -145,7 +150,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       // The answers, not model prose, decide whether the next video is available.
       const complete = data.complete && data.field === null;
       const spokenMessage = data.message;
-      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline ?? snapshot.unavailableOnline };
+      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline ?? snapshot.unavailableOnline, priority: data.priority ?? snapshot.priority, asylum: data.asylum ?? snapshot.asylum };
       if(complete){heldMessages.current=next.messages.slice(-1);heldField.current=null;}
       // Reveal as soon as the response arrives. No extra overlay or exit wait.
       updateSession(next); setSpeechId(id); setDraft("");
@@ -174,7 +179,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       const complete = data.complete && data.field === null;
       const messages: Message[] = [{ id, role: "agent", text: data.message }];
       if (complete) { heldMessages.current = messages; heldField.current = null; }
-      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline });
+      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline, priority: data.priority, asylum: data.asylum });
       setSpeechId(id);
       void voiceRef.current.speak(data.message);
     } catch {
@@ -434,7 +439,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
           {mode===null&&<div className={s.modeChoice}><p>¿Cómo prefieres responder?</p><div><button type="button" onClick={()=>{setMode("voice");voice.unlock();}}><Icon name="mic"/>Con mi voz</button><button type="button" onClick={()=>{setMode("text");voice.unlock();textInput.current?.focus({preventScroll:true});}}><Icon name="text"/>Por escrito</button></div></div>}
           {field&&session.messages.some(m=>m.role==="agent")&&<div className={s.answerControls} key={field}>
             {question?.kind==="yesno"&&!escalated&&<div className={s.binaryChoices}><button type="button" disabled={locked} onClick={()=>void ask(field,true)}>Sí<Icon name="check"/></button><button type="button" disabled={locked} onClick={()=>void ask(field,false)}>No<Icon name="close"/></button></div>}
-            {question?.kind==="date"&&<form className={s.dateAnswer} onSubmit={event=>{event.preventDefault();const value=(event.currentTarget.elements.namedItem("answerDate") as HTMLInputElement).value;if(value)void ask(field,value);}}><label htmlFor="intake-date">Elige la fecha</label><div><svg className={s.dateIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M8 3v4m8-4v4M3.5 10h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><input id="intake-date" name="answerDate" type="date" required min={futureDate ? today : "1900-01-01"} max={futureDate ? "2100-12-31" : today} defaultValue="" disabled={locked}/><span className={s.datePlaceholder} aria-hidden="true">Elige día, mes y año</span><button type="submit" disabled={locked} aria-label="Confirmar fecha"><Icon name="arrow"/></button></div>{futureDate&&noticeHint(question?.minNotice)&&<p className={s.dateHint}>{noticeHint(question?.minNotice)}</p>}</form>}
+            {question?.kind==="choice"&&question.options?.length&&!escalated?<div className={s.binaryChoices} data-choice>{question.options.map(option=><button key={option.code} type="button" disabled={locked} onClick={()=>void ask(field,option.code)}>{option.label}</button>)}</div>:null}
+            {question?.kind==="date"&&<form className={s.dateAnswer} onSubmit={event=>{event.preventDefault();const value=(event.currentTarget.elements.namedItem("answerDate") as HTMLInputElement).value;if(value)void ask(field,value);}}><label htmlFor="intake-date">Elige la fecha</label><div><svg className={s.dateIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M8 3v4m8-4v4M3.5 10h17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg><input id="intake-date" name="answerDate" type="date" required min={futureDate ? today : "1900-01-01"} max={futureDate ? "2100-12-31" : today} defaultValue="" disabled={locked}/><span className={s.datePlaceholder} aria-hidden="true">Elige día, mes y año</span><button type="submit" disabled={locked} aria-label="Confirmar fecha"><Icon name="arrow"/></button></div>{futureDate&&noticeHint(question?.minNotice)&&<p className={s.dateHint}>{noticeHint(question?.minNotice)}</p>}<p className={s.dateAlt}>También puedes escribirla: «15 de marzo de {futureDate?Number(today.slice(0,4))+1:2024}».</p>{question.allowUnknown&&<button type="button" className={s.dateUnknown} disabled={locked} onClick={()=>void ask(field,"UNKNOWN")}>{question.unknownLabel??"No la sé"}</button>}</form>}
             {question?.kind==="state"&&question.options?.length?<div className={s.binaryChoices}><button type="button" disabled={locked} onClick={()=>setStatePicker(true)}>Elegir mi estado<Icon name="pin"/></button></div>:null}
             {escalated&&<div className={s.escalate} role="status"><span>Para este servicio te ayudamos por WhatsApp.</span><a href={helpLink} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a></div>}
             {mode==="voice"&&!escalated&&<div className={s.voiceAnswer}><button type="button" data-recording={microphone.status==="recording"} disabled={busy||microphone.status==="processing"} onClick={()=>{voice.stop();if(microphone.status==="recording")microphone.stop();else void microphone.start();}}><Icon name="mic"/>{microphone.status==="recording"?`Terminar respuesta · ${microphone.seconds}s`:"Toca para hablar"}</button><button type="button" className={s.changeMode} onClick={()=>{microphone.cancel();setMode("text");}}>Prefiero escribir</button></div>}

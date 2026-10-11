@@ -38,6 +38,22 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'aaaaaaaa-0000-4000-8000-000000000002', kind: 'date', dateMode: 'future_event', minNotice: { days: 30 }, prompt: { es: '¿Cuándo es la próxima audiencia en la corte?', en: 'When is the next court hearing?' } },
   );
 }
+// Reforzar Asilo como en producción (10-10-2026): la fecha de la próxima audiencia, con 5 días hábiles de antelación.
+const asylum = catalog.services.find(service => service.slug === 'reforzar-asilo');
+if (asylum && !asylum.eligibilityQuestions.length) asylum.eligibilityQuestions.push(
+  { id: 'cd2b9568-77fc-4e9c-886a-2b78bc8e093c', kind: 'date', dateMode: 'future_event', minNotice: { value: 5, unit: 'business_days' }, prompt: { es: '¿Cuál es la fecha de su próxima audiencia en corte?', en: 'What is the date of your next court hearing?' } },
+);
+// future_event como la API real (probado el 10-10-2026): una fecha pasada descalifica («answer»); una que no deja la
+// antelación de minNotice, también («event_too_close»). Los días hábiles se cuentan después de hoy, hasta la fecha incluida.
+const todayYmd = () => new Date().toISOString().slice(0, 10);
+const businessDaysUntil = ymd => { let count = 0; const day = new Date(`${todayYmd()}T00:00:00Z`); while (day.toISOString().slice(0, 10) < ymd) { day.setUTCDate(day.getUTCDate() + 1); if (day.getUTCDay() % 6) count++; } return count; };
+const dateReason = (question, value) => {
+  if (question?.kind !== 'date' || question.dateMode !== 'future_event' || typeof value !== 'string') return null;
+  if (value < todayYmd()) return 'answer';
+  const need = question.minNotice?.value ?? question.minNotice?.days ?? 0;
+  const gap = question.minNotice?.unit === 'business_days' ? businessDaysUntil(value) : (Date.parse(value) - Date.parse(todayYmd())) / 86400000;
+  return gap < need ? 'event_too_close' : null;
+};
 // ---- formas de pago simuladas (ver cabecera) ----
 const breakdown = (totalCents, installmentCount, downpaymentCents) => {
   if (installmentCount === 1) return { totalCents, downpaymentCents: totalCents, installmentCount, installmentsAfterDownpayment: 0, perInstallmentCents: 0, lastInstallmentCents: 0 };
@@ -91,8 +107,18 @@ http.createServer((req, res) => {
     if (req.method === 'GET' && url === '/me') return send(200, { principal: { id: 'mock', name: 'Web · simulado', channel: 'web' }, org: { id: 'mock', name: 'UsaLatinoPrime' }, actingAs: { staffUserId: 'mock', displayName: 'Agente' } });
     if (req.method === 'GET' && url === '/catalog') return send(200, catalog, { 'cache-control': 'private, max-age=60' });
     if (req.method === 'POST' && url === '/eligibility/evaluate') {
-      const bad = body.answers.filter(a => a.value === false).map(a => a.questionId);
-      return send(200, { eligible: bad.length === 0, missingQuestionIds: [], disqualifiedQuestionIds: bad, disqualified: bad.map(questionId => ({ questionId, reason: 'answer' })), notices: [], anchorYmd: null, anchorWaived: false });
+      // Como la API real (10-10-2026): en las preguntas de deportación descalifica el «sí»; en las demás, el «no».
+      // Una pregunta del servicio sin responder va en missingQuestionIds y tampoco califica.
+      const questions = catalog.services.find(service => service.id === body.serviceId)?.eligibilityQuestions ?? [];
+      const negative = question => /deportaci|removal/i.test(`${question.prompt?.es ?? ''} ${question.prompt?.en ?? ''}`);
+      const disqualified = body.answers.map(a => {
+        const question = questions.find(q => q.id === a.questionId);
+        const reason = dateReason(question, a.value) ?? (a.value === (negative(question ?? {}) ? true : false) ? 'answer' : null);
+        return reason ? { questionId: a.questionId, reason } : null;
+      }).filter(Boolean);
+      const bad = disqualified.map(item => item.questionId);
+      const missing = questions.filter(q => !body.answers.some(a => a.questionId === q.id)).map(q => q.id);
+      return send(200, { eligible: bad.length === 0 && missing.length === 0, missingQuestionIds: missing, disqualifiedQuestionIds: bad, disqualified, notices: [], anchorYmd: null, anchorWaived: false });
     }
     if (req.method === 'PUT' && url.startsWith('/leads/')) return send(201, { leadId: '9b0e0000-0000-4000-8000-000000000001', created: true, linked: false, status: 'open', contactedAt: null, warnings: [] });
     if (req.method === 'POST' && url === '/contracts') {

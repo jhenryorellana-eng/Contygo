@@ -32,12 +32,14 @@ const THEME_KEY = "contygo-appearance";
 // Illustration system V8 (28-09-2026, material-de-diseno/ilustraciones-v8): one paper sculpture per service, each
 // with its own meaning, drawn once for both appearances (see docs/contygo-v7-direccion-arte.md).
 const art = (name: string) => `/contygo/v8/${name}.webp`;
-// The owner's star products, the most requested (30-09-2026): they lead on their own stage («Vitrina», chosen by
-// the owner among three concepts). Every other service follows directly, without category filters.
+// The owner's star products, the most requested (30-09-2026; Ajuste de estatus joined them on 10-10-2026): they lead
+// on their own stage («Vitrina», chosen by the owner among three concepts). Every other service follows directly,
+// without category filters.
 const featured: Star[] = [
   { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
   { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
+  { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia", copy: "Preparamos la solicitud de residencia del menor con I-360 aprobado, atentos a su fecha de prioridad." },
 ];
 const others = CONTYGO_SERVICES.filter(item => !featured.some(star => star.id === item.id));
 const visa = CONTYGO_SERVICES.find(item => item.id === "visa-juvenil");

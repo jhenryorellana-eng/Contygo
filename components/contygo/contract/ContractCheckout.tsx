@@ -14,10 +14,13 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
 import { publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
-import { ACCOUNT_LOGIN_URL, fixContactMessages, outcomeMessage, readResend, serviceAlreadyLiveMessage, whatsappHelpMessage, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHelpMessage, whatsappPrevioMessage, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
+import type { PriorityOutcome } from "@/lib/agent/adjustment-intake";
+import type { AsylumOutcome } from "@/lib/agent/asylum-intake";
+import { getServiceGuideUrl } from "@/lib/contygo";
 import {
   PAYMENT_NOTE_NO_OPTIONS, PAYMENT_NOTE_NO_ROW, breakdownForPlan, defaultPaymentOption, extraPartiesNote, formatMoney, installmentIdForRequest,
   optionForSelection, paymentLabel, paymentOptionsOf, paymentShape, reconcileSelection, selectionOf,
@@ -125,6 +128,10 @@ function phoneLabel(value: string) {
   return `${(COUNTRIES.find(c => c.dial === country.dial) ?? country).flag} +${country.dial} ${shown}`;
 }
 
+/** Sin la fecha a mano falta la respuesta del boletín: el contrato en línea no puede salir aunque contygo no diga que no. */
+const previoWithAdvisor = (priority: PriorityOutcome | undefined, eligible: boolean | null | undefined) =>
+  Boolean(priority?.previo && (eligible === false || priority.status === "unknown"));
+
 type Props = {
   service: ContygoService;
   /** From the journey: its conversation lives in this browser, not on the server (guía §2 bis). */
@@ -133,10 +140,14 @@ type Props = {
   answers?: Record<string, AnswerValue>;
   eligible?: boolean | null;
   externalRef?: string;
+  /** Ajuste de estatus: la fecha de prioridad aún no está vigente (o no la tiene a mano) → contrato previo con un asesor. */
+  priority?: PriorityOutcome;
+  /** Reforzamiento de Asilo: plazo vencido, sin fecha o audiencia en pocos días → un asesor (y la Apelación si toca). */
+  asylum?: AsylumOutcome;
   voice?: ClosingVoice;
 };
 
-export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, voice: sharedVoice }: Props) {
+export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, voice: sharedVoice }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
   const [data, setData] = useState<ReadyData | null>(null);
@@ -163,8 +174,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const reference = useRef("");
   const pending = useRef<Pending | null>(null);
   const resendKey = useRef<string | null>(null);
-  const journey = useRef({ displayName, phone, answers, eligible, externalRef });
-  journey.current = { displayName, phone, answers, eligible, externalRef };
+  const journey = useRef({ displayName, phone, answers, eligible, externalRef, priority, asylum });
+  journey.current = { displayName, phone, answers, eligible, externalRef, priority, asylum };
   const personKey = useRef(0);
   const root = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -194,6 +205,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "info", ...outcomeMessage({ step: "ALREADY_DONE", caseNumber: saved.caseNumber }) });
         return;
       }
+      // Ajuste sin fecha vigente (o sin la fecha a mano): el contrato previo va con un asesor mientras contygo no lo acepte en línea.
+      if (previoWithAdvisor(from.priority, from.eligible)) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...previoMessage(from.priority!.status === "unknown" ? "unknown" : from.priority!.near ? "near" : "far") }); return; }
+      // Asilo con el plazo vencido, sin fecha o con la audiencia en pocos días: el contrato lo prepara un asesor, aunque contygo lo acepte.
+      if (from.asylum?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...asylumMessage(from.asylum) }); return; }
       if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
       // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
       if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
@@ -473,7 +488,11 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       <span className={s.label}>{label}</span>{control}
       {errors[name] ? <small className={s.error} role="alert">{errors[name]}</small> : options.hint ? <small className={s.hint}>{options.hint}</small> : null}
     </label>;
-  const whatsapp = waLink(whatsappHelpMessage(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : null)));
+  // El contrato previo (fecha de prioridad sin llegar) lo pide con su propio mensaje: la persona no está atascada, está reservando.
+  const previo = previoWithAdvisor(priority, eligible);
+  const advisor = previo || Boolean(asylum?.advisor);
+  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor ? whatsappAsylumMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
+  const appealUrl = asylum?.appeal ? getServiceGuideUrl("apelacion") : null;
   /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
   function retryFromBlocked() {
     setNotice(null); setRetryable(false);
@@ -680,6 +699,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
 
       {stage === "blocked" && <div className={s.links}>
         <a className={s.secondary} href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        {appealUrl && <a className={s.secondary} href={appealUrl}>Conocer la Apelación</a>}
         {retryable && <button type="button" className={s.secondary} onClick={retryFromBlocked}>Reintentar</button>}
       </div>}
       {(stage === "form" || stage === "code") && <a className={s.help} href={whatsapp} target="_blank" rel="noopener noreferrer">¿Necesitas ayuda? Escríbenos por WhatsApp</a>}

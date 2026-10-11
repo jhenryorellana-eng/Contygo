@@ -11,22 +11,29 @@ import {
   INTAKE_FIELDS, INTAKE_FINISH_VOICE, INTAKE_FOLLOWUPS, INTAKE_GREETING, INTAKE_QUESTIONS, INTAKE_VOICE_SCRIPTS, US_STATES,
   getIntakeGuidance, sanitizeIntakeAnswers, validateIntakeAnswer, type IntakeAnswers, type IntakeField,
 } from "./visa-intake";
+import { PRIORITY_FIELD, normalizePriorityAnswer, parseWrittenDate } from "./adjustment-intake";
 
 export type ServiceAnswers = Record<string, AnswerValue>;
 /**
  * Lo que el navegador necesita de cada pregunta. kind "state": options [{code, label}] (la respuesta es el código de
  * 2 letras). kind "date": dateMode past/birthdate (hasta hoy) o future_event (desde hoy; minNotice es informativo).
+ * kind "choice": una de sus options (las preguntas propias de Reforzamiento de Asilo; contygo no tiene este kind).
  * kind "unknown": no se puede responder; la ficha ofrece WhatsApp.
  */
 export interface IntakeQuestion {
   id: string;
-  kind: QuestionKind;
+  kind: QuestionKind | "choice";
   text: string;
   dateMode?: string;
   minNotice?: Record<string, unknown>;
   options?: { code: string; label: string }[];
-  /** Solo la pregunta de estado de Visa Juvenil: admite «Aún no tengo un estado definido» (UNKNOWN). */
+  /** Admite «no lo sé» (UNKNOWN): el estado de Visa Juvenil («Aún no tengo un estado definido»), la fecha de prioridad del ajuste
+   *  y la fecha de la audiencia o entrevista de asilo («Aún no tengo fecha»). */
   allowUnknown?: boolean;
+  /** El texto del botón «no lo sé» de una pregunta de fecha. */
+  unknownLabel?: string;
+  /** Versión corta para repetir la pregunta cuando no se entendió (la larga no cabe con la ayuda delante). */
+  retryText?: string;
 }
 export interface JourneyGuidance { status: "potential" | "review"; title: string; detail: string; sources: { title: string; url: string }[] }
 
@@ -133,10 +140,16 @@ export const visaQuestions = (answers: IntakeAnswers): IntakeQuestion[] =>
     ...(field === "state" ? { options: VISA_STATE_OPTIONS, allowUnknown: true } : {}),
   }));
 
-/** Una respuesta de la entrevista se valida con sus reglas originales; las del catálogo, con las de contygo. */
+/** Una respuesta de la entrevista se valida con sus reglas originales; la fecha de prioridad, con las suyas; las del catálogo, con las de contygo. */
 export function normalizeIntakeAnswer(question: IntakeQuestion, value: unknown): AnswerValue | null {
+  if (question.id === PRIORITY_FIELD) return normalizePriorityAnswer(value);
   const field = visaField(question.id);
-  return field ? validateIntakeAnswer(field, value) : normalizeAnswer(question, value);
+  if (field) return validateIntakeAnswer(field, value);
+  // Las de opciones son propias de Reforzamiento de Asilo: las valida lib/agent/asylum-intake.ts.
+  if (question.kind === "choice") return null;
+  // Una fecha escrita o dicha con el mes en palabras («15 de marzo de 2024») vale igual que la del calendario.
+  const written = question.kind === "date" && typeof value === "string" && value.length <= 60 && !/^\d{4}-\d{2}-\d{2}$/.test(value) ? parseWrittenDate(value) : null;
+  return normalizeAnswer({ ...question, kind: question.kind }, written ?? value);
 }
 
 /** Las frases de la entrevista son las grabadas (public/contygo/audio/live): suenan al instante. */

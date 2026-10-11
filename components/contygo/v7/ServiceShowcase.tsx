@@ -1,7 +1,7 @@
 "use client";
 
 /* Servicios de la V7 · «Vitrina» (elegida por el dueño el 30-09-2026 entre tres conceptos).
-   Los tres más solicitados suben a un escenario oscuro: foco de luz, la escultura flotando sobre un
+   Los cuatro más solicitados suben a un escenario oscuro: foco de luz, la escultura flotando sobre un
    pedestal de papel y laureles de «favorito». Debajo, todo el catálogo directo, sin categorías: el
    color del fondo de cada dibujo agrupa los trámites sin obligar a elegir.
    Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla. */
@@ -45,7 +45,7 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
       <div className={s.stageHead} data-reveal data-react="title">
         <span className={s.stageEyebrow}><Laurel /> Los más solicitados <Laurel flip /></span>
         <h2>Los favoritos<br /><em>de nuestras familias.</em></h2>
-        <p>Los tres servicios que más nos piden. Cada uno con su guía en vídeo y su precio a la vista.</p>
+        <p>Los cuatro servicios que más nos piden. Cada uno con su guía en vídeo y su precio a la vista.</p>
       </div>
       <div ref={row} className={s.stageRow}>{stars.map(star => {
         const item = find(star.id);

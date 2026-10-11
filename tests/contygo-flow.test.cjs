@@ -72,7 +72,8 @@ test('el segundo vídeo no sustituye los vídeos introductorios aprobados',()=>{
     const intro=getRebuildServiceFilm(id),second=getRebuildPlatformFilm(id);
     assert(fs.existsSync(path.join(root,'public',intro.src)));
     assert.notEqual(intro.src,second.src);
-    assert.equal(Boolean(second.provisional),id!=='visa-juvenil',id);
+    // Visa Juvenil y Reforzamiento de Asilo tienen su segundo vídeo final; Apelación aún usa el provisional.
+    assert.equal(Boolean(second.provisional),id==='apelacion',id);
   }
 });
 

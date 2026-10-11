@@ -2,7 +2,7 @@
    UsaLatinoPrime — Datos de servicios y lógica de calificación
    ============================================================ */
 import type { Answers, IconName, ResultData, Service } from "./types";
-import { APELACION_VIDEO, REFORZAMIENTO_ASILO_VIDEO } from "./contygo-presentation";
+import { AJUSTE_ESTATUS_VIDEO, APELACION_VIDEO, REFORZAMIENTO_ASILO_VIDEO } from "./contygo-presentation";
 
 // ---- Iconos (line icons, stroke = currentColor) ----
 export const ICONS: Record<IconName, string> = {
@@ -75,7 +75,7 @@ export const SERVICES: Service[] = [
     id: "i-485",
     slug: "ajuste-de-estatus",
     icon: "card",
-    video: "/videos/ajuste-estatus.mp4",
+    video: AJUSTE_ESTATUS_VIDEO.src,
     name: "I-485 · Ajuste de Estatus",
     tagline: "Tu Green Card sin salir de EE.UU.",
     desc: "Solicita la residencia permanente una vez aprobada tu petición y elegible tu fecha de prioridad.",

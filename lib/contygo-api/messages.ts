@@ -68,6 +68,33 @@ export function waitText(retryAfter?: number | null): string {
 export const whatsappHelpMessage = (serviceName: string, ref?: string | null) =>
   `Hola, estaba contratando ${serviceName} en la web de ContyGo y necesito ayuda${ref ? ` (ref. ${ref})` : ""}.`;
 
+/**
+ * Ajuste de estatus con la fecha de prioridad aún sin llegar (o sin la fecha a mano): el contrato previo.
+ * contygo no deja contratar en línea si la fecha no está vigente (evaluate → eligible:false, 10-10-2026),
+ * así que lo prepara un asesor. Si contygo lo habilita, la ficha pasa sola al contrato en línea.
+ */
+export function previoMessage(status: "near" | "far" | "unknown"): { title: string; detail: string } {
+  if (status === "near") return { title: "Tu fecha está muy cerca: aseguremos tu lugar.", detail: "Un asesor prepara contigo el contrato previo por WhatsApp, con sus garantías y la oferta, para que presentes en cuanto llegue tu fecha." };
+  if (status === "far") return { title: "Tu contrato previo lo preparamos contigo.", detail: "Mientras llega tu fecha de prioridad, un asesor te acompaña por WhatsApp para asegurar tu lugar, con sus garantías y la oferta." };
+  return { title: "Confirmemos tu fecha de prioridad.", detail: "Escríbenos por WhatsApp con el aviso I-797 a mano: revisamos la fecha contigo y aseguramos tu lugar con el contrato previo." };
+}
+/**
+ * Reforzamiento de Asilo cuando el contrato no sale en línea: plazo de pruebas vencido, sin fecha todavía, o la
+ * próxima audiencia en menos de 5 días hábiles (contygo la rechaza: event_too_close). Lo prepara un asesor.
+ */
+export function asylumMessage(outcome: { kind: string; track: string }): { title: string; detail: string } {
+  if (outcome.kind === "late") return outcome.track === "afirmativo"
+    ? { title: "Tu entrevista está muy cerca.", detail: "USCIS recibe las pruebas hasta 14 días antes de la entrevista. Un asesor revisa tu caso contigo por WhatsApp y te dice cómo seguir." }
+    : { title: "Tu audiencia final está muy cerca.", detail: "Las pruebas se reciben hasta 30 días antes de la audiencia final. Un asesor revisa tu caso contigo por WhatsApp y, si el juez niega tu asilo, te acompañamos en la apelación." };
+  if (outcome.kind === "nodate") return { title: "Todavía tienes tiempo: preparemos tu contrato.", detail: "Como aún no tienes fecha, un asesor prepara tu contrato contigo por WhatsApp y empezamos a reforzar tu caso." };
+  if (outcome.kind === "soon") return { title: "Tu próxima audiencia es en pocos días.", detail: "Un asesor revisa tu caso contigo por WhatsApp para empezar cuanto antes." };
+  return { title: "Revisemos tu caso contigo.", detail: "Un asesor te acompaña por WhatsApp para preparar tu contrato." };
+}
+export const whatsappAsylumMessage = (serviceName: string, ref?: string | null) =>
+  `Hola, quiero que revisen mi caso para ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
+export const whatsappPrevioMessage = (serviceName: string, ref?: string | null) =>
+  `Hola, quiero hacer el contrato previo de ${serviceName} que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
+
 export function outcomeMessage(outcome: ScreenOutcome, roleLabel?: string): { title: string; detail?: string } {
   switch (outcome.step) {
     case "INVALID": return { title: "Revisa los campos marcados." };

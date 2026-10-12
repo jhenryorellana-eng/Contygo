@@ -99,6 +99,7 @@
 .summaryRow:first-child{border-top:0}
 .summaryRow dt{grid-column:1;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .summaryRow dd{grid-column:1;display:grid;gap:2px;margin:0;font-size:17px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+.changeService{justify-self:start;min-height:40px;padding:0 14px;border:0;border-radius:14px;background:rgba(var(--ink-rgb),.08);color:var(--ink);font:750 15px var(--font-contygo-body),sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .change{grid-column:2;grid-row:1 / span 2;align-self:center;min-height:44px;padding:0 14px;border:0;border-radius:14px;background:rgba(var(--ink-rgb),.08);color:var(--ink);font:750 15px var(--font-contygo-body),sans-serif;cursor:pointer}
 .consent{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:16px 18px;border-radius:20px;background:var(--field);box-shadow:inset 0 0 0 1.5px var(--line);font-size:16px;line-height:1.5;cursor:pointer}
 .consent input{position:absolute;opacity:0;pointer-events:none}

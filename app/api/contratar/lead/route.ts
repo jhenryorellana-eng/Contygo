@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { contractService } from "@/lib/contygo-catalog";
 import { remoteServiceFor } from "@/lib/contygo-api/catalog";
 import { isExternalRef, normalizePhone, sanitizeAnswers, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const parsed = await readBrowserJson(req);
     if ("response" in parsed) return parsed.response;
     const { body } = parsed;
-    const local = CONTYGO_SERVICES.find(service => service.id === body.serviceId);
+    const local = contractService(body.serviceId);
     if (!local) return fail("invalid_service", 400);
     if (!isExternalRef(body.externalRef)) return fail("invalid_reference", 400);
     const fullName = cleanName(body.displayName);

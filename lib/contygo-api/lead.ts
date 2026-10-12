@@ -6,7 +6,7 @@
    repetirlo con la misma referencia actualiza el mismo lead.
    aiSummary nunca lleva datos sensibles ni las respuestas.
    ============================================================ */
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { contractService } from "@/lib/contygo-catalog";
 import { contygoApi, type CallBudget } from "./client";
 import type { Attribution, UpsertLeadBody } from "./types";
 
@@ -34,7 +34,7 @@ export function sanitizeAttribution(input: unknown): Attribution | undefined {
 
 /** Para ventas: el servicio y el veredicto de contygo, nunca las respuestas. */
 export function leadSummary(localServiceId: string, eligible: boolean | null) {
-  const service = CONTYGO_SERVICES.find(item => item.id === localServiceId)?.name ?? localServiceId;
+  const service = contractService(localServiceId)?.name ?? localServiceId;
   const verdict = eligible === null ? "Aún sin respuestas de elegibilidad."
     : eligible ? "Respondió las preguntas del servicio: califica." : "Respondió las preguntas del servicio: requiere revisión de un asesor.";
   return `Web · ${service}. ${verdict}`;

@@ -1,17 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
-import type { ContygoService } from "@/lib/contygo-catalog";
+import { serviceVariants, type ContygoService } from "@/lib/contygo-catalog";
+import type { AnswerValue } from "@/lib/contygo-api/types";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import { waLink } from "@/lib/config";
 import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_DELIVERABLES } from "@/lib/contygo-deliverables";
-import { getRebuildPlatformFilm, getRebuildServiceFilm, type RebuildFilm } from "@/lib/contygo-rebuild-media";
+import { getRebuildPlatformFilm, getRebuildServiceFilm, PROVISIONAL_PLATFORM_FILM, type RebuildFilm } from "@/lib/contygo-rebuild-media";
 import VisaJuvenilExperience, { type VisaIntakeSession } from "../juvenil/VisaJuvenilExperience";
 import ContractCheckout from "../contract/ContractCheckout";
+import ServiceVariantPicker from "../contract/ServiceVariantPicker";
 import ContractClosingConcept from "../juvenil/PaperPlaneClosing";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
 import { closingName, closingScript, closingVariant, useClosingSpeechWarmup } from "../juvenil/closingSpeech";
@@ -31,6 +33,8 @@ export type ServiceCinemaDialogProps = {
   previewFilm?: RebuildFilm;
   /** Development preview only: start with a completed, entirely fictitious intake. */
   previewCompletedIntake?: boolean;
+  /** Development preview only: open on the second film's closing with the Básico / Premium picker already open. */
+  previewPicker?: boolean;
   visualTheme?: VisaVisualTheme;
 };
 
@@ -176,9 +180,10 @@ function Film({ film, title, caption, onEnded, autoPlay = false, immersive = fal
   </figure>;
 }
 
-function OpenDialog({ service, origin, onClose, initialStage = "service", initialPlanName, previewFilm, previewCompletedIntake = false, visualTheme = "lagoon" }: Omit<ServiceCinemaDialogProps, "service"> & { service: ContygoService }) {
+function OpenDialog({ service, origin, onClose, initialStage = "service", initialPlanName, previewFilm, previewCompletedIntake = false, previewPicker = false, visualTheme = "lagoon" }: Omit<ServiceCinemaDialogProps, "service"> & { service: ContygoService }) {
   const isVisa = service.id === "visa-juvenil";
   const completedPreview = process.env.NODE_ENV !== "production" && isVisa && previewCompletedIntake;
+  const pickerPreview = process.env.NODE_ENV !== "production" && isVisa && previewPicker;
   const dialog = useRef<HTMLDialogElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -189,11 +194,16 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const animation = useRef<Animation | null>(null);
   const closing = useRef(false);
   const mounted = useRef(false);
-  const [stage, setStage] = useState<Stage>("service");
-  const [visaSession, setVisaSession] = useState<VisaIntakeSession | null>(() => completedPreview
-    ? { ...DEBUG_COMPLETED_INTAKE, answers: { ...DEBUG_COMPLETED_INTAKE.answers }, messages: [...DEBUG_COMPLETED_INTAKE.messages] }
+  const [stage, setStage] = useState<Stage>(pickerPreview ? "platform" : "service");
+  const [visaSession, setVisaSession] = useState<VisaIntakeSession | null>(() => completedPreview || pickerPreview
+    ? { ...DEBUG_COMPLETED_INTAKE, answers: { ...DEBUG_COMPLETED_INTAKE.answers }, messages: [...DEBUG_COMPLETED_INTAKE.messages], ...(pickerPreview ? { complete: true, field: null, displayName: "Ana" } : {}) }
     : null);
   const [visaPhase, setVisaPhase] = useState<"watch" | "packing" | "interview">(completedPreview ? "interview" : "watch");
+  // Visa Juvenil: «Revisar mi contrato» first asks Básico or Premium; the contract is for the chosen one.
+  const variants = useMemo(() => serviceVariants(service.id), [service.id]);
+  const [picker, setPicker] = useState(false);
+  const [contract, setContract] = useState<{ service: ContygoService; answers: Record<string, AnswerValue> } | null>(null);
+  const contractService = contract?.service ?? service;
   // This owner survives the chat -> film switch, retaining decoded personalized speech.
   const closingVoice=useVisaVoice();
   useClosingSpeechWarmup(closingVoice,(visaSession?.complete||visaSession?.displayName!==undefined)
@@ -205,7 +215,8 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const planName = useId();
   const stageIndex = stages.findIndex(item => item.id === stage);
   const isEvaluation = service.id === "evaluacion-asilo";
-  const platformFilm = getRebuildPlatformFilm(service.id);
+  // The local preview modes (never production) use the 6 s clip as the second film too, to reach the contract quickly.
+  const platformFilm = process.env.NODE_ENV !== "production" && (previewFilm || completedPreview || pickerPreview) ? PROVISIONAL_PLATFORM_FILM : getRebuildPlatformFilm(service.id);
   const deliverables = CONTYGO_DELIVERABLES[service.id];
   // Prices are live (GET /catalog); the local list only gives the plan names. No price until the live one arrives.
   const prices = useServicePrices();
@@ -256,6 +267,9 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, []);
+
+  // The picker preview opens only once this dialog is open, so the picker sits above it.
+  useEffect(() => { if (pickerPreview) setPicker(true); }, [pickerPreview]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -333,10 +347,11 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
 
         {stage === "service" && <VisaJuvenilExperience serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} preparedVoice={closingVoice} onContract={() => changeStage("decision")} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} preparedVoice={closingVoice} onContract={() => variants.length > 1 ? setPicker(true) : changeStage("decision")} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
-        {stage === "decision" && <ContractCheckout service={service} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={visaSession?.answers} eligible={visaSession?.eligible ?? null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} voice={closingVoice} />}
+        {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}
+        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} voice={closingVoice} onChangeService={variants.length > 1 ? () => setPicker(true) : undefined} />}
 
         {stage === "decision" && !immersive && <>
           <div className={s.decisionGrid}>
@@ -362,6 +377,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       <div className={s.footerMeta}>{stageIndex > 0 ? <button className={s.back} type="button" onClick={() => changeStage(stages[stageIndex - 1].id)}><Arrow back />Volver</button> : <span className={s.atYourPace}>A tu ritmo.</span>}<span className={s.stepCount}>{String(stageIndex + (isVisa ? 2 : 1)).padStart(2, "0")} / {isVisa ? "04" : "03"}</span></div>
       {stage === "decision" ? <div className={s.decisionActions}><a className={s.whatsapp} href={whatsappUrl} target="_blank" rel="noopener noreferrer">Hablar con un agente <Arrow /></a><a className={s.primary} href={contractUrl} target="_blank" rel="noopener noreferrer">{isEvaluation ? "Continuar con mi evaluación" : "Ir a mi contrato"}<Arrow /></a></div> : <button type="button" className={s.primary} onClick={() => changeStage(stage === "service" ? "platform" : "decision")}>{stage === "service" ? "Ver cómo funciona ContyGo" : "Ver opciones para empezar"}<Arrow /></button>}
     </footer>}
+    {picker && <ServiceVariantPicker variants={variants} answers={visaSession?.answers} current={stage === "decision" ? contractService.id : undefined} onClose={() => setPicker(false)} onChoose={(chosen, answers) => { setContract({ service: chosen, answers }); setPicker(false); changeStage("decision"); }} />}
   </dialog>;
 }
 

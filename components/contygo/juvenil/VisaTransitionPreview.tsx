@@ -37,7 +37,7 @@ const conversation = [
 
 const visaService = CONTYGO_SERVICES.find(service => service.id === "visa-juvenil")!;
 type Origin = { x: number; y: number; width: number; height: number };
-type PreviewMode = "quick" | "full" | "completed";
+type PreviewMode = "quick" | "full" | "completed" | "picker";
 
 function Arrow() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -67,7 +67,9 @@ export default function VisaTransitionPreview() {
     if (contractPreview) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [contractPreview]);
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).get("demo") === "final") setPreviewMode("completed");
+    const demo = process.env.NODE_ENV !== "production" ? new URLSearchParams(window.location.search).get("demo") : null;
+    if (demo === "final") setPreviewMode("completed");
+    if (demo === "selector") setPreviewMode("picker");
     try {
       const saved = localStorage.getItem(APPEARANCE_KEY); if (saved === "light" || saved === "dark") setAppearance(saved);
       const savedDay = localStorage.getItem(DAY_KEY); if (savedDay === "tinta" || savedDay === "papel") setDay(savedDay);
@@ -122,6 +124,7 @@ export default function VisaTransitionPreview() {
           <button className={s.primaryButton} type="button" onClick={event => openPreview(event, "quick")}><span>Probar vídeo y chat</span><Arrow /></button>
           <button className={s.fullFilmButton} type="button" onClick={event => openPreview(event, "full")}><span>Ver vídeo completo con subtítulos</span><Arrow /></button>
           {process.env.NODE_ENV !== "production" && <button className={s.completedButton} type="button" onClick={event => openPreview(event, "completed")}><span>Ver transición del chat al botón</span><Arrow /></button>}
+          {process.env.NODE_ENV !== "production" && <button className={s.completedButton} type="button" onClick={event => openPreview(event, "picker")}><span>Ver selector Básico / Premium</span><Arrow /></button>}
           <button className={s.completedButton} type="button" onClick={() => setStatePickerDemo(true)}><span>Ver selector de estados</span><Arrow /></button>
           <button className={s.completedButton} type="button" onClick={() => setContractPreview("new")}><span>Probar vídeo 2 → nuevo contrato</span><Arrow /></button>
           <button className={s.contractButton} type="button" onClick={() => setContractPreview("previous")}>Comparar con el cierre anterior <span aria-hidden="true">↗</span></button>
@@ -158,7 +161,7 @@ export default function VisaTransitionPreview() {
 
     <footer className={s.footer}><span>SIEMPRE CONTIGO. PASO A PASO.</span><p>ContyGo · Luz que acompaña la voz</p></footer>
     <div className={themeStyles.surface} data-contygo-theme={appearance} data-contygo-dia={day}>
-      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? PROVISIONAL_PLATFORM_FILM : undefined} previewCompletedIntake={previewMode === "completed"} visualTheme="lagoon" />
+      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? PROVISIONAL_PLATFORM_FILM : undefined} previewCompletedIntake={previewMode === "completed"} previewPicker={previewMode === "picker"} visualTheme="lagoon" />
       {responseDemo && <ThinkingOverlayDemo onClose={() => setResponseDemo(false)} />}
       {statePickerDemo && <VisaStatePicker onChoose={() => setStatePickerDemo(false)} onClose={() => setStatePickerDemo(false)} />}
     </div>

@@ -28,7 +28,7 @@
    · FIX_CONTACT (CLIENT_NEEDS_HUMAN con una pista segura: solo canal web y tras un código válido) NO es
      un fallo: la persona corrige el teléfono y empieza otra vez; no se avisa a ventas.
    ============================================================ */
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { contractService } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, invalidateCatalog, localServiceNameFor, remoteServiceFor } from "./catalog";
 import {
   buildContractBody, checkoutEnabled, hasUnknownQuestion, isConfigFailure, mapContractResponse, normalizeContractPhone, publicRef,
@@ -189,7 +189,7 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
   const attempt: Attempt = {
     externalRef: input.externalRef,
     deadline,
-    serviceName: CONTYGO_SERVICES.find(item => item.id === input.localServiceId)?.name ?? null,
+    serviceName: contractService(input.localServiceId)?.name ?? null,
     person: personFromForm(input.form),
   };
 

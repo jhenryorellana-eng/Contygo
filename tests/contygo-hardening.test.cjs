@@ -278,15 +278,15 @@ test('loadCatalog guarda los fallos 30-60 s; no los de plazo; sirve la copia vie
     const m = catalogCalls(net).length;
     await assert.rejects(catalogLib.loadCatalog({ deadline: Date.now() + 100 }), { code: 'DEADLINE' });
     net.on('GET', '/catalog', { status: 200, body: catalog });
-    assert.equal((await catalogLib.loadCatalog()).length, 3, 'una petición con más plazo sí llega a contygo');
+    assert.equal((await catalogLib.loadCatalog()).length, catalog.services.length, 'una petición con más plazo sí llega a contygo');
     assert.equal(catalogCalls(net).length, m + 1);
 
     // Con copia vieja se sigue sirviendo, y el fallo también se recuerda.
     clock.advance(6 * 60_000);
     net.on('GET', '/catalog', { status: 500, body: { error: { code: 'INTERNAL' } } });
-    assert.equal((await catalogLib.loadCatalog()).length, 3, 'copia vieja');
+    assert.equal((await catalogLib.loadCatalog()).length, catalog.services.length, 'copia vieja');
     const k = catalogCalls(net).length;
-    assert.equal((await catalogLib.loadCatalog()).length, 3);
+    assert.equal((await catalogLib.loadCatalog()).length, catalog.services.length);
     assert.equal(catalogCalls(net).length, k, 'ni siquiera con copia vieja se insiste dentro de la ventana');
   } finally { clock.restore(); }
 });

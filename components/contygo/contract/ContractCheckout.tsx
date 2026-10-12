@@ -13,7 +13,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
-import { publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
+import { normalizeAnswer, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
+import { missingQuestions, type ContractQuestion } from "@/lib/contygo-api/variants";
 import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHelpMessage, whatsappPrevioMessage, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
@@ -51,7 +52,7 @@ type ApiOutcome = ScreenOutcome & {
   errors?: FieldErrors; maskedEmail?: string; expiresAt?: string | null; caseNumber?: string; signingUrl?: string; token?: string;
   verificationId?: string; body?: SentVerification["body"]; ticket?: string; role?: string | null; retryAfter?: number | null; ref?: string; code?: string; clientCreated?: boolean; firstName?: string;
 };
-type Step = "name" | "contact" | "address" | "people" | "plan" | "review";
+type Step = "questions" | "name" | "contact" | "address" | "people" | "plan" | "review";
 
 /** Whole dollars when exact, two decimals otherwise (an installment is never rounded). */
 const cents = formatMoney;
@@ -61,7 +62,9 @@ const isUsPhone = (value: string) => /^\+1\d{0,10}$/.test(value.trim());
 const CONFIRM_ATTEMPTS = 3;
 
 /** Each step: what it asks, which validator errors belong to it and what the guide says there. */
-const STEPS: Record<Step, { label: string; title: string; lead?: string; guide: GuideLineId; owns: (key: string) => boolean }> = {
+const STEPS: Record<Step, { label: string; title: string; lead?: string; guide?: GuideLineId; owns: (key: string) => boolean }> = {
+  // Only when the chosen service asks something the conversation did not (a variant such as Visa Juvenil Premium). No recorded guide line.
+  questions: { label: "Preguntas", title: "Unas preguntas sobre tu caso", lead: "Este servicio necesita saber esto antes de preparar tu contrato.", owns: key => key.startsWith("answers.") },
   name: { label: "Tu nombre", title: "¿Cómo te llamas?", lead: "Escríbelo tal como aparece en tus documentos.", guide: "contractName", owns: key => ["firstName", "middleName", "lastName"].includes(key) },
   contact: { label: "Contacto", title: "¿Cómo te escribimos?", lead: "A tu correo llega un código para confirmar que eres tú.", guide: "contractContact", owns: key => key === "email" || key === "phone" },
   address: { label: "Dirección", title: "¿Dónde vives?", lead: "La dirección donde recibes tu correspondencia.", guide: "contractAddress", owns: key => key.startsWith("address.") },
@@ -145,9 +148,11 @@ type Props = {
   /** Reforzamiento de Asilo: plazo vencido, sin fecha o audiencia en pocos días → un asesor (y la Apelación si toca). */
   asylum?: AsylumOutcome;
   voice?: ClosingVoice;
+  /** Visa Juvenil: back to the Básico / Premium picker. */
+  onChangeService?: () => void;
 };
 
-export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, voice: sharedVoice }: Props) {
+export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, voice: sharedVoice, onChangeService }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
   const [data, setData] = useState<ReadyData | null>(null);
@@ -167,6 +172,9 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const [pendingRestart, setPendingRestart] = useState(false);
   const [form, setForm] = useState<DraftForm>({ firstName: "", middleName: "", lastName: "", email: "", phone: "", line1: "", apartment: "", city: "", state: "", zip: "", locale: "es", planId: "", installmentId: "" });
   const [persons, setPersons] = useState<Person[]>([]);
+  /** Questions of this service the conversation did not answer, and the answers given here. */
+  const [missing, setMissing] = useState<ContractQuestion[]>([]);
+  const [extraAnswers, setExtraAnswers] = useState<Record<string, AnswerValue>>({});
   const [consent, setConsent] = useState<{ accepted: boolean; at: string }>({ accepted: false, at: "" });
   const [sent, setSent] = useState<SentVerification | null>(null);
   /** While the flow runs, this tab keeps it in sessionStorage; at the end it forgets it. */
@@ -212,7 +220,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
       // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
       if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
-      if (!next.service.questions.every(question => from.answers?.[question.id] !== undefined)) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NEEDS_ANSWERS" }) }); return; }
+      // A question the conversation did not ask (another variant of the service) is asked here, first.
+      const unanswered = missingQuestions(next.service.questions, from.answers);
+      setMissing(unanswered);
+      if (unanswered.length) setStep("questions");
 
       const draft = readDraft();
       const mine = draft?.serviceId === service.id ? draft : null;
@@ -256,7 +267,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   function finish() { setKeeping(false); setSent(null); clearDraft(); }
 
   const roles = useMemo(() => data?.service.partyRoles ?? [], [data]);
-  const steps = useMemo<Step[]>(() => ["name", "contact", "address", ...(roles.length ? ["people" as const] : []), "plan", "review"], [roles.length]);
+  const steps = useMemo<Step[]>(() => [...(missing.length ? ["questions" as const] : []), "name", "contact", "address", ...(roles.length ? ["people" as const] : []), "plan", "review"], [missing.length, roles.length]);
   const stepIndex = Math.max(0, steps.indexOf(step));
   const plan = data?.service.plans.find(item => item.id === form.planId) ?? data?.service.plans[0];
   const installmentOptionId = installmentIdForRequest(plan, form.installmentId);
@@ -276,7 +287,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   useEffect(() => {
     const key = stage === "form" ? `form:${step}` : stage === "code" ? "code" : stage === "done" ? `done:${Boolean(result?.signingUrl)}` : "";
     if (!key || spokenFor.current === key) return;
-    const line: GuideLineId = stage === "form" ? STEPS[step].guide : stage === "code" ? "contractCode" : result?.signingUrl ? "contractDone" : "contractDoneNoLink";
+    const line: GuideLineId | undefined = stage === "form" ? STEPS[step].guide : stage === "code" ? "contractCode" : result?.signingUrl ? "contractDone" : "contractDoneNoLink";
+    if (!line) { spokenFor.current = key; return; }
     // Marked as spoken only when it really plays: a timer cleared by a quick re-render must not leave
     // the previous screen's caption on this one.
     const timer = window.setTimeout(() => { spokenFor.current = key; guideRef.current.play(line); }, 450);
@@ -381,10 +393,16 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   }
 
   /** «Continuar»: only this step's answers are checked; the rest waits for its own step. */
+  /** Each question asked here needs a valid answer (the same rules as the conversation). */
+  function questionErrors(): FieldErrors {
+    return Object.fromEntries(missing.flatMap(question => normalizeAnswer(question, extraAnswers[question.id]) === null
+      ? [[`answers.${question.id}`, question.kind === "date" ? "Elige la fecha." : question.kind === "state" ? "Elige el estado." : "Elige «Sí» o «No»."]] : []));
+  }
+
   function next() {
     if (!data) return;
     const check = validateContractForm(input, data.service);
-    const mine = check.ok ? {} : Object.fromEntries(Object.entries(check.errors).filter(([key]) => STEPS[step].owns(key)));
+    const mine = step === "questions" ? questionErrors() : check.ok ? {} : Object.fromEntries(Object.entries(check.errors).filter(([key]) => STEPS[step].owns(key)));
     if (Object.keys(mine).length) {
       setErrors(current => ({ ...current, ...mine }));
       setNotice({ tone: "error", title: "Revisa lo que está marcado en rojo.", detail: Object.values(mine)[0] });
@@ -402,8 +420,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     if (!data || busy) return;
     const check = validateContractForm(input, data.service);
     if (!check.ok) { show({ step: "INVALID" }); reopen(check.errors); return; }
+    const unanswered = questionErrors();
+    if (Object.keys(unanswered).length) { show({ step: "INVALID" }); reopen(unanswered); return; }
     if (!captcha.token) { setNotice({ tone: "info", title: "Un momento: estamos confirmando que no eres un robot.", detail: "Cuando termine la verificación, toca «Enviar mi código» otra vez." }); return; }
-    const answersNow = journey.current.answers ?? {};
+    const answersNow = { ...journey.current.answers, ...extraAnswers };
     // After a cut, the same form and answers go again with the same key: contygo answers the same
     // and nothing is sent twice. Anything else is a new attempt with a new key.
     const fingerprint = JSON.stringify([input, answersNow]);
@@ -511,7 +531,13 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       ? [`${text(plan.name)} · Total ${cents(chosenRow.totalCents)}`, paymentLabel(chosenRow, chosenOption.frequency).line, ...(extraPartiesNote(extraCount, plan.extraPartyPriceCents) ? [extraPartiesNote(extraCount, plan.extraPartyPriceCents) as string] : [])]
       : [text(plan.name), PAYMENT_NOTE_NO_ROW]
     : [`${text(plan.name)} · ${cents(plan.priceCents)}`];
+  /** «Sí», «14/05/2012» or «Texas», for the summary. */
+  const answerLabel = (question: ContractQuestion, value: AnswerValue | undefined) => value === undefined ? "—"
+    : typeof value === "boolean" ? value ? "Sí" : "No"
+    : question.kind === "date" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split("-").reverse().join("/")
+    : question.options?.find(option => option.code === value)?.label ?? value;
   const summary: { step: Step; title: string; lines: string[] }[] = [
+    ...(missing.length ? [{ step: "questions" as const, title: "Tu caso", lines: missing.map(question => `${text(question.prompt)} ${answerLabel(question, extraAnswers[question.id])}`) }] : []),
     { step: "name", title: "Tu nombre", lines: [[form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ")] },
     { step: "contact", title: "Contacto", lines: [form.email, form.phone ? phoneLabel(form.phone) : ""] },
     { step: "address", title: "Dirección", lines: [[form.line1, form.apartment].filter(Boolean).join(", "), [form.city, stateName, form.zip].filter(Boolean).join(", ")] },
@@ -524,6 +550,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     <div className={s.card}>
       <header className={s.head}>
         <span className={s.eyebrow}><span className={s.nucleus} aria-hidden="true"><Image src="/contygo/brand/symbol-light.png" alt="" width={1024} height={1024} sizes="20px" /></span>{service.name} · Tu contrato</span>
+        {onChangeService && (stage === "form" || stage === "blocked" || stage === "failed") && <button type="button" className={s.changeService} onClick={onChangeService}>Cambiar de servicio</button>}
         {stage === "form" && <div className={s.progress} aria-label={`Paso ${stepIndex + 1} de ${steps.length}: ${STEPS[step].label}`}>
           <ol>{steps.map((item, index) => <li key={item} data-state={index < stepIndex ? "done" : index === stepIndex ? "current" : "next"}><span>{STEPS[item].label}</span></li>)}</ol>
           <p>Paso {stepIndex + 1} de {steps.length} · <strong>{STEPS[step].label}</strong></p>
@@ -545,6 +572,29 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
 
       {stage === "form" && data && <form className={s.form} noValidate onSubmit={event => { event.preventDefault(); if (step === "review") void start(); else next(); }}>
         <div ref={body} className={s.stepBody} data-step-body key={step}>
+          {step === "questions" && <div className={s.fields}>
+            {missing.map(question => {
+              const name = `answers.${question.id}`, value = extraAnswers[question.id], prompt = text(question.prompt);
+              const setAnswer = (next: AnswerValue | undefined) => {
+                setExtraAnswers(current => { const copy = { ...current }; if (next === undefined || next === "") delete copy[question.id]; else copy[question.id] = next; return copy; });
+                clear(name);
+              };
+              if (question.kind === "yesno") return <div key={question.id} className={s.options} role="radiogroup" aria-label={prompt} data-invalid={Boolean(errors[name])}>
+                <p className={s.groupTitle}>{prompt}</p>
+                <div className={s.segmented}>{[true, false].map(choice => <label key={String(choice)} data-selected={value === choice}><input type="radio" name={`${uid}-${question.id}`} checked={value === choice} onChange={() => setAnswer(choice)} />{choice ? "Sí" : "No"}</label>)}</div>
+                {errors[name] && <small className={s.error} role="alert">{errors[name]}</small>}
+              </div>;
+              if (question.kind === "date") {
+                const today = new Date().toISOString().slice(0, 10), future = question.dateMode === "future_event";
+                return <div key={question.id}>{field(name, prompt, <input type="date" min={future ? today : "1900-01-01"} max={future ? "2100-12-31" : today} value={typeof value === "string" ? value : ""} onChange={event => setAnswer(event.target.value || undefined)} />, { wide: true })}</div>;
+              }
+              return <div key={question.id}>{field(name, prompt, <select value={typeof value === "string" ? value : ""} onChange={event => setAnswer(event.target.value || undefined)}>
+                <option value="">Elige el estado</option>
+                {(question.options ?? []).map(option => <option key={option.code} value={option.code}>{option.label}</option>)}
+              </select>, { wide: true })}</div>;
+            })}
+          </div>}
+
           {step === "name" && <div className={s.fields}>
             {field("firstName", "Nombre", <input autoComplete="given-name" maxLength={80} value={form.firstName} onChange={set("firstName")} placeholder="Ej.: María" />, { guide: "firstName" })}
             {field("middleName", "Segundo nombre (si tienes)", <input autoComplete="additional-name" maxLength={80} value={form.middleName} onChange={set("middleName")} />, { hint: "Puedes dejarlo vacío." })}

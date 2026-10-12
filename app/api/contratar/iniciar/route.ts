@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { contractService } from "@/lib/contygo-catalog";
 import { checkoutEnabled, isExternalRef, isIdempotencyKey, publicRef } from "@/lib/contygo-api/checkout";
 import { startContract } from "@/lib/contygo-api/flow";
 import { sanitizeAttribution } from "@/lib/contygo-api/lead";
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req);
     const limited = checkLimits([{ key: `start:ip:${ip}`, windowSeconds: 3600, max: 10 }]);
     if (limited) return limited;
-    const local = CONTYGO_SERVICES.find(service => service.id === body.serviceId);
+    const local = contractService(body.serviceId);
     if (!local) return fail("invalid_service", 400);
     if (!isExternalRef(body.externalRef)) return fail("invalid_reference", 400);
     if (!isIdempotencyKey(body.idempotencyKey)) return fail("invalid_idempotency_key", 400);

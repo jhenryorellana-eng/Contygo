@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { contractService } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, publicServiceView, remoteServiceFor } from "@/lib/contygo-api/catalog";
 import { checkoutEnabled } from "@/lib/contygo-api/checkout";
 import { logConfig } from "@/lib/contygo-api/log";
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     if ("response" in parsed) return parsed.response;
     const limited = checkLimits([{ key: `svc:ip:${clientIp(req)}`, windowSeconds: 600, max: 60 }]);
     if (limited) return limited;
-    const local = CONTYGO_SERVICES.find(service => service.id === parsed.body.serviceId);
+    const local = contractService(parsed.body.serviceId);
     if (!local) return fail("invalid_service", 400);
     const captchaSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null;
     if (!checkoutEnabled()) return json({ ok: true, checkoutEnabled: false, reason: "checkout_disabled", service: null, terms: CONTRACT_TERMS, captchaSiteKey });

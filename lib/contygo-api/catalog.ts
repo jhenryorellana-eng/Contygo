@@ -5,7 +5,7 @@
    lib/contygo-catalog.ts solo aporta lo visual (vídeos, imágenes,
    textos de la landing) y se une con este por `slug`.
    ============================================================ */
-import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
+import { CONTRACT_SERVICES, CONTYGO_SERVICES, contractService } from "@/lib/contygo-catalog";
 import { contygoApi, type CallBudget } from "./client";
 import { isConfigFailure, partyRolesToAsk, questionKind } from "./checkout";
 import { normalizeCatalog } from "./payment-options";
@@ -69,7 +69,7 @@ export async function loadCatalog(budget: CallBudget = {}): Promise<CatalogServi
 
 /** El servicio de contygo que corresponde a un servicio de la landing. */
 export async function remoteServiceFor(localId: string, budget: CallBudget = {}): Promise<CatalogService | null> {
-  const local = CONTYGO_SERVICES.find(service => service.id === localId);
+  const local = contractService(localId);
   if (!local) return null;
   const services = await loadCatalog(budget);
   return services.find(service => service.slug === local.slug) ?? null;
@@ -79,7 +79,7 @@ export async function remoteServiceFor(localId: string, budget: CallBudget = {})
 export async function localServiceNameFor(remoteId: string, budget: CallBudget = {}): Promise<string | null> {
   const services = await loadCatalog(budget);
   const slug = services.find(service => service.id === remoteId)?.slug;
-  return CONTYGO_SERVICES.find(service => service.slug === slug)?.name ?? null;
+  return CONTRACT_SERVICES.find(service => service.slug === slug)?.name ?? null;
 }
 
 /** Texto de una opción (us_state): `name` {es, en} de contygo (o `label`, respaldo), y el código si no trae ninguno. */

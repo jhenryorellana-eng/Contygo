@@ -705,6 +705,13 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 - [ ] El PR de contygo, desplegado (ver «Lo que depende de contygo»).
 - [ ] Webhooks, solo si se activan. El receptor ya verifica la firma y la ventana de ±300 s y deduplica por `X-Event-Id`. Hoy están apagados.
 
+## Variantes de un servicio: Visa Juvenil Básico o Premium (12-10-2026)
+
+- `visa-juvenil-premium` (contygo.app/servicios/visa-juvenil-premium) es una **variante** de Visa Juvenil: está en `CONTYGO_VARIANTS` (`lib/contygo-catalog.ts`), no en `CONTYGO_SERVICES`, así que no tiene tarjeta, link ni entrada propia en el sitemap. `contractService(id)` la resuelve en `/servicio`, `/iniciar` y `/lead`.
+- Tras los dos vídeos, «Revisar mi contrato» abre `ServiceVariantPicker`: una carpeta por opción, con las etapas como pestañas y el precio vivo de `/api/contratar/servicio`. El contrato es de la opción elegida y la ficha tiene «Cambiar de servicio».
+- Las respuestas del chat son de las preguntas de Básico. `carryAnswers` (`lib/contygo-api/variants.ts`) las reutiliza si Premium hace la misma pregunta (mismo texto y tipo) y la respuesta encaja. Lo que falte lo pide la ficha en un primer paso, «Preguntas», en vez de bloquear con `NEEDS_ANSWERS`. El veredicto del chat solo vale para Básico: Premium lo evalúa contygo al contratar.
+- Simulador: Premium es una copia de Básico con su precio publicado ($3,500) y sus propios ids. Sin `MOCK_PLAIN_CATALOG` también pregunta la fecha de nacimiento del menor, para ver el paso «Preguntas». Probador: `/contygo-motion/visa-transicion?demo=selector` abre el cierre con el selector ya abierto (solo en desarrollo).
+
 ## Qué queda fuera del recorrido
 
 - **La entrevista original de Visa Juvenil** vuelve al recorrido desde el 09-10-2026: `/api/agent/service-intake` hace primero sus preguntas (vive en EE. UU., fecha de nacimiento, estado, pruebas y, sin pruebas, testigos; claves `visa.*`) y después las del catálogo, que el contrato exige. Las claves `visa.*` no salen hacia contygo: el contrato y el lead solo envían las del catálogo. Si contygo no dice que no, la orientación final es la original, con las reglas por estado. La ruta antigua `/api/agent/visa-intake` sigue sin usarse.

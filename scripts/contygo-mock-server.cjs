@@ -31,6 +31,20 @@ const path = require('node:path');
 const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'contygo-catalog-2026-09-29.json'), 'utf8'));
 const STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','PR','GU','VI','AS','MP'];
 const STATE_NAMES = { TX: 'Texas', FL: 'Florida', CA: 'California', NY: 'Nueva York', PR: 'Puerto Rico', DC: 'Distrito de Columbia' };
+// Visa Juvenil Premium (publicado en contygo el 12-10-2026, $3,500). Sus personas, preguntas y pagos reales solo los da
+// GET /catalog con la clave: aquí es una copia de Básico con su precio publicado, sus propios ids y la misma pregunta de
+// elegibilidad (la ficha reutiliza esa respuesta del chat). Sin MOCK_PLAIN_CATALOG pregunta además la fecha de nacimiento
+// del menor, para ver el paso «Preguntas» de la ficha.
+const basic = catalog.services.find(service => service.slug === 'visa-juvenil-basico');
+if (basic && !catalog.services.some(service => service.slug === 'visa-juvenil-premium')) catalog.services.push({
+  id: 'e5a1c0de-0000-4000-8000-000000000001', slug: 'visa-juvenil-premium', name: { es: 'Visa Juvenil Premium', en: 'Premium Juvenile Visa' },
+  plans: [{ id: 'e5a1c0de-0000-4000-8000-0000000000a1', name: { es: 'Premium', en: 'Premium' }, priceCents: 350000, installmentOptions: [], extraPartyPriceCents: 0 }],
+  eligibilityQuestions: [
+    { id: 'e5a1c0de-0000-4000-8000-0000000000b1', kind: 'yes_no', prompt: { ...basic.eligibilityQuestions[0].prompt } },
+    ...(process.env.MOCK_PLAIN_CATALOG ? [] : [{ id: 'e5a1c0de-0000-4000-8000-0000000000b2', kind: 'date', dateMode: 'birthdate', prompt: { es: '¿Cuál es la fecha de nacimiento del menor?', en: "What is the minor's date of birth?" } }]),
+  ],
+  partyRoles: basic.partyRoles.map(role => ({ ...role, label: { ...role.label } })),
+});
 if (!process.env.MOCK_PLAIN_CATALOG) {
   const visa = catalog.services.find(service => service.slug === 'visa-juvenil-basico');
   if (visa) visa.eligibilityQuestions.push(

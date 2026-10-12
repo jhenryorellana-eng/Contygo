@@ -33,6 +33,7 @@ const ids = {
   apel: '163a31af-0000-4000-8000-000000000002', apelPlan: '163a31af-0000-4000-8000-0000000000a2', apelQ: '163a31af-0000-4000-8000-0000000000b2',
   itin: '758f682c-0000-4000-8000-000000000003', itinPlan: '758f682c-0000-4000-8000-0000000000a3',
   installment: 'fbb0dc08-0000-4000-8000-0000000000c1',
+  premium: 'e5a1c0de-0000-4000-8000-000000000001', premiumPlan: 'e5a1c0de-0000-4000-8000-0000000000a1', premiumQ: 'e5a1c0de-0000-4000-8000-0000000000b1', premiumBirth: 'e5a1c0de-0000-4000-8000-0000000000b2',
 };
 // Misma forma que GET /catalog real (29-09-2026, con el kind de cada pregunta), con ids de prueba.
 const catalog = {
@@ -61,6 +62,19 @@ const catalog = {
       id: ids.itin, slug: 'itin-number', name: { es: 'Número ITIN', en: null },
       plans: [{ id: ids.itinPlan, name: { es: 'Individual', en: null }, priceCents: 25000, extraPartyPriceCents: 0, installmentOptions: [] }],
       eligibilityQuestions: [], partyRoles: [],
+    },
+    {
+      // Variante de Visa Juvenil (12-10-2026): la misma pregunta que Básico con otro id, y una más que el chat no hace.
+      id: ids.premium, slug: 'visa-juvenil-premium', name: { es: 'Visa Juvenil Premium', en: null },
+      plans: [{ id: ids.premiumPlan, name: { es: 'Premium', en: null }, priceCents: 350000, extraPartyPriceCents: 0, installmentOptions: [] }],
+      eligibilityQuestions: [
+        { id: ids.premiumQ, kind: 'yes_no', prompt: { es: '¿El menor tiene menos de 21 años y no está casado?', en: null } },
+        { id: ids.premiumBirth, kind: 'date', dateMode: 'birthdate', prompt: { es: '¿Cuál es la fecha de nacimiento del menor?', en: null } },
+      ],
+      partyRoles: [
+        { roleKey: 'lead', label: { es: 'Tutor', en: null }, cardinality: 'single', isRequired: true },
+        { roleKey: 'minor', label: { es: 'Menor', en: null }, cardinality: 'multiple', isRequired: true },
+      ],
     },
   ],
 };

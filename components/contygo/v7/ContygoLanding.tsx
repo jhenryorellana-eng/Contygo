@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { waLink } from "@/lib/config";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
-import { formatCents, fromPriceLabel, lowestCents, useServicePrices } from "@/lib/contygo-api/prices-client";
+import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
 import { CONTENT_CATEGORY } from "@/lib/meta/events";
@@ -68,6 +68,9 @@ const proof = [
   { icon: "app", text: "En español, desde tu celular" },
   { icon: "file", text: "Revisas tu contrato antes de decidir" },
 ];
+/** The landing-wide «desde» (hero figures, bottom button, FAQ) is the owner's figure (12-10-2026), not the cheapest
+ *  live price: the $50 asylum evaluation and the $100 tax return are not what the page offers families. */
+const LANDING_FROM_CENTS = 25000;
 // Prices are live (GET /catalog through /api/contratar/precios): with no price loaded, the text just does not quote one.
 const faqs = (from: string | null, visaFrom: string | null) => [
   ["¿Qué hace ContyGo por mí?", "Te acompaña en la preparación de los documentos y formularios incluidos en tu servicio. La plataforma organiza la información que aportas y te permite conocer tus siguientes pasos. Revisa el alcance específico antes de contratar."],
@@ -132,8 +135,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     trackBrowserWhenReady("ViewContent", { content_ids: [service.id], content_name: service.name, content_category: CONTENT_CATEGORY });
   }, [service]);
   const prices = useServicePrices();
-  const fromCents = lowestCents(prices);
-  const fromPrice = fromCents === null ? null : formatCents(fromCents);
+  const fromPrice = formatCents(LANDING_FROM_CENTS);
   const visaFrom = visa ? fromPriceLabel(prices, visa.slug) : null;
   const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const root = useRef<HTMLDivElement>(null);

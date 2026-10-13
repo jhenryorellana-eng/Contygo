@@ -15,6 +15,7 @@ import { isUsable, loadEb4Bulletin } from "@/lib/agent/visa-bulletin";
 import {
   ASYLUM_SERVICE, LOCAL_DATE_FIELD, asylumFinish, asylumFlow, asylumGuidance, asylumOutcome, asylumVoiceScripts, isHearingDateQuestion, normalizeAsylumAnswer,
 } from "@/lib/agent/asylum-intake";
+import { HEARING_SERVICE, hearingFinish, hearingFlow, hearingGuidance, hearingVoiceScripts, normalizeHearingAnswer } from "@/lib/agent/hearing-intake";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { loadCatalog } from "@/lib/contygo-api/catalog";
@@ -34,6 +35,9 @@ import type { CatalogService, EligibilityResult } from "@/lib/contygo-api/types"
 // (lib/agent/adjustment-intake.ts): la pregunta «¿está vigente?» del catálogo la responde esa comparación.
 // Reforzamiento de Asilo pregunta defensivo o afirmativo, personal o familiar, la fecha (la del catálogo) y el
 // tipo de audiencia, y dice si aún hay tiempo de presentar pruebas (lib/agent/asylum-intake.ts).
+// Preparación de audiencia pregunta si hay audiencia, cuándo y si es la de mérito, y recomienda la preparación
+// de la segunda o de la tercera audiencia (lib/agent/hearing-intake.ts). Sus preguntas no dependen de contygo:
+// si el servicio aún no está en el catálogo, el chat funciona igual y la ficha ofrece WhatsApp.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -105,29 +109,32 @@ export async function POST(req: NextRequest) {
   let remote: CatalogService | undefined;
   try { remote = (await loadCatalog()).find(service => service.slug === local.slug); }
   catch { return json({ ok: false, error: "catalog_unavailable" }, 503); }
-  if (!remote) return json({ ok: false, error: "service_not_contractable" }, 404);
+  const hearing = local.id === HEARING_SERVICE;
+  if (!remote && !hearing) return json({ ok: false, error: "service_not_contractable" }, 404);
+  const remoteQuestions = remote?.eligibilityQuestions ?? [];
 
   const respond = json;
 
-  const catalog = intakeQuestions(remote.eligibilityQuestions);
+  const catalog = intakeQuestions(remoteQuestions);
   const visa = local.id === VISA_INTERVIEW_SERVICE;
   const adjustment = local.id === ADJUSTMENT_SERVICE;
   const asylum = local.id === ASYLUM_SERVICE;
   // Ajuste: la fecha de prioridad ocupa el lugar de la pregunta del boletín, que nunca se le hace a la persona.
-  const bulletinQuestion = adjustment ? remote.eligibilityQuestions.find(isBulletinQuestion) : undefined;
+  const bulletinQuestion = adjustment ? remoteQuestions.find(isBulletinQuestion) : undefined;
   const bulletin = adjustment ? await loadEb4Bulletin() : null;
   const usableBulletin = bulletin && isUsable(bulletin) ? bulletin : null;
   // Asilo: la fecha de la audiencia o la entrevista es la pregunta de fecha del catálogo (si existe) y va dentro de su flujo.
-  const hearingQuestion = asylum ? remote.eligibilityQuestions.find(isHearingDateQuestion) : undefined;
+  const hearingQuestion = asylum ? remoteQuestions.find(isHearingDateQuestion) : undefined;
   const dateId = hearingQuestion?.id ?? LOCAL_DATE_FIELD;
   const absorbed = bulletinQuestion ?? hearingQuestion;
   const asked = catalog.filter(question => question.id !== absorbed?.id);
   const at = bulletinQuestion ? catalog.findIndex(question => question.id === bulletinQuestion.id) : Math.min(1, catalog.length);
-  const otherCatalog = remote.eligibilityQuestions.filter(question => question.id !== absorbed?.id);
+  const otherCatalog = remoteQuestions.filter(question => question.id !== absorbed?.id);
   // The question list depends on the answers: the witness question only follows «no evidence».
   const questionsFor = (current: ServiceAnswers) => visa ? [...visaQuestions(visaAnswers(current)), ...catalog]
     : adjustment ? [...asked.slice(0, at), ...adjustmentFlow(current, usableBulletin).questions, ...asked.slice(at)]
-    : asylum ? [...asylumFlow(current, dateId).questions, ...asked] : catalog;
+    : asylum ? [...asylumFlow(current, dateId).questions, ...asked]
+    : hearing ? [...hearingFlow(current).questions, ...catalog] : catalog;
   /** Ajuste: las respuestas en juego, con la del boletín recalculada aquí (la que mande el navegador no cuenta). */
   const settleAdjustment = (current: unknown): ServiceAnswers => {
     const flow = adjustmentFlow(current, usableBulletin);
@@ -136,15 +143,25 @@ export async function POST(req: NextRequest) {
   };
   /** Asilo: sus respuestas en orden; la fecha va con el id del catálogo y «Aún no tengo fecha» nunca llega a contygo. */
   const settleAsylum = (current: unknown): ServiceAnswers => ({ ...asylumFlow(current, dateId).answers, ...sanitizeServiceAnswers(otherCatalog, current) });
-  const settle = (current: ServiceAnswers): ServiceAnswers => adjustment ? settleAdjustment(current) : asylum ? settleAsylum(current) : current;
-  const normalize = asylum ? normalizeAsylumAnswer : normalizeIntakeAnswer;
-  let answers: ServiceAnswers = adjustment ? settleAdjustment(body.answers) : asylum ? settleAsylum(body.answers)
-    : { ...(visa ? prefixVisaAnswers(visaAnswers(body.answers)) : {}), ...sanitizeServiceAnswers(remote.eligibilityQuestions, body.answers) };
+  /** Preparación de audiencia: sus respuestas en orden y, después, las del catálogo (si contygo tiene alguna). */
+  const settleHearing = (current: unknown): ServiceAnswers => ({ ...hearingFlow(current).answers, ...sanitizeServiceAnswers(remoteQuestions, current) });
+  const settle = (current: ServiceAnswers): ServiceAnswers => adjustment ? settleAdjustment(current) : asylum ? settleAsylum(current) : hearing ? settleHearing(current) : current;
+  const normalize = asylum ? normalizeAsylumAnswer : hearing ? normalizeHearingAnswer : normalizeIntakeAnswer;
+  let answers: ServiceAnswers = adjustment ? settleAdjustment(body.answers) : asylum ? settleAsylum(body.answers) : hearing ? settleHearing(body.answers)
+    : { ...(visa ? prefixVisaAnswers(visaAnswers(body.answers)) : {}), ...sanitizeServiceAnswers(remoteQuestions, body.answers) };
   const questions = questionsFor(answers);
   const hasVideo = Boolean(getRebuildServiceFilm(local.id).src);
   const complete = async (payload: ReturnType<typeof turn>) => {
     if (!payload.complete) return payload;
-    const { result, ...done } = await finish(remote!, payload.answers, visa ? visaAnswers(payload.answers) : undefined);
+    // Without the service in contygo's catalog yet (Preparación de audiencia) there is nothing to evaluate there.
+    const { result, ...done } = remote ? await finish(remote, payload.answers, visa ? visaAnswers(payload.answers) : undefined) : { result: null, eligible: null, guidance: undefined };
+    if (hearing) {
+      const outcome = hearingFlow(payload.answers).outcome;
+      if (!outcome) return { ...payload, ...done };
+      // contygo said no for a reason of its own: its orientation stands, and Henry takes it on WhatsApp.
+      if (result?.eligible === false) return { ...payload, ...done, hearing: { ...outcome, advisor: true } };
+      return { ...payload, ...done, message: hearingFinish(outcome), guidance: hearingGuidance(outcome, result), hearing: outcome };
+    }
     if (asylum) {
       const verdict = asylumFlow(payload.answers, dateId).verdict;
       if (!verdict) return { ...payload, ...done };
@@ -173,6 +190,7 @@ export async function POST(req: NextRequest) {
     const scripts = visa ? visaVoiceScripts(catalog)
       : adjustment ? Array.from(new Set([...serviceVoiceScripts(local.name, questions, hasVideo), ...adjustmentVoiceScripts(usableBulletin, asked[at] ?? null)]))
       : asylum ? Array.from(new Set([...serviceVoiceScripts(local.name, questions, hasVideo), ...asylumVoiceScripts()]))
+      : hearing ? Array.from(new Set([...serviceVoiceScripts(local.name, questions, hasVideo), ...hearingVoiceScripts()]))
       : serviceVoiceScripts(local.name, questions, hasVideo);
     const greeting = { ...opening, scripts, message: opening.escalate ? opening.message : Object.keys(answers).length && question ? questionFollowup(question) : visa ? VISA_GREETING : serviceGreeting(local.name, questions, hasVideo) };
     return respond(await complete(greeting));

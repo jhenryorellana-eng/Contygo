@@ -183,6 +183,25 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     price: 500,
     plans: [{ name: "Constitución", price: 500 }, { name: "Constitución + Identidad de Marca", price: 1000 }],
   },
+  {
+    // links.usalatinoprime.com (12-10-2026): una sesión de 45 minutos con Henry Orellana, en español. Dos precios según la
+    // audiencia. En contygo se contrata con el slug de abajo y un paquete por audiencia (ver docs/preparacion-de-audiencia.md).
+    id: "preparacion-audiencia",
+    slug: "preparacion-de-audiencia",
+    name: "Preparación de Audiencia",
+    category: "corte",
+    description: "Una sesión de 45 minutos con Henry Orellana, en español, para llegar a tu audiencia sabiendo qué esperar.",
+    audience: "Personas con una audiencia en la corte de inmigración: la segunda (preliminar) o la de mérito.",
+    includes: [
+      "Sesión individual de 45 minutos con Henry Orellana, en español y desde donde estés.",
+      "Segunda audiencia: repasar qué pasa ese día, ordenar tus preguntas y practicar con calma.",
+      "Audiencia de mérito: recorrer tu historia de principio a fin y practicar las preguntas más difíciles.",
+      "Orientación sobre cuándo conviene acudir a un abogado.",
+    ],
+    exclusions: ["Henry es consultor migratorio certificado en Utah, no abogado: la sesión es orientación personal y no incluye representación legal.", "No garantiza el resultado de tu audiencia."],
+    price: 150,
+    plans: [{ name: "Segunda audiencia", price: 150 }, { name: "Tercera audiencia", price: 350 }],
+  },
 ];
 
 /**

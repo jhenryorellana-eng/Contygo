@@ -90,6 +90,10 @@ export function asylumMessage(outcome: { kind: string; track: string }): { title
   if (outcome.kind === "soon") return { title: "Tu próxima audiencia es en pocos días.", detail: "Un asesor revisa tu caso contigo por WhatsApp para empezar cuanto antes." };
   return { title: "Revisemos tu caso contigo.", detail: "Un asesor te acompaña por WhatsApp para preparar tu contrato." };
 }
+/** Preparación de audiencia sin una audiencia programada: todavía no hay sesión que preparar; Henry orienta por WhatsApp. */
+export const HEARING_ADVISOR_MESSAGE = { title: "Escríbele a Henry antes de reservar.", detail: "Esta preparación es para una audiencia ya programada en la corte de inmigración. Henry te orienta por WhatsApp sobre tu caso." };
+export const whatsappHearingMessage = (serviceName: string, ref?: string | null) =>
+  `Hola Henry, quiero orientación sobre ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
 export const whatsappAsylumMessage = (serviceName: string, ref?: string | null) =>
   `Hola, quiero que revisen mi caso para ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
 export const whatsappPrevioMessage = (serviceName: string, ref?: string | null) =>

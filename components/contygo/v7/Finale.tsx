@@ -17,7 +17,9 @@ const GUIDES = [
   { id: "apelacion", name: "Apelación", label: "Entiende tus siguientes pasos" },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, bien organizada" },
   { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia" },
-];
+  // Appears once its film is in (and its frame in public/contygo/v7/cierre-preparacion-audiencia.webp).
+  { id: "preparacion-audiencia", name: "Preparación de Audiencia", label: "Llega a tu audiencia con calma" },
+].filter(guide => Boolean(getRebuildServiceFilm(guide.id).src));
 
 function Play() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor" /></svg>;
@@ -36,7 +38,7 @@ export default function Finale({ onOpen }: { onOpen: (service: ContygoService, e
       <p className={f.caption}>La curva es tu historia. <b>El check, tu siguiente paso.</b></p>
       <h2 id="cierre-titulo" className={f.title}><span>Que tu siguiente paso</span> <em>se sienta acompañado.</em></h2>
       <p className={f.lead}>Elige tu servicio y mira su guía en vídeo. Con el precio y tu contrato a la vista, decides cuándo empezar.</p>
-      <ul className={f.guides}>{GUIDES.map(guide => {
+      <ul className={f.guides} data-count={GUIDES.length}>{GUIDES.map(guide => {
         const service = CONTYGO_SERVICES.find(item => item.id === guide.id);
         if (!service) return null;
         const film = getRebuildServiceFilm(guide.id);

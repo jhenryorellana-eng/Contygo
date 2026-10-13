@@ -20,6 +20,9 @@ type Props = { stars: Star[]; others: ContygoService[]; open: (item: ContygoServ
 const art = (id: string) => `/contygo/v8/servicio-${id}.webp`;
 const find = (id: string) => CONTYGO_SERVICES.find(item => item.id === id)!;
 const minutes = (id: string) => formatVideoDuration(getRebuildServiceFilm(id).duration);
+/** A star without its film yet opens straight on the conversation. */
+const hasFilm = (id: string) => Boolean(getRebuildServiceFilm(id).src && getRebuildServiceFilm(id).duration);
+const COUNT = ["", "El servicio", "Los dos servicios", "Los tres servicios", "Los cuatro servicios", "Los cinco servicios", "Los seis servicios"];
 
 const StarIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" /></svg>;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
@@ -45,9 +48,9 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
       <div className={s.stageHead} data-reveal data-react="title">
         <span className={s.stageEyebrow}><Laurel /> Los más solicitados <Laurel flip /></span>
         <h2>Los favoritos<br /><em>de nuestras familias.</em></h2>
-        <p>Los cuatro servicios que más nos piden. Cada uno con su guía en vídeo y su precio a la vista.</p>
+        <p>{COUNT[stars.length] ?? "Los servicios"} que más nos piden. Cada uno con su guía y su precio a la vista.</p>
       </div>
-      <div ref={row} className={s.stageRow}>{stars.map(star => {
+      <div ref={row} className={s.stageRow} data-count={stars.length}>{stars.map(star => {
         const item = find(star.id);
         return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} aria-label={label(item, true)}>
           <span className={s.spot} aria-hidden="true" />
@@ -57,7 +60,7 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
             <span className={s.rosette}><StarIcon />Más solicitado</span>
             <strong>{star.name}</strong>
             <span className={s.stageLabel}>{star.label}</span>
-            <span className={s.stageFoot}>{fromPriceLabel(prices, item.slug) ? <span className={s.stagePrice}><small>Desde</small>{fromPriceLabel(prices, item.slug)}</span> : <span />}<span className={s.stagePlay}><Play />Ver la guía · {minutes(star.id)}</span></span>
+            <span className={s.stageFoot}>{fromPriceLabel(prices, item.slug) ? <span className={s.stagePrice}><small>Desde</small>{fromPriceLabel(prices, item.slug)}</span> : <span />}<span className={s.stagePlay}><Play />{hasFilm(star.id) ? `Ver la guía · ${minutes(star.id)}` : "Empezar la guía"}</span></span>
           </span>
         </button>;
       })}</div>

@@ -52,6 +52,17 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'aaaaaaaa-0000-4000-8000-000000000002', kind: 'date', dateMode: 'future_event', minNotice: { days: 30 }, prompt: { es: '¿Cuándo es la próxima audiencia en la corte?', en: 'When is the next court hearing?' } },
   );
 }
+// Preparación de audiencia (12-10-2026): aún no existe en contygo. Así se recomienda crearla (docs/preparacion-de-audiencia.md):
+// slug preparacion-de-audiencia, un paquete por audiencia y sin preguntas de elegibilidad (las hace la landing).
+if (!catalog.services.some(service => service.slug === 'preparacion-de-audiencia')) catalog.services.push({
+  id: 'a0d1e2c3-0000-4000-8000-000000000001', slug: 'preparacion-de-audiencia', name: { es: 'Preparación de Audiencia', en: 'Hearing Preparation' },
+  plans: [
+    { id: 'a0d1e2c3-0000-4000-8000-0000000000a1', name: { es: 'Segunda audiencia', en: 'Second hearing' }, priceCents: 15000, installmentOptions: [], extraPartyPriceCents: 0 },
+    { id: 'a0d1e2c3-0000-4000-8000-0000000000a2', name: { es: 'Tercera audiencia', en: 'Third hearing' }, priceCents: 35000, installmentOptions: [], extraPartyPriceCents: 0 },
+  ],
+  eligibilityQuestions: [],
+  partyRoles: [{ roleKey: 'lead', label: { es: 'Titular', en: 'Applicant' }, cardinality: 'single', isRequired: true }],
+});
 // Reforzar Asilo como en producción (10-10-2026): la fecha de la próxima audiencia, con 5 días hábiles de antelación.
 const asylum = catalog.services.find(service => service.slug === 'reforzar-asilo');
 if (asylum && !asylum.eligibilityQuestions.length) asylum.eligibilityQuestions.push(

@@ -45,9 +45,10 @@ const destinations = {
   asilo: 'asilo-politico', 'reforzar-asilo': 'reforzar-asilo', apelacion: 'apelacion',
   'cambio-corte': 'cambio-de-corte', itin: 'itin-number', impuestos: 'taxes',
   'evaluacion-asilo': 'evaluacion-asilo', reapertura: 'reapertura-in-absentia', llc: 'llc-florida',
+  'preparacion-audiencia': 'preparacion-de-audiencia',
 };
 
-test('los doce servicios usan el cierre aprobado, su nombre, vídeo y destino propio',()=>{
+test('los trece servicios usan el cierre aprobado, su nombre, vídeo y destino propio',()=>{
   for(const service of CONTYGO_SERVICES){
     const film=getRebuildPlatformFilm(service.id);
     const markup=renderToStaticMarkup(React.createElement(SharedClosing,{autoPlay:true,service,film,displayName:'Ana'}));
@@ -72,8 +73,10 @@ test('el segundo vídeo no sustituye los vídeos introductorios aprobados',()=>{
     const intro=getRebuildServiceFilm(id),second=getRebuildPlatformFilm(id);
     assert(fs.existsSync(path.join(root,'public',intro.src)));
     assert.notEqual(intro.src,second.src);
-    // Visa Juvenil y Reforzamiento de Asilo tienen su segundo vídeo final; Apelación aún usa el provisional.
-    assert.equal(Boolean(second.provisional),id==='apelacion',id);
+    // Los tres tienen ya su segundo vídeo final (el de Apelación llegó el 12-10-2026).
+    assert.equal(second.provisional,undefined,id);
+    assert(fs.existsSync(path.join(root,'public',second.src)),id);
+    assert(fs.existsSync(path.join(root,'public',second.poster)),id);
   }
 });
 
@@ -85,7 +88,7 @@ test('Visa Juvenil usa su segundo vídeo final, con su propio póster',()=>{
   assert.notEqual(second.poster,getRebuildServiceFilm('visa-juvenil').poster);
 });
 
-test('los doce servicios públicos enlazan a su ficha específica en ContyGo', () => {
+test('los trece servicios públicos enlazan a su ficha específica en ContyGo', () => {
   assert.deepEqual(CONTYGO_SERVICES.map(service => service.id).sort(), Object.keys(destinations).sort());
   for (const [id, slug] of Object.entries(destinations)) {
     assert.equal(getContygoServiceUrl(id), `https://contygo.app/servicios/${slug}`, id);
@@ -160,7 +163,7 @@ test('un servicio desconocido o un resultado no calificado nunca produce un dest
   assert.equal(getSelfServiceUrl('i-485', 'contact'), null);
 });
 
-test('los doce servicios pasan por presentación antes de enlazar al contrato correcto, sin cuestionario', () => {
+test('los trece servicios pasan por presentación antes de enlazar al contrato correcto, sin cuestionario', () => {
   for (const service of CONTYGO_SERVICES) {
     const markup = renderToStaticMarkup(React.createElement(ServicePresentation, { service }));
     const presentation = getServicePresentation(service.id);

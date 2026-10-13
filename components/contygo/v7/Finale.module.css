@@ -66,7 +66,12 @@
 .guides li{transition-property:opacity,translate,rotate;transition-duration:.8s,1s,1.1s;transition-timing-function:ease,var(--unfold),var(--unfold)}
 
 /* Pantallas medianas: las cuatro guías, dos por fila y apaisadas. */
-@media(max-width:1100px) and (min-width:761px){.guides{grid-template-columns:1fr 1fr;max-width:860px}.guide{aspect-ratio:5/4}}
+/* Five guides: three above, two centred below. */
+.guides[data-count="5"]{grid-template-columns:repeat(6,minmax(0,1fr))}
+.guides[data-count="5"]>li{grid-column:span 2}
+.guides[data-count="5"]>li:nth-child(4){grid-column:2 / span 2}
+.guides li:nth-child(5){transition-delay:1.53s}
+@media(max-width:1100px) and (min-width:761px){.guides,.guides[data-count="5"]{grid-template-columns:1fr 1fr;max-width:860px}.guides[data-count="5"]>li,.guides[data-count="5"]>li:nth-child(4){grid-column:auto}.guides[data-count="5"]>li:nth-child(5){grid-column:1 / -1;justify-self:center;width:calc(50% - 12px)}.guide{aspect-ratio:5/4}}
 @media(max-width:760px){
   .finale{padding:28px 10px 10px}
   .stage{padding:56px 16px 44px;border-radius:28px}

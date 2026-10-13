@@ -24,7 +24,7 @@ function TouchHand(){return <svg viewBox="0 0 56 72" fill="none" aria-hidden="tr
 /** onContract: abre la ficha de contratación del recorrido; sin ella, el botón sigue enlazando a ContyGo. */
 /** priority: el resultado de la fecha de prioridad (Ajuste de estatus); asylum: el del plazo de pruebas (Reforzamiento
  *  de Asilo). Cambian la invitación tras el vídeo. */
-type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null};
+type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null;hearing?:{kind:string;advisor:boolean}|null};
 export default function PaperPlaneClosing(props:ClosingProps){
   return props.preparedVoice?<ClosingScene {...props} voice={props.preparedVoice}/>:<LocalClosing {...props}/>;
 }
@@ -32,14 +32,14 @@ function LocalClosing(props:ClosingProps){
   const voice=useVisaVoice();
   return <ClosingScene {...props} voice={voice}/>;
 }
-function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum}:{voice:ClosingVoice}&ClosingProps){
+function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum,hearing}:{voice:ClosingVoice}&ClosingProps){
   const [serviceId,setServiceId]=useState(providedService?.id??"visa-juvenil"),[name,setName]=useState(closingName(displayName)),[take,setTake]=useState(0);
   const [phase,setPhase]=useState<"watch"|"flying"|"invitation">("watch"),[blocked,setBlocked]=useState(false),[failed,setFailed]=useState(false);
   const [calling,setCalling]=useState(false),[ctaInvited,setCtaInvited]=useState(false);
   const scene=useRef<HTMLDivElement>(null),frame=useRef<HTMLDivElement>(null),video=useRef<HTMLVideoElement>(null),plane=useRef<HTMLDivElement>(null),symbol=useRef<HTMLDivElement>(null),brand=useRef<HTMLDivElement>(null),cta=useRef<HTMLAnchorElement>(null),title=useRef<HTMLHeadingElement>(null);
   const context=useRef<gsap.Context|null>(null),flying=useRef(false),voiceRef=useRef(voice);voiceRef.current=voice;
   const service=providedService??options.find(item=>item.id===serviceId)!;
-  const variant=closingVariant(service.id,priority,asylum),film=providedFilm??getRebuildPlatformFilm(service.id),action=closingAction(service.id,variant);
+  const variant=closingVariant(service.id,priority,asylum,hearing),film=providedFilm??getRebuildPlatformFilm(service.id),action=closingAction(service.id,variant);
   const script=closingScript(closingName(name),service.id,variant),scriptRef=useRef(script);scriptRef.current=script;
   const nameWords=wordCount(closingName(name)),totalWords=wordCount(script);
   // Follow the real audio clock. Word boundaries are proportional estimates:

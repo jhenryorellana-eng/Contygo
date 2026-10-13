@@ -15,12 +15,13 @@ import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
 import { normalizeAnswer, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
 import { missingQuestions, type ContractQuestion } from "@/lib/contygo-api/variants";
-import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHelpMessage, whatsappPrevioMessage, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, HEARING_ADVISOR_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
 import type { PriorityOutcome } from "@/lib/agent/adjustment-intake";
 import type { AsylumOutcome } from "@/lib/agent/asylum-intake";
+import type { HearingOutcome } from "@/lib/agent/hearing-intake";
 import { getServiceGuideUrl } from "@/lib/contygo";
 import {
   PAYMENT_NOTE_NO_OPTIONS, PAYMENT_NOTE_NO_ROW, breakdownForPlan, defaultPaymentOption, extraPartiesNote, formatMoney, installmentIdForRequest,
@@ -131,6 +132,12 @@ function phoneLabel(value: string) {
   return `${(COUNTRIES.find(c => c.dial === country.dial) ?? country).flag} +${country.dial} ${shown}`;
 }
 
+/** Preparación de audiencia: el paquete de la audiencia que dio la conversación (por su nombre en contygo), si lo hay. */
+const hearingPlan = (plans: PublicServiceView["plans"], kind: HearingOutcome["kind"] | undefined) => {
+  const words = kind === "tercera" ? /tercera|merito/ : kind === "segunda" ? /segunda|preliminar/ : null;
+  return words ? plans.find(plan => words.test(text(plan.name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) : undefined;
+};
+
 /** Sin la fecha a mano falta la respuesta del boletín: el contrato en línea no puede salir aunque contygo no diga que no. */
 const previoWithAdvisor = (priority: PriorityOutcome | undefined, eligible: boolean | null | undefined) =>
   Boolean(priority?.previo && (eligible === false || priority.status === "unknown"));
@@ -147,12 +154,14 @@ type Props = {
   priority?: PriorityOutcome;
   /** Reforzamiento de Asilo: plazo vencido, sin fecha o audiencia en pocos días → un asesor (y la Apelación si toca). */
   asylum?: AsylumOutcome;
+  /** Preparación de audiencia: la preparación que le toca (elige su paquete) o, sin audiencia, WhatsApp con Henry. */
+  hearing?: HearingOutcome;
   voice?: ClosingVoice;
   /** Visa Juvenil: back to the Básico / Premium picker. */
   onChangeService?: () => void;
 };
 
-export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, voice: sharedVoice, onChangeService }: Props) {
+export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, hearing, voice: sharedVoice, onChangeService }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
   const [data, setData] = useState<ReadyData | null>(null);
@@ -182,8 +191,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const reference = useRef("");
   const pending = useRef<Pending | null>(null);
   const resendKey = useRef<string | null>(null);
-  const journey = useRef({ displayName, phone, answers, eligible, externalRef, priority, asylum });
-  journey.current = { displayName, phone, answers, eligible, externalRef, priority, asylum };
+  const journey = useRef({ displayName, phone, answers, eligible, externalRef, priority, asylum, hearing });
+  journey.current = { displayName, phone, answers, eligible, externalRef, priority, asylum, hearing };
   const personKey = useRef(0);
   const root = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -195,6 +204,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     setStage("loading"); setNotice(null);
     try {
       const { status, data: body } = await postJson("/api/contratar/servicio", { serviceId: service.id });
+      // Not in contygo's catalog (yet): not a connection problem, the service is not contracted online.
+      if (status === 404 && body?.error === "service_not_contractable") { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
       if (status !== 200 || !body?.ok) throw new Error(body?.error ?? String(status));
       const answer = body as unknown as ServiceData;
       const from = journey.current;
@@ -217,6 +228,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       if (previoWithAdvisor(from.priority, from.eligible)) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...previoMessage(from.priority!.status === "unknown" ? "unknown" : from.priority!.near ? "near" : "far") }); return; }
       // Asilo con el plazo vencido, sin fecha o con la audiencia en pocos días: el contrato lo prepara un asesor, aunque contygo lo acepte.
       if (from.asylum?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...asylumMessage(from.asylum) }); return; }
+      // Preparación de audiencia sin una audiencia programada: todavía no hay sesión que preparar.
+      if (from.hearing?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...HEARING_ADVISOR_MESSAGE }); return; }
       if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
       // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
       if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
@@ -236,7 +249,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setForm({ ...mine.form, ...reconcileSelection(next.service.plans, mine.form.planId, mine.form.installmentId), phone: usable }); setPersons(mine.persons); setConsent(mine.consent);
         personKey.current = Math.max(personKey.current, ...mine.persons.map(person => person.key));
       } else {
-        const plan = next.service.plans[0];
+        const plan = hearingPlan(next.service.plans, from.hearing?.kind) ?? next.service.plans[0];
         const name = from.displayName.trim();
         // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
         const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
@@ -510,8 +523,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     </label>;
   // El contrato previo (fecha de prioridad sin llegar) lo pide con su propio mensaje: la persona no está atascada, está reservando.
   const previo = previoWithAdvisor(priority, eligible);
-  const advisor = previo || Boolean(asylum?.advisor);
-  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor ? whatsappAsylumMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
+  const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor);
+  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
   const appealUrl = asylum?.appeal ? getServiceGuideUrl("apelacion") : null;
   /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
   function retryFromBlocked() {

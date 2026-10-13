@@ -17,6 +17,7 @@ import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import type { IntakeQuestion, JourneyGuidance, ServiceAnswers } from "@/lib/agent/service-intake";
 import type { PriorityOutcome } from "@/lib/agent/adjustment-intake";
 import type { AsylumOutcome } from "@/lib/agent/asylum-intake";
+import type { HearingOutcome } from "@/lib/agent/hearing-intake";
 import { newExternalRef, pageAttribution } from "@/lib/contygo-api/browser";
 import { useLeadCaptcha } from "./useLeadCaptcha";
 import shared from "../rebuild/ServiceIntroFilm.module.css";
@@ -28,8 +29,8 @@ type Message = { id: number; role: "agent" | "user"; text: string };
 // Visa Juvenil antepone su entrevista original (claves «visa.»), que el servidor mezcla con las del catálogo.
 // La conversación vive en este navegador (guía §2 bis): externalRef la identifica ante contygo (lead y alta).
 // Ajuste de estatus: priority dice si la fecha de prioridad está vigente (cierre del segundo vídeo y ficha del contrato).
-export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome };
-type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome };
+export type VisaIntakeSession = { watched: boolean; externalRef?: string; displayName?: string; phone?: string; answers: ServiceAnswers; messages: Message[]; complete: boolean; field: string | null; question?: IntakeQuestion | null; total?: number; guidance?: JourneyGuidance; eligible?: boolean | null; source?: "gemini" | "guided"; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome; hearing?: HearingOutcome };
+type IntakeTurn = { ok: true; answers: ServiceAnswers; field: string | null; question: IntakeQuestion | null; total: number; complete: boolean; message: string; source?: "gemini" | "guided"; guidance?: JourneyGuidance; eligible?: boolean | null; scripts?: string[]; escalate?: boolean; unavailableOnline?: boolean; priority?: PriorityOutcome; asylum?: AsylumOutcome; hearing?: HearingOutcome };
 
 /** Hint under a future_event date. The shape of minNotice is not documented yet, so it is read defensively: no hint is better than a wrong one. */
 function noticeHint(minNotice: IntakeQuestion["minNotice"]): string | null {
@@ -150,7 +151,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       // The answers, not model prose, decide whether the next video is available.
       const complete = data.complete && data.field === null;
       const spokenMessage = data.message;
-      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline ?? snapshot.unavailableOnline, priority: data.priority ?? snapshot.priority, asylum: data.asylum ?? snapshot.asylum };
+      const next: VisaIntakeSession = { ...snapshot, watched: true, answers: data.answers, messages: [...snapshot.messages, { id, role: "agent", text: spokenMessage }], complete, field: complete ? null : data.field, question: data.question, total: data.total, guidance: data.guidance ?? snapshot.guidance, eligible: data.eligible ?? snapshot.eligible, source: data.source, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline ?? snapshot.unavailableOnline, priority: data.priority ?? snapshot.priority, asylum: data.asylum ?? snapshot.asylum, hearing: data.hearing ?? snapshot.hearing };
       if(complete){heldMessages.current=next.messages.slice(-1);heldField.current=null;}
       // Reveal as soon as the response arrives. No extra overlay or exit wait.
       updateSession(next); setSpeechId(id); setDraft("");
@@ -179,7 +180,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       const complete = data.complete && data.field === null;
       const messages: Message[] = [{ id, role: "agent", text: data.message }];
       if (complete) { heldMessages.current = messages; heldField.current = null; }
-      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline, priority: data.priority, asylum: data.asylum });
+      updateSession({ ...sessionRef.current, watched: true, answers: data.answers, messages, field: complete ? null : data.field, question: data.question, total: data.total, complete, guidance: data.guidance, eligible: data.eligible ?? null, escalate: Boolean(data.escalate), unavailableOnline: data.unavailableOnline, priority: data.priority, asylum: data.asylum, hearing: data.hearing });
       setSpeechId(id);
       void voiceRef.current.speak(data.message);
     } catch {

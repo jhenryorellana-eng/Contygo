@@ -31,6 +31,7 @@ const nextConfig = {
       "visa-juvenil": ["visajuvenil", "sijs", "visa-juvenil-basico"],
       "reapertura-in-absentia": ["reapertura"],
       "llc-florida": ["llc"],
+      "preparacion-de-audiencia": ["preparacion-audiencia", "preparacion-audiencias", "audiencia"],
       "peticion-i-360": ["i-360", "i360", "peticioni360"],
       "ajuste-de-estatus": ["i-485", "i485", "ajustedeestatus", "ajuste-estatus"],
       "asilo-politico": ["asilo", "asilopolitico"],

@@ -19,6 +19,13 @@ export const APELACION_VIDEO = {
   duration: 109.83333333333333,
 };
 
+/** Second Apelación film (the initial package and the later legal brief, before the contract), compressed for on-demand playback. */
+export const APELACION_VIDEO_2 = {
+  src: "/contygo/films/apelacion-video2-v1-720p.mp4",
+  poster: "/contygo/films/apelacion-video2-v1-poster.webp",
+  duration: 383.3333333333333,
+};
+
 export const REFORZAMIENTO_ASILO_VIDEO = {
   src: "/contygo/films/reforzamiento-asilo-v1-720p.mp4",
   poster: "/contygo/films/reforzamiento-asilo-v1-poster.webp",

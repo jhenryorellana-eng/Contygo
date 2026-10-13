@@ -74,3 +74,16 @@ Se usa el máster de AE, `output/contygo-reforzamiento-asilo-video2/entrega-ae/C
 - Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 8987 fotogramas.
 - El vídeo termina diciendo «Toca "Revisar mi contrato"». El botón del cierre dice eso mismo cuando se va a contratar.
 - Con el plazo de pruebas vencido, el botón sigue siendo «Hablar con un asesor» (`closingSpeech.ts`).
+
+## Apelación · vídeo 2 · integración 2026-10-12
+
+Se usa la entrega `ContyGo-Apelacion-2-Web-720p.mp4` del dueño (1280 × 720, H.264, 138.45 MB) como segundo vídeo de `apelacion`. Sustituye al clip provisional: con él, los cuatro servicios destacados con vídeo (Visa Juvenil, Apelación, Reforzamiento de Asilo y Ajuste de Estatus) tienen sus dos vídeos finales. `APELACION_VIDEO_2`, en `lib/contygo-presentation.ts`, centraliza el archivo, la portada y la duración.
+
+| Servicio / ID | Archivo en `public/contygo/films/` | Duración | Peso web |
+| --- | --- | --- | --- |
+| Apelación (vídeo 2) / `apelacion` | `apelacion-video2-v1-720p.mp4` | 6:23 (383.333 s, 9200 fotogramas) | 60.91 MB |
+
+- La codificación es la misma que la de los demás vídeos: H.264 1280 × 720 a 24 fps, preset slow, CRF 24, 1800 kbit/s como máximo, Rec.709. Audio AAC a 96 kbit/s. MP4 con faststart.
+- La portada es el fotograma del segundo 7, a 960 × 540.
+- Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 9200 fotogramas.
+- El vídeo presenta el paquete inicial y el escrito jurídico posterior. El botón del cierre es el general, «Revisar mi contrato».

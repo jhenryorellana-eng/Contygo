@@ -67,8 +67,13 @@
 /* As the thread passes, each drawing rises into place. */
 :global(main[data-thread-ready=true]) .shelfItem:not([data-lit=true]) .shelfArt img{opacity:.25;transform:translateY(22px) scale(.92)}
 
-/* Cuatro favoritos: en pantallas medianas, dos por fila. */
-@media(max-width:1100px){.stageRow{grid-template-columns:1fr 1fr;row-gap:56px}}
+/* Cinco favoritos: tres arriba y dos centrados debajo. */
+.stageRow[data-count="5"]{grid-template-columns:repeat(6,minmax(0,1fr));row-gap:56px}
+.stageRow[data-count="5"]>*{grid-column:span 2}
+.stageRow[data-count="5"]>:nth-child(4){grid-column:2 / span 2}
+.pedestalCard:nth-child(5) .float>span{animation-delay:-6s}
+/* Cuatro favoritos: en pantallas medianas, dos por fila (con cinco, el último centrado). */
+@media(max-width:1100px){.stageRow,.stageRow[data-count="5"]{grid-template-columns:1fr 1fr;row-gap:56px}.stageRow[data-count="5"]>*,.stageRow[data-count="5"]>:nth-child(4){grid-column:auto}.stageRow[data-count="5"]>:nth-child(5){grid-column:1 / -1;justify-self:center;width:calc(50% - 15px)}}
 @media(max-width:1000px){.shelf{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){
   .stage{margin:-72px -22px 0;padding:72px 22px 18px}
@@ -76,7 +81,7 @@
   .stageHead p{font-size:17px}
   .stageRow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-inline:-22px;padding:6px 22px 16px 36px;scroll-padding-left:36px}
   .stageRow::-webkit-scrollbar{display:none}
-  .pedestalCard{flex:0 0 80%;scroll-snap-align:start}
+  .pedestalCard,.stageRow[data-count="5"]>:nth-child(5){flex:0 0 80%;width:auto;scroll-snap-align:start}
   .spot{height:360px;top:-50px}
   .float{width:80%}
   .listHead{display:block;margin:64px 0 22px}.listHead h3{margin-bottom:6px}

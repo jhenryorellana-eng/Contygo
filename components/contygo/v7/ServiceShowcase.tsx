@@ -4,7 +4,8 @@
    Los cuatro más solicitados suben a un escenario oscuro: foco de luz, la escultura flotando sobre un
    pedestal de papel y laureles de «favorito». Debajo, todo el catálogo directo, sin categorías: el
    color del fondo de cada dibujo agrupa los trámites sin obligar a elegir.
-   Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla. */
+   Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla.
+   En el celular los favoritos avanzan solos y llevan flechas (StarCarousel). */
 import Image from "next/image";
 import { useRef } from "react";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
@@ -12,6 +13,7 @@ import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-clien
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import ThreadRail from "./ThreadRail";
+import StarCarousel from "./StarCarousel";
 import s from "./ServiceShowcase.module.css";
 
 export type Star = { id: string; name: string; label: string; copy: string };
@@ -65,6 +67,7 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
         </button>;
       })}</div>
       <ThreadRail track={row} labels={stars.map(star => star.name)} />
+      <StarCarousel track={row} count={stars.length} />
     </div>
     <div className={s.listHead} data-reveal><h3>Todo nuestro <em>catálogo.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
     <div className={s.shelf}>{others.map(item => <button key={item.id} type="button" className={s.shelfItem} data-family={item.category} data-react="tile" onClick={e => open(item, e.currentTarget)} aria-label={label(item)}>

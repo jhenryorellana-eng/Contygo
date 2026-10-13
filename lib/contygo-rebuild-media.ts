@@ -1,5 +1,5 @@
 import { CONTYGO_SERVICES, type ContygoCategory } from "./contygo-catalog";
-import { AJUSTE_ESTATUS_VIDEO, AJUSTE_ESTATUS_VIDEO_2, APELACION_VIDEO, APELACION_VIDEO_2, REFORZAMIENTO_ASILO_VIDEO, REFORZAMIENTO_ASILO_VIDEO_2, VISA_JUVENIL_VIDEO, VISA_JUVENIL_VIDEO_2, getServicePresentation } from "./contygo-presentation";
+import { AJUSTE_ESTATUS_VIDEO, AJUSTE_ESTATUS_VIDEO_2, APELACION_VIDEO, APELACION_VIDEO_2, PREPARACION_AUDIENCIA_VIDEO, PREPARACION_AUDIENCIA_VIDEO_2, REFORZAMIENTO_ASILO_VIDEO, REFORZAMIENTO_ASILO_VIDEO_2, VISA_JUVENIL_VIDEO, VISA_JUVENIL_VIDEO_2, getServicePresentation } from "./contygo-presentation";
 
 /** New films only; retained category artwork remains until its visual pilot is ready.
  * null means the owner has not supplied the Grok export. */
@@ -23,6 +23,7 @@ export const REBUILD_SERVICE_FILMS: Record<string, string | null> = {
   "apelacion": APELACION_VIDEO.src,
   "reforzar-asilo": REFORZAMIENTO_ASILO_VIDEO.src,
   "i-485": AJUSTE_ESTATUS_VIDEO.src,
+  "preparacion-audiencia": PREPARACION_AUDIENCIA_VIDEO.src,
 };
 export const REBUILD_PLATFORM_FILMS: Record<string, string | null> = {
   ...Object.fromEntries(CONTYGO_SERVICES.map(s => [s.id, null])),
@@ -30,6 +31,7 @@ export const REBUILD_PLATFORM_FILMS: Record<string, string | null> = {
   "i-485": AJUSTE_ESTATUS_VIDEO_2.src,
   "reforzar-asilo": REFORZAMIENTO_ASILO_VIDEO_2.src,
   "apelacion": APELACION_VIDEO_2.src,
+  "preparacion-audiencia": PREPARACION_AUDIENCIA_VIDEO_2.src,
 };
 /** Shared app demonstration (6 s) until each service's final second film is supplied. */
 export const PROVISIONAL_PLATFORM_FILM: RebuildFilm = { src: "/contygo/hero-video-v2/01-elige-desktop.mp4", poster: "/contygo/hero-video-v2/01-elige-desktop.jpg", captions: "/contygo/hero-video-v2/01-elige.es.vtt", onScreenText: true, duration: 6, provisional: true };
@@ -38,6 +40,7 @@ export function getRebuildServiceFilm(id: string): RebuildFilm {
   if (id === "apelacion") return { ...APELACION_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
   if (id === "reforzar-asilo") return { ...REFORZAMIENTO_ASILO_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
   if (id === "i-485") return { ...AJUSTE_ESTATUS_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
+  if (id === "preparacion-audiencia") return { ...PREPARACION_AUDIENCIA_VIDEO, src: REBUILD_SERVICE_FILMS[id] };
   const service = CONTYGO_SERVICES.find(s => s.id === id);
   const presentation = getServicePresentation(id);
   return { src: REBUILD_SERVICE_FILMS[id] ?? presentation?.src ?? null, poster: presentation?.poster ?? REBUILD_CATEGORIES[service?.category ?? "familia"].poster, duration: 0 };
@@ -47,6 +50,7 @@ export function getRebuildPlatformFilm(id: string): RebuildFilm {
   if (id === "i-485") return { ...AJUSTE_ESTATUS_VIDEO_2, src: REBUILD_PLATFORM_FILMS[id] };
   if (id === "reforzar-asilo") return { ...REFORZAMIENTO_ASILO_VIDEO_2, src: REBUILD_PLATFORM_FILMS[id] };
   if (id === "apelacion") return { ...APELACION_VIDEO_2, src: REBUILD_PLATFORM_FILMS[id] };
+  if (id === "preparacion-audiencia") return { ...PREPARACION_AUDIENCIA_VIDEO_2, src: REBUILD_PLATFORM_FILMS[id] };
   const src=REBUILD_PLATFORM_FILMS[id];
   if(!src||src===PROVISIONAL_PLATFORM_FILM.src)return PROVISIONAL_PLATFORM_FILM;
   return {src,poster:getRebuildServiceFilm(id).poster,duration:0};

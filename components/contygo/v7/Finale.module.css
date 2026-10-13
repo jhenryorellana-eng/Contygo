@@ -78,17 +78,19 @@
   .caption{font-size:15px;margin-bottom:20px!important}
   .stage .title{font-size:clamp(34px,9.4vw,46px)}
   .lead{font-size:17px;margin-bottom:30px!important}
-  /* La primera y la última guía a lo ancho; las dos del medio, lado a lado. */
-  .guides{grid-template-columns:1fr 1fr;gap:12px}
-  .guides li:is(:first-child,:last-child){grid-column:1 / -1}
-  .guides li:is(:first-child,:last-child) .guide{aspect-ratio:16/12}
+  /* La primera guía a lo ancho y las demás de dos en dos; la última, a lo ancho si se queda sola
+     (con cuatro: 1 · 2+3 · 4; con cinco: 1 · 2+3 · 4+5). */
+  .guides,.guides[data-count="5"]{grid-template-columns:1fr 1fr;gap:12px}
+  .guides[data-count="5"]>li,.guides[data-count="5"]>li:nth-child(4){grid-column:auto}
+  .guides li:is(:first-child,:last-child:nth-child(even)){grid-column:1 / -1}
+  .guides li:is(:first-child,:last-child:nth-child(even)) .guide{aspect-ratio:16/12}
   .guide{border-radius:20px;aspect-ratio:3/4.1}
-  .guides li:not(:first-child,:last-child) .text{left:14px;right:14px;bottom:70px}
-  .guides li:not(:first-child,:last-child) .text small{display:none}
-  .guides li:not(:first-child,:last-child) .text strong{font-size:18px}
-  .guides li:not(:first-child,:last-child) .text>span{font-size:14px}
-  .guides li:not(:first-child,:last-child) .play{left:14px;right:auto;bottom:14px;width:46px;height:46px}
-  .guides li:not(:first-child,:last-child) .tagLong{display:none}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .text{left:14px;right:14px;bottom:70px}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .text small{display:none}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .text strong{font-size:18px}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .text>span{font-size:14px}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .play{left:14px;right:auto;bottom:14px;width:46px;height:46px}
+  .guides li:not(:first-child,:last-child:nth-child(even)) .tagLong{display:none}
   .tag{top:10px;left:10px;font-size:12px;padding:7px 11px 7px 9px}
   .all{margin-top:28px;font-size:15px}
 }

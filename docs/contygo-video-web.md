@@ -87,3 +87,26 @@ Se usa la entrega `ContyGo-Apelacion-2-Web-720p.mp4` del dueño (1280 × 720, H.
 - La portada es el fotograma del segundo 7, a 960 × 540.
 - Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 9200 fotogramas.
 - El vídeo presenta el paquete inicial y el escrito jurídico posterior. El botón del cierre es el general, «Revisar mi contrato».
+
+## Preparación de Audiencia · vídeo 1 · integración 2026-10-12
+
+Se usa la entrega `ContyGo-Preparacion-Audiencia-1-Corregido-Web-720p.mp4` del dueño (1280 × 720, H.264, 26.27 MB) como primer vídeo de `preparacion-audiencia`. `PREPARACION_AUDIENCIA_VIDEO`, en `lib/contygo-presentation.ts`, centraliza el archivo, la portada y la duración.
+
+| Servicio / ID | Archivo en `public/contygo/films/` | Duración | Peso web |
+| --- | --- | --- | --- |
+| Preparación de Audiencia / `preparacion-audiencia` | `preparacion-audiencia-v1-720p.mp4` | 1:20 (79.583 s, 1910 fotogramas) | 11.31 MB |
+
+- La codificación es la misma que la de los demás vídeos.
+- La portada es el fotograma del segundo 7, a 960 × 540. Tarjeta del cierre de la portada: `public/contygo/v7/cierre-preparacion-audiencia.webp`, el mismo fotograma a 1280 × 720 (la pareja con la notificación de audiencia). La vista previa de WhatsApp sale de esa tarjeta.
+- Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 1910 fotogramas.
+
+## Preparación de Audiencia · vídeo 2 · integración 2026-10-12
+
+Se usa la entrega `ContyGo-Preparacion-Audiencia-2-Web-720p.mp4` del dueño (1280 × 720, H.264, 49.51 MB) como segundo vídeo de `preparacion-audiencia`. Sustituye al clip provisional. `PREPARACION_AUDIENCIA_VIDEO_2`, en `lib/contygo-presentation.ts`, centraliza el archivo, la portada y la duración.
+
+| Servicio / ID | Archivo en `public/contygo/films/` | Duración | Peso web |
+| --- | --- | --- | --- |
+| Preparación de Audiencia (vídeo 2) / `preparacion-audiencia` | `preparacion-audiencia-video2-v1-720p.mp4` | 2:29 (149.083 s, 3578 fotogramas) | 21.54 MB |
+
+- La codificación es la misma que la de los demás vídeos. La portada es el fotograma del segundo 7, a 960 × 540.
+- Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 3578 fotogramas.

@@ -17,7 +17,7 @@ const GUIDES = [
   { id: "apelacion", name: "Apelación", label: "Entiende tus siguientes pasos" },
   { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, bien organizada" },
   { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia" },
-  // Appears once its film is in (and its frame in public/contygo/v7/cierre-preparacion-audiencia.webp).
+  // Since its first film arrived (12-10-2026); frame in public/contygo/v7/cierre-preparacion-audiencia.webp.
   { id: "preparacion-audiencia", name: "Preparación de Audiencia", label: "Llega a tu audiencia con calma" },
 ].filter(guide => Boolean(getRebuildServiceFilm(guide.id).src));
 

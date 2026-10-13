@@ -28,6 +28,18 @@ test('es un servicio público y destacado de la corte, con un paquete por audien
   assert.deepEqual(service.plans, [{ name: 'Segunda audiencia', price: 150 }, { name: 'Tercera audiencia', price: 350 }]);
 });
 
+test('sus dos vídeos ya están (portadas, tarjeta del cierre y vista previa de WhatsApp)', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const media = require('../lib/contygo-rebuild-media.ts');
+  const first = media.getRebuildServiceFilm(hearing.HEARING_SERVICE);
+  assert.deepEqual([first.src, first.duration], ['/contygo/films/preparacion-audiencia-v1-720p.mp4', 79.58333333333333]);
+  for (const file of [first.src, first.poster, '/contygo/v7/cierre-preparacion-audiencia.webp', '/contygo/compartir/preparacion-audiencia.jpg']) assert.ok(fs.existsSync(path.join(__dirname, '..', 'public', file)), file);
+  const second = media.getRebuildPlatformFilm(hearing.HEARING_SERVICE);
+  assert.deepEqual([second.src, second.duration, second.provisional], ['/contygo/films/preparacion-audiencia-video2-v1-720p.mp4', 149.08333333333334, undefined]);
+  for (const file of [second.src, second.poster]) assert.ok(fs.existsSync(path.join(__dirname, '..', 'public', file)), file);
+});
+
 test('las tres preguntas: sin audiencia no se pregunta más; la de mérito decide la preparación', () => {
   assert.deepEqual(hearing.hearingFlow({}, TODAY).questions.map(question => question.id), [hearing.HAS_FIELD, hearing.DATE_FIELD, hearing.MERIT_FIELD]);
   const none = hearing.hearingFlow({ [hearing.HAS_FIELD]: false }, TODAY);

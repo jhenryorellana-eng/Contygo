@@ -29,14 +29,11 @@ Las tres preguntas que aprobó el dueño (`lib/agent/hearing-intake.ts`):
 
 El criterio es el de [la página de la asesoría](https://links.usalatinoprime.com/asesoria): «La de tu próxima cita en la corte. Si es una audiencia preliminar, la segunda; si es tu audiencia de mérito, la tercera.» Al llegar al contrato, el paquete recomendado ya está elegido y la persona puede cambiarlo. Las respuestas llevan claves `audiencia.*` y no salen hacia contygo.
 
-## Lo que falta: los vídeos
+## Los vídeos
 
-Hoy el recorrido abre con «La presentación en vídeo estará disponible próximamente» y va directo a las preguntas. El segundo vídeo es el clip provisional compartido de 6 s. Cuando lleguen los vídeos:
+**Vídeo 1 (12-10-2026).** La entrega del dueño, `ContyGo-Preparacion-Audiencia-1-Corregido-Web-720p.mp4` (26.27 MB), comprimida como los demás (`docs/contygo-video-web.md`): `public/contygo/films/preparacion-audiencia-v1-720p.mp4`, 1:20 (79.583 s, 1910 fotogramas), 11.31 MB. `PREPARACION_AUDIENCIA_VIDEO`, en `lib/contygo-presentation.ts`, centraliza el archivo, la portada y la duración. Con él, la vitrina dice «Ver la guía · 1:20» y el servicio aparece en el cierre de la página («Guía en vídeo»), con el fotograma del segundo 7 (`public/contygo/v7/cierre-preparacion-audiencia.webp`). La vista previa de WhatsApp usa ese mismo fotograma.
 
-1. Comprimirlos como los demás (`docs/contygo-video-web.md`) y dejarlos en `public/contygo/films/`.
-2. Vídeo 1: añadir la constante en `lib/contygo-presentation.ts` y su entrada en `REBUILD_SERVICE_FILMS` (`lib/contygo-rebuild-media.ts`). Vídeo 2: su entrada en `REBUILD_PLATFORM_FILMS` y en `getRebuildPlatformFilm`, como Visa Juvenil, Ajuste y Reforzamiento.
-3. Un fotograma del vídeo 1 en `public/contygo/v7/cierre-preparacion-audiencia.webp`. Con el vídeo y el fotograma, el servicio aparece solo en el cierre de la página («Guía en vídeo»). La vitrina muestra entonces «Ver la guía · duración» en vez de «Empezar la guía».
-4. Volver a generar su vista previa de WhatsApp con el fotograma (`scripts/build-share-previews.mjs`).
+**Vídeo 2 (12-10-2026).** La entrega `ContyGo-Preparacion-Audiencia-2-Web-720p.mp4` (49.51 MB), comprimida igual: `public/contygo/films/preparacion-audiencia-video2-v1-720p.mp4`, 2:29 (149.083 s, 3578 fotogramas), 21.54 MB. `PREPARACION_AUDIENCIA_VIDEO_2` sustituye al clip provisional. El vídeo presenta las dos sesiones con Henry y sus precios ($150 y $350, 45 minutos), el pago con tarjeta o Zelle y el cambio de horario por WhatsApp. El botón del cierre es «Revisar mi contrato» (o «Hablar con Henry» sin audiencia).
 
 **Ilustración provisional.** La vitrina usa la escultura de papel de «Corte» (`public/contygo/v8/servicio-preparacion-audiencia.webp`, copia de `categoria-corte.webp`) hasta que haya una propia del sistema V8.
 

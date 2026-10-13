@@ -52,6 +52,20 @@ export const AJUSTE_ESTATUS_VIDEO_2 = {
   duration: 392.625,
 };
 
+/** First Preparación de audiencia film (what each hearing is and how the session with Henry helps), compressed for on-demand playback. */
+export const PREPARACION_AUDIENCIA_VIDEO = {
+  src: "/contygo/films/preparacion-audiencia-v1-720p.mp4",
+  poster: "/contygo/films/preparacion-audiencia-v1-poster.webp",
+  duration: 79.58333333333333,
+};
+
+/** Second Preparación de audiencia film (the two sessions with Henry, their prices and how to book), compressed for on-demand playback. */
+export const PREPARACION_AUDIENCIA_VIDEO_2 = {
+  src: "/contygo/films/preparacion-audiencia-video2-v1-720p.mp4",
+  poster: "/contygo/films/preparacion-audiencia-video2-v1-poster.webp",
+  duration: 149.08333333333334,
+};
+
 export function formatVideoDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.round(seconds) % 60).padStart(2, "0")}`;
 }
@@ -65,6 +79,7 @@ const PRESENTATIONS: Record<string, { src: string; poster?: string; caption: str
   "asilo": { src: "/videos/asilo-politico.mp4", caption: "Presentación de Asilo Político." },
   "reforzar-asilo": { ...REFORZAMIENTO_ASILO_VIDEO, caption: "Conoce el Reforzamiento de Asilo · 2:00." },
   "apelacion": { ...APELACION_VIDEO, caption: "Conoce el proceso de Apelación ante la BIA · 1:50." },
+  "preparacion-audiencia": { ...PREPARACION_AUDIENCIA_VIDEO, caption: "Conoce la Preparación de Audiencia · 1:20." },
   "cambio-corte": { src: "/videos/cambio-corte.mp4", caption: "Presentación de Cambio de Corte." },
   "itin": { src: "/videos/itin.mp4", caption: "Presentación de Número ITIN." },
   "impuestos": { src: "/videos/taxes.mp4", caption: "Presentación de Declaración de Impuestos." },

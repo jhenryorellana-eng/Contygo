@@ -15,7 +15,7 @@ import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
 import { normalizeAnswer, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
 import { missingQuestions, type ContractQuestion } from "@/lib/contygo-api/variants";
-import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, HEARING_ADVISOR_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, ineligibleMessage, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, HEARING_ADVISOR_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
@@ -230,7 +230,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       if (from.asylum?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...asylumMessage(from.asylum) }); return; }
       // Preparación de audiencia sin una audiencia programada: todavía no hay sesión que preparar.
       if (from.hearing?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...HEARING_ADVISOR_MESSAGE }); return; }
-      if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "NOT_ELIGIBLE" }) }); return; }
+      if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...ineligibleMessage(service.id) }); return; }
       // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
       if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
       // A question the conversation did not ask (another variant of the service) is asked here, first.
@@ -523,8 +523,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     </label>;
   // El contrato previo (fecha de prioridad sin llegar) lo pide con su propio mensaje: la persona no está atascada, está reservando.
   const previo = previoWithAdvisor(priority, eligible);
-  const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor);
-  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
+  const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor) || eligible === false;
+  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor || eligible === false ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
   const appealUrl = asylum?.appeal ? getServiceGuideUrl("apelacion") : null;
   /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
   function retryFromBlocked() {

@@ -13,8 +13,9 @@ export const VISA_JUVENIL_VIDEO_2 = {
   duration: 920.92,
 };
 
+/** Owner's corrected cut (13-10-2026): the EOIR fee is $1,060, said and on its card, as in the second film. */
 export const APELACION_VIDEO = {
-  src: "/contygo/films/apelacion-v1-720p.mp4",
+  src: "/contygo/films/apelacion-v1r2-720p.mp4",
   poster: "/contygo/films/apelacion-v1-poster.webp",
   duration: 109.83333333333333,
 };

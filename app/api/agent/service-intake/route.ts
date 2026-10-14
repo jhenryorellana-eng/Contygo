@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CHAT_MODEL, agentEnabled, clientIp, getGenAI, rateLimit } from "@/lib/agent/server";
 import { isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
 import {
-  eligibilityGuidance, intakeQuestions, nextServiceQuestion, normalizeIntakeAnswer, prefixVisaAnswers, questionFollowup, sanitizeServiceAnswers,
+  eligibilityGuidance, ineligibleFinish, intakeQuestions, nextServiceQuestion, normalizeIntakeAnswer, prefixVisaAnswers, questionFollowup, sanitizeServiceAnswers,
   serviceGreeting, serviceVoiceScripts, visaAnswers, visaGuidance, visaQuestions, visaVoiceScripts, INTAKE_NO_QUESTIONS_FINISH, SERVICE_FINISH,
   VISA_GREETING, VISA_INTERVIEW_SERVICE, type IntakeQuestion, type ServiceAnswers,
 } from "@/lib/agent/service-intake";
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       return { ...payload, ...done, message: asylumFinish(outcome), guidance: asylumGuidance(outcome, result), asylum: outcome };
     }
     const verdict = adjustment ? adjustmentFlow(payload.answers, usableBulletin).verdict : null;
-    if (!verdict) return { ...payload, ...done };
+    if (!verdict) return { ...payload, ...done, ...(result?.eligible === false ? { message: ineligibleFinish(result) } : {}) };
     // Si contygo pone otro reparo (I-360, matrimonio, deportación), manda su orientación general.
     const blocked = otherBlockers(result, bulletinQuestion?.id);
     return { ...payload, ...done, ...(blocked ? {} : { message: adjustmentFinish(verdict), guidance: adjustmentGuidance(verdict, usableBulletin, result) }), priority: priorityOutcome(verdict, usableBulletin, blocked) };

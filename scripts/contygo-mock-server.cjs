@@ -72,7 +72,16 @@ if (asylum && !asylum.eligibilityQuestions.length) asylum.eligibilityQuestions.p
 // antelación de minNotice, también («event_too_close»). Los días hábiles se cuentan después de hoy, hasta la fecha incluida.
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 const businessDaysUntil = ymd => { let count = 0; const day = new Date(`${todayYmd()}T00:00:00Z`); while (day.toISOString().slice(0, 10) < ymd) { day.setUTCDate(day.getUTCDate() + 1); if (day.getUTCDay() % 6) count++; } return count; };
+// Apelación, como la API real (13-10-2026): hasta 27 días desde la decisión del juez, sí; de 28 a 30, deadline_too_close;
+// desde 31, deadline_passed.
+const appealReason = (question, value) => {
+  if (question?.kind !== 'date' || !/decisi[oó]n del juez/i.test(question.prompt?.es ?? '') || typeof value !== 'string') return null;
+  const days = (Date.parse(todayYmd()) - Date.parse(value)) / 86400000;
+  return days > 30 ? 'deadline_passed' : days > 27 ? 'deadline_too_close' : null;
+};
 const dateReason = (question, value) => {
+  const appeal = appealReason(question, value);
+  if (appeal) return appeal;
   if (question?.kind !== 'date' || question.dateMode !== 'future_event' || typeof value !== 'string') return null;
   if (value < todayYmd()) return 'answer';
   const need = question.minNotice?.value ?? question.minNotice?.days ?? 0;

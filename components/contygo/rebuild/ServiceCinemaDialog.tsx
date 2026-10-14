@@ -207,7 +207,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   // This owner survives the chat -> film switch, retaining decoded personalized speech.
   const closingVoice=useVisaVoice();
   useClosingSpeechWarmup(closingVoice,(visaSession?.complete||visaSession?.displayName!==undefined)
-    ?closingScript(closingName(visaSession?.displayName??""),service.id,closingVariant(service.id,visaSession?.priority,visaSession?.asylum,visaSession?.hearing)):null);
+    ?closingScript(closingName(visaSession?.displayName??""),service.id,closingVariant(service.id,visaSession?.priority,visaSession?.asylum,visaSession?.hearing,visaSession?.eligible)):null);
   const immersive = true;
   const previousStage = useRef(stage);
   const [planIndex, setPlanIndex] = useState(Math.max(0, service.plans.findIndex(plan => plan.name === initialPlanName)));
@@ -347,7 +347,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
 
         {stage === "service" && <VisaJuvenilExperience serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} preparedVoice={closingVoice} onContract={() => variants.length > 1 ? setPicker(true) : changeStage("decision")} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} onContract={() => variants.length > 1 ? setPicker(true) : changeStage("decision")} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
         {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}

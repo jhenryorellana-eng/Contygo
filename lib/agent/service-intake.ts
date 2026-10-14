@@ -84,6 +84,13 @@ const REASON_FALLBACK = "Con lo que nos contaste, este servicio conviene revisar
 
 export const reasonDetail = (reason: DisqualifiedReason) => REASON_DETAIL[reason] ?? REASON_FALLBACK;
 
+/** El último mensaje cuando contygo dice que no (13-10-2026): el agente lo dice antes del vídeo, en vez del «¡Listo!» de
+ *  siempre, porque después el cierre y la ficha llevan a un asesor por WhatsApp y no al contrato en línea. */
+export function ineligibleFinish(result: EligibilityResult) {
+  const reasons = Array.from(new Set((result.disqualified ?? []).map(item => item.reason)));
+  return ["Gracias por responder.", ...(reasons.length ? reasons.map(reasonDetail) : [REASON_FALLBACK]), "Antes de contratar, un asesor revisa tu caso contigo por WhatsApp.", "En el siguiente vídeo te mostramos cómo te acompañamos."].join(" ");
+}
+
 /** Orientación que ve la persona al terminar. Nunca decide por ella ni da asesoría legal. */
 export function eligibilityGuidance(result: EligibilityResult | null | undefined, questions: CatalogQuestion[]): JourneyGuidance | undefined {
   if (!result || !questions.length) return undefined;

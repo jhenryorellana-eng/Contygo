@@ -91,6 +91,13 @@ export function asylumMessage(outcome: { kind: string; track: string }): { title
   return { title: "Revisemos tu caso contigo.", detail: "Un asesor te acompaña por WhatsApp para preparar tu contrato." };
 }
 /** Preparación de audiencia sin una audiencia programada: todavía no hay sesión que preparar; Henry orienta por WhatsApp. */
+/** Cuando contygo dijo que no en la conversación (13-10-2026): la ficha no abre el contrato y lo dice claro. */
+export function ineligibleMessage(serviceId: string): { title: string; detail: string } {
+  return serviceId === "apelacion"
+    ? { title: "Revisemos tu plazo para apelar.", detail: "Por la fecha de la decisión del juez, no podemos iniciar la apelación en línea. Un asesor revisa tu plazo contigo por WhatsApp: escríbenos hoy, cada día cuenta." }
+    : { title: "Revisemos tu caso contigo.", detail: "Con estas respuestas no podemos iniciar este servicio en línea. Un asesor revisa tu caso por WhatsApp y te dice cómo seguir." };
+}
+
 export const HEARING_ADVISOR_MESSAGE = { title: "Escríbele a Henry antes de reservar.", detail: "Esta preparación es para una audiencia ya programada en la corte de inmigración. Henry te orienta por WhatsApp sobre tu caso." };
 export const whatsappHearingMessage = (serviceName: string, ref?: string | null) =>
   `Hola Henry, quiero orientación sobre ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;

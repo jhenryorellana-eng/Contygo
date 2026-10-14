@@ -110,3 +110,16 @@ Se usa la entrega `ContyGo-Preparacion-Audiencia-2-Web-720p.mp4` del dueño (128
 
 - La codificación es la misma que la de los demás vídeos. La portada es el fotograma del segundo 7, a 960 × 540.
 - Comprobado: decodificación completa sin errores, `moov` antes de `mdat` y 3578 fotogramas.
+
+## Apelación · vídeo 1 corregido ($1,060) · 2026-10-13
+
+Un cliente avisó de que la tasa de la apelación ante la BIA es de $1,060 y no de $1,030. El vídeo 1 decía «La tasa oficial actual es de 1.030 dólares» (a los 51 s) y mostraba la tarjeta «$1.030 Tasa oficial». El vídeo 2 ya decía $1,060.
+
+El dueño mandó el vídeo 1 corregido por WhatsApp: `WhatsApp Video 2026-10-13 at 7.32.41 PM.mp4` (1280 × 720, 24 fps, 2636 fotogramas, 28.40 MB). La narración y la tarjeta grande dicen $1,060. En la toma abierta anterior (la asesora con el portátil, de 51.0 a 54.08 s) seguía una tarjetita con «$1.030». Por eso, de 50.0 s a 54.08 s ahora hay un fundido de 0.83 s desde las bandejas BIA/DHS a la tarjeta grande de $1,060, que queda quieta hasta que su toma empieza a moverse. Son los fotogramas 1200 a 1297. El audio no se toca y el resto de fotogramas coincide uno a uno con la entrega (PSNR de unos 42 dB).
+
+| Servicio / ID | Archivo en `public/contygo/films/` | Duración | Peso web |
+| --- | --- | --- | --- |
+| Apelación (BIA) / `apelacion` | `apelacion-v1r2-720p.mp4` (sustituye a `apelacion-v1-720p.mp4`) | 1:50 (109.833 s, 2636 fotogramas) | 20.99 MB |
+
+- Codificación: H.264 CRF 22 (la entrega ya venía comprimida), 1800 kbit/s como máximo, Rec.709, AAC 96 kbit/s, faststart. Es un archivo nuevo, para que nadie vea el antiguo desde la caché.
+- Comprobado: decodificación completa sin errores y 2636 fotogramas. La narración transcrita dice «1.060». En la hoja de contactos de todo el vídeo no queda ningún «$1.030».

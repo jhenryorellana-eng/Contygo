@@ -15,7 +15,9 @@ import { isUsable, loadEb4Bulletin } from "@/lib/agent/visa-bulletin";
 import {
   ASYLUM_SERVICE, LOCAL_DATE_FIELD, asylumFinish, asylumFlow, asylumGuidance, asylumOutcome, asylumVoiceScripts, isHearingDateQuestion, normalizeAsylumAnswer,
 } from "@/lib/agent/asylum-intake";
-import { HEARING_SERVICE, hearingFinish, hearingFlow, hearingGuidance, hearingVoiceScripts, normalizeHearingAnswer } from "@/lib/agent/hearing-intake";
+import {
+  HEARING_SERVICE, hearingFinish, hearingFlow, hearingGuidance, hearingRemoteAnswers, hearingRemoteQuestions, hearingVoiceScripts, normalizeHearingAnswer,
+} from "@/lib/agent/hearing-intake";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { loadCatalog } from "@/lib/contygo-api/catalog";
@@ -36,8 +38,9 @@ import type { CatalogService, EligibilityResult } from "@/lib/contygo-api/types"
 // Reforzamiento de Asilo pregunta defensivo o afirmativo, personal o familiar, la fecha (la del catálogo) y el
 // tipo de audiencia, y dice si aún hay tiempo de presentar pruebas (lib/agent/asylum-intake.ts).
 // Preparación de audiencia pregunta si hay audiencia, cuándo y si es la de mérito, y recomienda la preparación
-// de la segunda o de la tercera audiencia (lib/agent/hearing-intake.ts). Sus preguntas no dependen de contygo:
-// si el servicio aún no está en el catálogo, el chat funciona igual y la ficha ofrece WhatsApp.
+// de la segunda o de la tercera audiencia (lib/agent/hearing-intake.ts). Las dos preguntas de contygo (la fecha y la
+// audiencia) se responden con esas, no se repiten. Si el servicio no estuviera en el catálogo, el chat funciona igual
+// y la ficha ofrece WhatsApp.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -130,11 +133,16 @@ export async function POST(req: NextRequest) {
   const asked = catalog.filter(question => question.id !== absorbed?.id);
   const at = bulletinQuestion ? catalog.findIndex(question => question.id === bulletinQuestion.id) : Math.min(1, catalog.length);
   const otherCatalog = remoteQuestions.filter(question => question.id !== absorbed?.id);
+  // Audiencia: la fecha y «¿En qué audiencia se encuentra?» de contygo salen de las respuestas del chat.
+  const hearingRemote = hearing ? hearingRemoteQuestions(remoteQuestions) : {};
+  const hearingAbsorbed = new Set([hearingRemote.date?.id, hearingRemote.choice?.id].filter(Boolean));
+  const hearingCatalog = catalog.filter(question => !hearingAbsorbed.has(question.id));
+  const hearingOther = remoteQuestions.filter(question => !hearingAbsorbed.has(question.id));
   // The question list depends on the answers: the witness question only follows «no evidence».
   const questionsFor = (current: ServiceAnswers) => visa ? [...visaQuestions(visaAnswers(current)), ...catalog]
     : adjustment ? [...asked.slice(0, at), ...adjustmentFlow(current, usableBulletin).questions, ...asked.slice(at)]
     : asylum ? [...asylumFlow(current, dateId).questions, ...asked]
-    : hearing ? [...hearingFlow(current).questions, ...catalog] : catalog;
+    : hearing ? [...hearingFlow(current).questions, ...hearingCatalog] : catalog;
   /** Ajuste: las respuestas en juego, con la del boletín recalculada aquí (la que mande el navegador no cuenta). */
   const settleAdjustment = (current: unknown): ServiceAnswers => {
     const flow = adjustmentFlow(current, usableBulletin);
@@ -143,8 +151,11 @@ export async function POST(req: NextRequest) {
   };
   /** Asilo: sus respuestas en orden; la fecha va con el id del catálogo y «Aún no tengo fecha» nunca llega a contygo. */
   const settleAsylum = (current: unknown): ServiceAnswers => ({ ...asylumFlow(current, dateId).answers, ...sanitizeServiceAnswers(otherCatalog, current) });
-  /** Preparación de audiencia: sus respuestas en orden y, después, las del catálogo (si contygo tiene alguna). */
-  const settleHearing = (current: unknown): ServiceAnswers => ({ ...hearingFlow(current).answers, ...sanitizeServiceAnswers(remoteQuestions, current) });
+  /** Preparación de audiencia: sus respuestas en orden, las de contygo que se derivan de ellas y, después, las demás del catálogo. */
+  const settleHearing = (current: unknown): ServiceAnswers => {
+    const own = hearingFlow(current).answers;
+    return { ...own, ...hearingRemoteAnswers(own, hearingRemote), ...sanitizeServiceAnswers(hearingOther, current) };
+  };
   const settle = (current: ServiceAnswers): ServiceAnswers => adjustment ? settleAdjustment(current) : asylum ? settleAsylum(current) : hearing ? settleHearing(current) : current;
   const normalize = asylum ? normalizeAsylumAnswer : hearing ? normalizeHearingAnswer : normalizeIntakeAnswer;
   let answers: ServiceAnswers = adjustment ? settleAdjustment(body.answers) : asylum ? settleAsylum(body.answers) : hearing ? settleHearing(body.answers)
@@ -158,9 +169,20 @@ export async function POST(req: NextRequest) {
     if (hearing) {
       const outcome = hearingFlow(payload.answers).outcome;
       if (!outcome) return { ...payload, ...done };
-      // contygo said no for a reason of its own: its orientation stands, and Henry takes it on WhatsApp.
-      if (result?.eligible === false) return { ...payload, ...done, hearing: { ...outcome, advisor: true } };
-      return { ...payload, ...done, message: hearingFinish(outcome), guidance: hearingGuidance(outcome, result), hearing: outcome };
+      const reasons = (result?.disqualified ?? []).map(item => item.reason);
+      const disqualified = result?.eligible === false && (reasons.length > 0 || result.disqualifiedQuestionIds.length > 0);
+      if (outcome.kind !== "none" && result && disqualified) {
+        // A hearing too close for contygo's notice: Henry takes it on WhatsApp, and the agent says why.
+        if (reasons.includes("event_too_close")) {
+          const held = { ...outcome, advisor: true, tooClose: true };
+          return { ...payload, ...done, message: hearingFinish(held), guidance: hearingGuidance(held, result), hearing: held };
+        }
+        // contygo said no for a reason of its own: its orientation stands, and Henry takes it on WhatsApp.
+        return { ...payload, ...done, message: ineligibleFinish(result), hearing: { ...outcome, advisor: true } };
+      }
+      // Only an answer missing («No la tengo a mano»): not a «no». The contract form asks the date and contygo evaluates again.
+      const eligible = result?.eligible === false ? null : done.eligible;
+      return { ...payload, ...done, eligible, message: hearingFinish(outcome), guidance: hearingGuidance(outcome, result), hearing: outcome };
     }
     if (asylum) {
       const verdict = asylumFlow(payload.answers, dateId).verdict;

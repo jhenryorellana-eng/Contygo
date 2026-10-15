@@ -52,17 +52,27 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'aaaaaaaa-0000-4000-8000-000000000002', kind: 'date', dateMode: 'future_event', minNotice: { days: 30 }, prompt: { es: '¿Cuándo es la próxima audiencia en la corte?', en: 'When is the next court hearing?' } },
   );
 }
-// Preparación de audiencia (12-10-2026): aún no existe en contygo. Así se recomienda crearla (docs/preparacion-de-audiencia.md):
-// slug preparacion-de-audiencia, un paquete por audiencia y sin preguntas de elegibilidad (las hace la landing).
+// Preparación de audiencia como en producción (14-10-2026): un paquete por audiencia, la fecha de la próxima audiencia
+// (future_event, 7 días naturales de antelación) y «¿En qué audiencia se encuentra?» (single_choice). Esa opción limita el
+// paquete (HEARING_PLANS): evaluate publica allowedPlanIds y POST /contracts rechaza otro con 422 PLAN_NOT_ALLOWED.
+const HEARING_PLANS = { 'segunda-audiencia': 'a0d1e2c3-0000-4000-8000-0000000000a1', 'tercera-audiencia': 'a0d1e2c3-0000-4000-8000-0000000000a2' };
 if (!catalog.services.some(service => service.slug === 'preparacion-de-audiencia')) catalog.services.push({
   id: 'a0d1e2c3-0000-4000-8000-000000000001', slug: 'preparacion-de-audiencia', name: { es: 'Preparación de Audiencia', en: 'Hearing Preparation' },
   plans: [
-    { id: 'a0d1e2c3-0000-4000-8000-0000000000a1', name: { es: 'Segunda audiencia', en: 'Second hearing' }, priceCents: 15000, installmentOptions: [], extraPartyPriceCents: 0 },
-    { id: 'a0d1e2c3-0000-4000-8000-0000000000a2', name: { es: 'Tercera audiencia', en: 'Third hearing' }, priceCents: 35000, installmentOptions: [], extraPartyPriceCents: 0 },
+    { id: HEARING_PLANS['segunda-audiencia'], name: { es: 'Preparación para la segunda audiencia', en: 'Second hearing preparation' }, priceCents: 15000, installmentOptions: [], extraPartyPriceCents: 0 },
+    { id: HEARING_PLANS['tercera-audiencia'], name: { es: 'Preparación para la tercera audiencia', en: 'Third hearing preparation' }, priceCents: 35000, installmentOptions: [], extraPartyPriceCents: 0 },
   ],
-  eligibilityQuestions: [],
+  eligibilityQuestions: [
+    { id: 'a0d1e2c3-0000-4000-8000-0000000000b1', kind: 'date', dateMode: 'future_event', minNotice: { value: 7, unit: 'calendar_days' }, prompt: { es: '¿Cuándo es su próxima audiencia?', en: 'When is your next hearing?' } },
+    { id: 'a0d1e2c3-0000-4000-8000-0000000000b2', kind: 'single_choice', prompt: { es: '¿En qué audiencia se encuentra?', en: 'Which hearing are you in?' }, options: [
+      { code: 'segunda-audiencia', name: { es: 'Segunda audiencia', en: 'Second hearing' } },
+      { code: 'tercera-audiencia', name: { es: 'Tercera audiencia', en: 'Third hearing' } },
+    ] },
+  ],
   partyRoles: [{ roleKey: 'lead', label: { es: 'Titular', en: 'Applicant' }, cardinality: 'single', isRequired: true }],
 });
+/** Los paquetes que permiten las respuestas (solo las single_choice con reglas); null = sin restricción. */
+const allowedPlans = answers => { const choice = answers.find(a => Object.prototype.hasOwnProperty.call(HEARING_PLANS, a.value ?? a.answer)); return choice ? [HEARING_PLANS[choice.value ?? choice.answer]] : null; };
 // Reforzar Asilo como en producción (10-10-2026): la fecha de la próxima audiencia, con 5 días hábiles de antelación.
 const asylum = catalog.services.find(service => service.slug === 'reforzar-asilo');
 if (asylum && !asylum.eligibilityQuestions.length) asylum.eligibilityQuestions.push(
@@ -147,17 +157,19 @@ http.createServer((req, res) => {
       const negative = question => /deportaci|removal/i.test(`${question.prompt?.es ?? ''} ${question.prompt?.en ?? ''}`);
       const disqualified = body.answers.map(a => {
         const question = questions.find(q => q.id === a.questionId);
-        const reason = dateReason(question, a.value) ?? (a.value === (negative(question ?? {}) ? true : false) ? 'answer' : null);
+        const reason = dateReason(question, a.value) ?? (question?.kind !== 'single_choice' && a.value === (negative(question ?? {}) ? true : false) ? 'answer' : null);
         return reason ? { questionId: a.questionId, reason } : null;
       }).filter(Boolean);
       const bad = disqualified.map(item => item.questionId);
       const missing = questions.filter(q => !body.answers.some(a => a.questionId === q.id)).map(q => q.id);
-      return send(200, { eligible: bad.length === 0 && missing.length === 0, missingQuestionIds: missing, disqualifiedQuestionIds: bad, disqualified, notices: [], anchorYmd: null, anchorWaived: false });
+      return send(200, { eligible: bad.length === 0 && missing.length === 0, missingQuestionIds: missing, disqualifiedQuestionIds: bad, disqualified, notices: [], anchorYmd: null, anchorWaived: false, allowedPlanIds: allowedPlans(body.answers) });
     }
     if (req.method === 'PUT' && url.startsWith('/leads/')) return send(201, { leadId: '9b0e0000-0000-4000-8000-000000000001', created: true, linked: false, status: 'open', contactedAt: null, warnings: [] });
     if (req.method === 'POST' && url === '/contracts') {
       const email = String(body.client?.email ?? '');
       if (!/^\+1\d{10}$/.test(body.client?.phoneE164 ?? '')) return send(400, { error: { code: 'INVALID_REQUEST', message: 'Invalid', details: { fields: [{ path: 'client.phoneE164', reason: 'unsupported_country' }] } } });
+      const allowed = allowedPlans(body.eligibilityAnswers ?? []);
+      if (allowed && !allowed.includes(body.servicePlanId)) return send(422, { error: { code: 'PLAN_NOT_ALLOWED', message: 'The answers qualify, but not for this plan', details: { questionIds: [], allowedPlanIds: allowed } } });
       if (/^forbidden@/i.test(email)) return send(403, { error: { code: 'FORBIDDEN', message: 'Key cannot create contracts' } });
       if (/^ratelimit@/i.test(email) && !body.verificationId) return send(429, { error: { code: 'VERIFICATION_RATE_LIMITED', message: 'Too many codes' } }, { 'retry-after': '3600' });
       if (/^human@/i.test(email) && !body.verificationId) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person' } });

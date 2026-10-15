@@ -98,6 +98,8 @@ export function ineligibleMessage(serviceId: string): { title: string; detail: s
     : { title: "Revisemos tu caso contigo.", detail: "Con estas respuestas no podemos iniciar este servicio en línea. Un asesor revisa tu caso por WhatsApp y te dice cómo seguir." };
 }
 
+/** Preparación de audiencia con la audiencia antes de la antelación que pide contygo (event_too_close). */
+export const HEARING_TOO_CLOSE_MESSAGE = { title: "Tu audiencia es muy pronto para reservar en línea.", detail: "Henry necesita al menos 7 días para preparar la sesión contigo. Escríbele por WhatsApp y él te dice qué hacer." };
 export const HEARING_ADVISOR_MESSAGE = { title: "Escríbele a Henry antes de reservar.", detail: "Esta preparación es para una audiencia ya programada en la corte de inmigración. Henry te orienta por WhatsApp sobre tu caso." };
 export const whatsappHearingMessage = (serviceName: string, ref?: string | null) =>
   `Hola Henry, quiero orientación sobre ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;

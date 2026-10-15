@@ -95,18 +95,126 @@ test('sin audiencia programada el chat termina enseguida y Henry orienta por Wha
   assert.equal(done.guidance.status, 'review');
 });
 
-test('cuando contygo ya tiene el servicio, sus respuestas se evalúan allí y las de la landing no viajan', async () => {
-  const withService = { services: [...catalog.services, {
-    id: 'a0d1e2c3-0000-4000-8000-000000000001', slug: 'preparacion-de-audiencia', name: { es: 'Preparación de Audiencia', en: null },
-    plans: [{ id: 'p2', name: { es: 'Segunda audiencia', en: null }, priceCents: 15000, extraPartyPriceCents: 0, installmentOptions: [] }, { id: 'p3', name: { es: 'Tercera audiencia', en: null }, priceCents: 35000, extraPartyPriceCents: 0, installmentOptions: [] }],
-    eligibilityQuestions: [], partyRoles: [],
-  }] };
-  net.on('GET', '/catalog', { status: 200, body: withService });
-  const done = await say({ answers: { [hearing.HAS_FIELD]: true, [hearing.DATE_FIELD]: hearing.NO_DATE }, field: hearing.MERIT_FIELD, answer: false });
-  assert.equal(done.hearing.kind, 'segunda');
-  const evaluate = net.calls.find(call => call.path === '/eligibility/evaluate');
-  assert.deepEqual(evaluate.json, { serviceId: 'a0d1e2c3-0000-4000-8000-000000000001', answers: [] });
+// El servicio como está en producción (14-10-2026): la fecha (future_event, 7 días) y «¿En qué audiencia se encuentra?»
+// (single_choice), que limita el paquete: Segunda → $150, Tercera → $350.
+const H = {
+  service: 'a0d1e2c3-0000-4000-8000-000000000001', p2: 'a0d1e2c3-0000-4000-8000-0000000000a1', p3: 'a0d1e2c3-0000-4000-8000-0000000000a2',
+  date: 'a0d1e2c3-0000-4000-8000-0000000000b1', choice: 'a0d1e2c3-0000-4000-8000-0000000000b2',
+};
+const HEARING_PLANS = { 'segunda-audiencia': H.p2, 'tercera-audiencia': H.p3 };
+const hearingService = {
+  id: H.service, slug: 'preparacion-de-audiencia', name: { es: 'Preparación de Audiencia', en: null },
+  plans: [
+    { id: H.p2, name: { es: 'Preparación para la segunda audiencia', en: null }, priceCents: 15000, extraPartyPriceCents: 0, installmentOptions: [] },
+    { id: H.p3, name: { es: 'Preparación para la tercera audiencia', en: null }, priceCents: 35000, extraPartyPriceCents: 0, installmentOptions: [] },
+  ],
+  eligibilityQuestions: [
+    { id: H.date, kind: 'date', dateMode: 'future_event', minNotice: { value: 7, unit: 'calendar_days' }, prompt: { es: '¿Cuándo es su próxima audiencia?', en: null } },
+    { id: H.choice, kind: 'single_choice', prompt: { es: '¿En qué audiencia se encuentra?', en: null }, options: [
+      { code: 'segunda-audiencia', name: { es: 'Segunda audiencia', en: null } }, { code: 'tercera-audiencia', name: { es: 'Tercera audiencia', en: null } },
+    ] },
+  ],
+  partyRoles: [{ roleKey: 'lead', label: { es: 'Titular', en: null }, cardinality: 'single', isRequired: true }],
+};
+/** contygo en producción: falta una respuesta → missing; la fecha a menos de 7 días → event_too_close; la opción limita el paquete. */
+function withHearingService() {
+  net.on('GET', '/catalog', { status: 200, body: { services: [...catalog.services, hearingService] } });
+  net.on('POST', '/eligibility/evaluate', call => {
+    const answers = call.json.answers;
+    const value = id => answers.find(item => item.questionId === id)?.value;
+    const missing = [H.date, H.choice].filter(id => value(id) === undefined);
+    const tooClose = typeof value(H.date) === 'string' && (Date.parse(value(H.date)) - Date.parse(ymd(0))) / 86_400_000 < 7;
+    const disqualified = tooClose ? [{ questionId: H.date, reason: 'event_too_close' }] : [];
+    return { status: 200, body: { eligible: !missing.length && !disqualified.length, missingQuestionIds: missing, disqualifiedQuestionIds: disqualified.map(item => item.questionId), disqualified, notices: [], anchorYmd: null, allowedPlanIds: HEARING_PLANS[value(H.choice)] ? [HEARING_PLANS[value(H.choice)]] : null } };
+  });
+}
+const chat = async answers => {
+  let turn = await say({ answers: {} });
+  for (const [field, answer] of answers) turn = await say({ answers: turn.answers, field, answer });
+  return turn;
+};
+
+test('single_choice de contygo: se responde con el code de una opción (o su rótulo), nunca se adivina', () => {
+  const { normalizeAnswer, questionKind, hasUnknownQuestion } = require('../lib/contygo-api/checkout.ts');
+  const { publicQuestion } = require('../lib/contygo-api/catalog.ts');
+  const question = hearingService.eligibilityQuestions[1];
+  assert.equal(questionKind(question), 'choice');
+  assert.equal(hasUnknownQuestion(hearingService.eligibilityQuestions), false, 'ya no se escala a WhatsApp');
+  const target = { kind: 'choice', options: question.options };
+  assert.equal(normalizeAnswer(target, 'tercera-audiencia'), 'tercera-audiencia');
+  assert.equal(normalizeAnswer(target, 'segunda audiencia'), 'segunda-audiencia');
+  assert.equal(normalizeAnswer(target, 'cuarta-audiencia'), null);
+  assert.equal(normalizeAnswer(target, true), null);
+  assert.equal(normalizeAnswer({ kind: 'choice' }, 'segunda-audiencia'), null, 'sin options no hay respuesta posible');
+  assert.deepEqual(publicQuestion(question).options, [{ code: 'segunda-audiencia', label: 'Segunda audiencia' }, { code: 'tercera-audiencia', label: 'Tercera audiencia' }]);
+});
+
+test('con el servicio en contygo, el chat no repite sus dos preguntas: las responde con las suyas y contygo evalúa', async () => {
+  withHearingService();
+  const date = ymd(40);
+  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, date], [hearing.MERIT_FIELD, true]]);
+  assert.equal(done.complete, true);
+  assert.equal(done.total, 3, 'solo las tres preguntas de la landing');
+  assert.equal(done.hearing.kind, 'tercera');
   assert.equal(done.eligible, true);
+  assert.equal(done.answers[H.date], date);
+  assert.equal(done.answers[H.choice], 'tercera-audiencia');
+  const evaluate = net.calls.filter(call => call.path === '/eligibility/evaluate').at(-1);
+  assert.deepEqual(evaluate.json, { serviceId: H.service, answers: [{ questionId: H.date, value: date }, { questionId: H.choice, value: 'tercera-audiencia' }] });
+  assert.ok(Object.keys(evaluate.json.answers).every(key => !String(key).startsWith('audiencia.')), 'las claves audiencia.* no viajan');
+});
+
+test('«No la tengo a mano»: no es un «no»; la fecha queda pendiente para la ficha del contrato', async () => {
+  withHearingService();
+  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, 'no la tengo a mano'], [hearing.MERIT_FIELD, false]]);
+  assert.equal(done.hearing.kind, 'segunda');
+  assert.equal(done.hearing.advisor, false);
+  assert.equal(done.eligible, null, 'contygo solo echa en falta la fecha');
+  assert.equal(done.answers[H.date], undefined);
+  assert.equal(done.answers[H.choice], 'segunda-audiencia');
+  const { missingQuestions } = require('../lib/contygo-api/variants.ts');
+  const { publicServiceView } = require('../lib/contygo-api/catalog.ts');
+  assert.deepEqual(missingQuestions(publicServiceView(hearingService).questions, done.answers).map(question => question.id), [H.date]);
+});
+
+test('una audiencia en menos de 7 días: contygo la descalifica y Henry la atiende por WhatsApp', async () => {
+  withHearingService();
+  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, ymd(3)], [hearing.MERIT_FIELD, true]]);
+  assert.equal(done.eligible, false);
+  assert.deepEqual({ kind: done.hearing.kind, advisor: done.hearing.advisor, tooClose: done.hearing.tooClose }, { kind: 'tercera', advisor: true, tooClose: true });
+  assert.match(done.message, /al menos 7 días/);
+  assert.equal(done.guidance.status, 'review');
+  const { closingVariant } = require('../components/contygo/juvenil/closingSpeech.ts');
+  assert.equal(closingVariant(hearing.HEARING_SERVICE, null, null, done.hearing), 'audiencia-henry');
+});
+
+test('el contrato: solo el paquete de su audiencia; otro se rechaza antes de enviar el código', async () => {
+  withHearingService();
+  process.env.LANDING_TOKEN_SECRET ||= 'secreto-de-prueba-de-la-landing-000000000000';
+  const flow = require('../lib/contygo-api/flow.ts');
+  const form = planId => ({
+    firstName: 'Ana', lastName: 'Pérez', email: 'ana.perez@gmail.com', phone: '+13055550199',
+    address: { line1: '100 Main St', city: 'Miami', state: 'FL', zip: '33101' }, locale: 'es', servicePlanId: planId, parties: [],
+    consent: { accepted: true, at: new Date(Date.now() - 30_000).toISOString() },
+  });
+  const answers = { [H.date]: ymd(40), [H.choice]: 'segunda-audiencia' };
+  const ref = 'web-2f7c1b9e-8a41-4d7e-9f10-1c2d3e4f5a6b';
+  const wrong = await flow.startContract({ localServiceId: hearing.HEARING_SERVICE, externalRef: ref, form: form(H.p3), answers }, crypto.randomUUID());
+  assert.equal(wrong.step, 'INVALID');
+  assert.match(wrong.errors.servicePlanId, /no corresponde/);
+  assert.equal(net.calls.some(call => call.path === '/contracts'), false, 'no se envía el código con un paquete que contygo rechazaría');
+  const right = await flow.startContract({ localServiceId: hearing.HEARING_SERVICE, externalRef: ref, form: form(H.p2), answers }, crypto.randomUUID());
+  assert.equal(right.step, 'ASK_CODE');
+  const body = net.calls.find(call => call.path === '/contracts').json;
+  assert.equal(body.servicePlanId, H.p2);
+  assert.deepEqual(body.eligibilityAnswers, [{ questionId: H.date, answer: ymd(40) }, { questionId: H.choice, answer: 'segunda-audiencia' }]);
+});
+
+test('un 422 PLAN_NOT_ALLOWED de contygo vuelve al paso del paquete', () => {
+  const { mapContractResponse } = require('../lib/contygo-api/checkout.ts');
+  const outcome = mapContractResponse({ status: 422, error: { code: 'PLAN_NOT_ALLOWED', details: { questionIds: [H.choice], allowedPlanIds: [H.p2] } } });
+  assert.equal(outcome.step, 'INVALID');
+  assert.ok(outcome.errors.servicePlanId);
 });
 
 test('el cierre nombra la preparación que le toca; sin audiencia, el botón es «Hablar con Henry»', () => {

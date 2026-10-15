@@ -32,7 +32,7 @@ import { contractService } from "@/lib/contygo-catalog";
 import { CatalogUnavailableError, invalidateCatalog, localServiceNameFor, remoteServiceFor } from "./catalog";
 import {
   buildContractBody, checkoutEnabled, hasUnknownQuestion, isConfigFailure, mapContractResponse, normalizeContractPhone, publicRef,
-  sanitizeAnswers, toContractAnswers, toEvaluateAnswers, validateContractForm,
+  sanitizeAnswers, toContractAnswers, toEvaluateAnswers, validateContractForm, PLAN_NOT_ALLOWED_MESSAGE,
   type ContractOutcome, type FieldErrors, type FixContact, type RetryReason,
 } from "./checkout";
 import { contygoApi } from "./client";
@@ -231,6 +231,12 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
     return { step: "RETRY_LATER", reason: "busy", retryAfter: evaluation.retryAfter };
   }
   if (!evaluation.data.eligible) return { step: "NOT_ELIGIBLE" };
+  // Una opción única puede limitar los paquetes (Segunda → $150): el código no sale con un paquete que contygo rechazaría.
+  const allowed = evaluation.data.allowedPlanIds;
+  if (Array.isArray(allowed)) {
+    if (!allowed.length) return { step: "NOT_ELIGIBLE" };
+    if (!allowed.includes(form.value.servicePlanId)) return { step: "INVALID", errors: { servicePlanId: PLAN_NOT_ALLOWED_MESSAGE } };
+  }
 
   // El lead se actualiza con el nombre completo y el correo. Si falla, no bloquea la venta.
   await syncLead(input.externalRef, buildLeadBody(

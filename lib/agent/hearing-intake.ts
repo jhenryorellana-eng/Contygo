@@ -6,12 +6,15 @@
    1. ¿Tiene una audiencia programada en la corte de inmigración? Sin audiencia, Henry orienta por WhatsApp.
    2. ¿Cuándo es? («No la tengo a mano» vale). Solo sirve para avisar si es en muy pocos días.
    3. ¿Es la de mérito? Sí → la preparación para la tercera audiencia; no → la de la segunda (preliminar).
-   Sus claves llevan «audiencia.»: no salen hacia contygo (solo las del catálogo).
+   Sus claves llevan «audiencia.»: no salen hacia contygo. Contygo hace dos preguntas propias (14-10-2026): la fecha
+   de la próxima audiencia (future_event, 7 días de antelación) y «¿En qué audiencia se encuentra?» (single_choice, que
+   limita el paquete: Segunda → $150, Tercera → $350). No se repiten: sus respuestas salen de las de este chat
+   (hearingRemoteAnswers). Con «No la tengo a mano» la fecha queda sin responder y la pide la ficha del contrato.
    ============================================================ */
-import { normalizeAnswer } from "@/lib/contygo-api/checkout";
-import type { EligibilityResult } from "@/lib/contygo-api/types";
+import { normalizeAnswer, questionKind, text } from "@/lib/contygo-api/checkout";
+import type { AnswerValue, CatalogQuestion, EligibilityResult, I18nText } from "@/lib/contygo-api/types";
 import { dayLabel } from "./adjustment-intake";
-import { NO_DATE, normalizeAsylumAnswer } from "./asylum-intake";
+import { NO_DATE, isHearingDateQuestion, normalizeAsylumAnswer } from "./asylum-intake";
 import type { IntakeQuestion, JourneyGuidance, ServiceAnswers } from "./service-intake";
 
 export const HEARING_SERVICE = "preparacion-audiencia";
@@ -36,8 +39,9 @@ const MERIT: IntakeQuestion = { id: MERIT_FIELD, kind: "yesno", text: MERIT_QUES
 export const normalizeHearingAnswer = normalizeAsylumAnswer;
 
 export type HearingKind = "segunda" | "tercera" | "none";
-/** What the browser keeps: it decides the closing, the contract package and, without a hearing, WhatsApp with Henry. */
-export interface HearingOutcome { kind: HearingKind; date: string | null; soon: boolean; advisor: boolean }
+/** What the browser keeps: it decides the closing, the contract package and, without a hearing, WhatsApp with Henry.
+ *  `tooClose`: contygo needs more notice than the hearing leaves (event_too_close): Henry takes it on WhatsApp. */
+export interface HearingOutcome { kind: HearingKind; date: string | null; soon: boolean; advisor: boolean; tooClose?: boolean }
 
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
@@ -62,7 +66,42 @@ export function hearingFlow(input: unknown, today = todayYmd()): { questions: In
   return { questions, answers, outcome: { kind: merit ? "tercera" : "segunda", date: known, soon: Boolean(known && daysBetween(today, known) <= SOON_DAYS), advisor: false } };
 }
 
+// ---------------- Las preguntas de contygo ----------------
+
+const fold = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const KIND_WORDS: Record<Exclude<HearingKind, "none">, RegExp> = { segunda: /segunda|preliminar/, tercera: /tercera|merito/ };
+const optionWords = (option: NonNullable<CatalogQuestion["options"]>[number]) =>
+  fold([option.code, ...[option.name, option.label].map(value => typeof value === "string" ? value : value && typeof value === "object" ? text(value as I18nText) : "")].join(" "));
+
+/** The option of contygo's «¿En qué audiencia se encuentra?» for a hearing kind, if exactly one fits. */
+export function hearingOption(question: CatalogQuestion, kind: Exclude<HearingKind, "none">): string | null {
+  const fits = (question.options ?? []).filter(option => KIND_WORDS[kind].test(optionWords(option)));
+  return fits.length === 1 ? fits[0].code : null;
+}
+
+/** Which of contygo's questions this chat answers: the hearing date (future_event) and the hearing kind (single_choice
+ *  whose options name the second and the third hearing). Found by kind and options, never by position or id. */
+export function hearingRemoteQuestions(questions: CatalogQuestion[]): { date?: CatalogQuestion; choice?: CatalogQuestion } {
+  const date = questions.find(isHearingDateQuestion);
+  const choice = questions.find(question => questionKind(question) === "choice" && hearingOption(question, "segunda") && hearingOption(question, "tercera"));
+  return { ...(date ? { date } : {}), ...(choice ? { choice } : {}) };
+}
+
+/** contygo's answers, derived from this chat's: the date (unless «No la tengo a mano») and the hearing kind. */
+export function hearingRemoteAnswers(answers: ServiceAnswers, remote: ReturnType<typeof hearingRemoteQuestions>): Record<string, AnswerValue> {
+  const out: Record<string, AnswerValue> = {};
+  if (answers[HAS_FIELD] !== true) return out;
+  const date = answers[DATE_FIELD];
+  if (remote.date && typeof date === "string" && date !== NO_DATE) out[remote.date.id] = date;
+  const merit = answers[MERIT_FIELD];
+  const code = remote.choice && typeof merit === "boolean" ? hearingOption(remote.choice, merit ? "tercera" : "segunda") : null;
+  if (remote.choice && code) out[remote.choice.id] = code;
+  return out;
+}
+
 const NEXT_VIDEO = "En el siguiente vídeo te mostramos cómo te acompañamos.";
+/** contygo disqualifies a hearing that leaves less notice than its date question asks (event_too_close; 7 days on 14-10-2026). */
+export const TOO_CLOSE_LINE = "Tu audiencia es muy pronto para reservar la preparación en línea: Henry necesita al menos 7 días para prepararla contigo. Escríbele por WhatsApp y él te dice qué hacer.";
 const PLAN_LINE: Record<Exclude<HearingKind, "none">, string> = {
   tercera: "Te corresponde la preparación para tu tercera audiencia, la de mérito: 45 minutos con Henry para recorrer tu historia y practicar las preguntas más difíciles.",
   segunda: "Te corresponde la preparación para tu segunda audiencia, la preliminar: 45 minutos con Henry para repasar qué pasa ese día, ordenar tus preguntas y practicar con calma.",
@@ -71,6 +110,7 @@ const PLAN_LINE: Record<Exclude<HearingKind, "none">, string> = {
 /** The agent's last line before the second film. */
 export function hearingFinish(outcome: HearingOutcome) {
   if (outcome.kind === "none") return `Esta preparación es para quien ya tiene una audiencia en la corte de inmigración. Henry puede orientarte por WhatsApp sobre tu caso. ${NEXT_VIDEO}`;
+  if (outcome.tooClose) return `${TOO_CLOSE_LINE} ${NEXT_VIDEO}`;
   const soon = outcome.soon && outcome.date ? ` Tu audiencia es el ${dayLabel(outcome.date)}: reserva tu sesión cuanto antes.` : "";
   return `${PLAN_LINE[outcome.kind]}${soon} ${NEXT_VIDEO}`;
 }
@@ -84,6 +124,7 @@ export function hearingGuidance(outcome: HearingOutcome, result?: EligibilityRes
   const sources = [{ title: "Preparación de audiencia con Henry Orellana · Preguntas frecuentes", url: HENRY_FAQ_URL }];
   const guidance = (status: JourneyGuidance["status"], title: string, lines: (string | null)[]): JourneyGuidance =>
     ({ status, title, detail: [...lines.filter((line): line is string => Boolean(line)), ...notices, LEGAL].join(" "), sources });
+  if (outcome.tooClose) return guidance("review", "Tu audiencia es muy pronto: escríbele a Henry", [TOO_CLOSE_LINE]);
   if (outcome.kind === "none") return guidance("review", "Escríbele a Henry antes de reservar", ["Esta preparación es para una audiencia ya programada en la corte de inmigración: la segunda (preliminar) o la de mérito.", "Si aún no tienes una, Henry te orienta por WhatsApp."]);
   const soon = outcome.soon && outcome.date ? `Tu audiencia es el ${dayLabel(outcome.date)}: reserva tu sesión cuanto antes.` : null;
   return outcome.kind === "tercera"

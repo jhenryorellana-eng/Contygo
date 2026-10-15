@@ -18,17 +18,18 @@ export const text = (value: I18nText | null | undefined, locale: Locale = "es") 
 /**
  * Cómo se responde cada pregunta: lo dice `kind` en GET /catalog (guía §4, paso 0; en el
  * OpenAPI de producción es obligatorio): yes_no con un booleano, date con "YYYY-MM-DD" y
- * us_state con el código de 2 letras de `options`. Manda siempre `kind`: el texto engaña
+ * us_state con el código de 2 letras de `options`; single_choice con el `code` de una de sus `options`. Manda siempre `kind`: el texto engaña
  * («¿La fecha de prioridad del I-360 está vigente…?» es de sí/no en el catálogo real).
  * Un kind que no conocemos NO se adivina: es "unknown", no se puede responder y el flujo
  * escala a una persona (OpenAPI). Deducirlo del texto queda solo como defensa para un
  * catálogo antiguo que llegara SIN kind.
  */
-export type QuestionKind = "yesno" | "date" | "state" | "unknown";
+export type QuestionKind = "yesno" | "date" | "state" | "choice" | "unknown";
 export function questionKind(question: Pick<CatalogQuestion, "prompt"> & { kind?: string | null }): QuestionKind {
   if (question.kind === "yes_no") return "yesno";
   if (question.kind === "date") return "date";
   if (question.kind === "us_state") return "state";
+  if (question.kind === "single_choice") return "choice";
   if (typeof question.kind === "string" && question.kind) return "unknown";
   return /\bfecha\b/i.test(question.prompt?.es ?? "") || /\bdate\b/i.test(question.prompt?.en ?? "") ? "date" : "yesno";
 }
@@ -100,6 +101,14 @@ function normalizeState(value: unknown, options?: AnswerTarget["options"]): stri
   return options.find(option => optionLabels(option).some(label => fold(label) === wanted))?.code ?? null;
 }
 
+/** single_choice: el `code` de una de sus options, tal cual o por su rótulo. Sin options no hay respuesta posible. */
+function normalizeChoice(value: unknown, options?: AnswerTarget["options"]): string | null {
+  if (typeof value !== "string" || !options?.length || value.length > 200) return null;
+  if (options.some(option => option.code === value)) return value;
+  const wanted = fold(value);
+  return wanted ? options.find(option => optionLabels(option).some(label => fold(label) === wanted))?.code ?? null : null;
+}
+
 /**
  * Normaliza una respuesta a la forma que acepta la API, o null si no vale. Con un `kind` suelto
  * (compatibilidad) una fecha es «hasta hoy» y un estado cualquiera de EE. UU.; con la pregunta
@@ -114,6 +123,7 @@ export function normalizeAnswer(target: QuestionKind | AnswerTarget, value: unkn
     return isPastOrTodayDate(value, today) ? value : null;
   }
   if (kind === "state") return normalizeState(value, options);
+  if (kind === "choice") return normalizeChoice(value, options);
   if (typeof value === "boolean") return value;
   if (typeof value !== "string") return null;
   const word = value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[¿?¡!.,]/g, "");
@@ -361,6 +371,9 @@ export function buildContractBody(options: {
 
 // ---------------- Respuestas de POST /contracts ----------------
 
+/** El paquete elegido no corresponde a las respuestas (PLAN_NOT_ALLOWED): se vuelve al paso del paquete. */
+export const PLAN_NOT_ALLOWED_MESSAGE = "Este paquete no corresponde a lo que nos contaste. Elige el paquete que te corresponde.";
+
 export type ContractOutcome =
   | { step: "INVALID"; errors: FieldErrors }
   | { step: "ASK_CODE"; verificationId: string; maskedEmail: string; expiresAt: string | null }
@@ -537,6 +550,9 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
     case "CLIENT_NEEDS_HUMAN": return readExistingClient(details) ?? readFixContact(details) ?? { step: "HUMAN" };
     case "NOT_ELIGIBLE": return { step: "NOT_ELIGIBLE" };
     case "PLAN_NOT_CONTRACTABLE": return { step: "UNAVAILABLE" };
+    // Las respuestas califican, pero para otro paquete (single_choice con reglas «respuesta → paquetes»).
+    case "PLAN_NOT_ALLOWED":
+    case "CASE_PLAN_NOT_ALLOWED": return { step: "INVALID", errors: { servicePlanId: PLAN_NOT_ALLOWED_MESSAGE } };
     case "INVALID_PARTIES": return { step: "INVALID_PARTIES", role: typeof details.role === "string" ? details.role : null };
     case "DESTINATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "destination", retryAfter: response.retryAfter };
     case "VERIFICATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "verification", retryAfter: response.retryAfter ?? 3600 };

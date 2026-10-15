@@ -9,15 +9,23 @@ Servicio añadido el 12 de octubre de 2026 como quinto destacado de la página p
 
 Henry es consultor migratorio certificado en Utah, no abogado: la sesión es orientación personal y no incluye representación legal. La landing lo dice en la orientación final y en el alcance del servicio.
 
-## Lo que falta en contygo (lo hace el dueño)
+## El servicio en contygo (desde el 14-10-2026)
 
-El contrato se hace por la API de contygo, como los demás servicios. **El servicio todavía no existe en contygo.** Para conectarlo, hay que crear en el panel de contygo:
+El contrato se hace por la API de contygo, como los demás servicios. El servicio **ya existe** en producción (lo montó el dueño desde el admin de contygo, guía `docs/guides/preparacion-de-audiencia-desde-el-admin.md` de x-legal):
 
-- **Slug:** `preparacion-de-audiencia` (si se usa otro, cambia `slug` en `lib/contygo-catalog.ts`).
-- **Dos paquetes:** «Segunda audiencia» ($150) y «Tercera audiencia» ($350). La landing elige el paquete por su nombre: busca «segunda» o «preliminar», y «tercera» o «mérito».
-- **Sin preguntas de elegibilidad:** las hace la landing. Si contygo añade alguna, el chat la pregunta después de las tres propias.
+- **Slug:** `preparacion-de-audiencia` (la landing lo une por slug: `lib/contygo-catalog.ts`).
+- **Dos paquetes de pago único:** «Preparación para la segunda audiencia» ($150) y «Preparación para la tercera audiencia» ($350).
+- **Dos preguntas de elegibilidad propias de contygo:**
+  - «¿Cuándo es su próxima audiencia?»: `date` + `future_event`, con **7 días naturales** de antelación. Una audiencia más cercana la descalifica (`event_too_close`).
+  - «¿En qué audiencia se encuentra?»: `single_choice` con `segunda-audiencia` y `tercera-audiencia`. Limita el paquete: Segunda → $150, Tercera → $350. `/eligibility/evaluate` devuelve `allowedPlanIds` y `POST /contracts` rechaza otro paquete con `422 PLAN_NOT_ALLOWED`.
 
-Mientras no exista, el chat funciona igual (sus preguntas no dependen de contygo) y la ficha del contrato muestra «Este servicio no se contrata en línea» con WhatsApp, en vez de un error.
+**El chat no repite esas dos preguntas:** las responde con las suyas (`hearingRemoteAnswers` en `lib/agent/hearing-intake.ts`, que las encuentra por `kind` y por sus opciones, nunca por posición ni id). La fecha va tal cual; «¿Es la de mérito?» sí → `tercera-audiencia`, no → `segunda-audiencia`.
+
+- **«No la tengo a mano»:** la fecha queda sin responder. No es un «no»: la ficha del contrato la pide en su paso «Preguntas» y contygo vuelve a evaluar antes de enviar el código.
+- **Audiencia en menos de 7 días:** el chat lo dice («Henry necesita al menos 7 días…»), el cierre es «Hablar con Henry» y la ficha manda a WhatsApp.
+- **La ficha solo ofrece el paquete de su audiencia.** El servidor de la landing también comprueba `allowedPlanIds` antes de enviar el código, y un `PLAN_NOT_ALLOWED` de contygo devuelve a la persona al paso del paquete.
+
+Que el servicio exista no basta: hasta el 15-10-2026 la ficha lo mandaba a WhatsApp porque la landing no conocía el `kind` `single_choice` (lo trataba como «desconocido»). Desde entonces lo responde, para este y cualquier otro servicio.
 
 ## La evaluación
 
@@ -27,7 +35,7 @@ Las tres preguntas que aprobó el dueño (`lib/agent/hearing-intake.ts`):
 2. ¿Cuándo es tu próxima audiencia? Vale «No la tengo a mano». Si faltan 3 días o menos, el agente avisa que reserve cuanto antes.
 3. ¿Esa audiencia es la de mérito, donde se presenta tu caso completo? Sí: preparación para la tercera audiencia. No: para la segunda.
 
-El criterio es el de [la página de la asesoría](https://links.usalatinoprime.com/asesoria): «La de tu próxima cita en la corte. Si es una audiencia preliminar, la segunda; si es tu audiencia de mérito, la tercera.» Al llegar al contrato, el paquete recomendado ya está elegido y la persona puede cambiarlo. Las respuestas llevan claves `audiencia.*` y no salen hacia contygo.
+El criterio es el de [la página de la asesoría](https://links.usalatinoprime.com/asesoria): «La de tu próxima cita en la corte. Si es una audiencia preliminar, la segunda; si es tu audiencia de mérito, la tercera.» Al llegar al contrato, la ficha solo ofrece el paquete de esa audiencia. Las respuestas de la landing llevan claves `audiencia.*` y no salen hacia contygo: salen las de contygo que se derivan de ellas (sección anterior).
 
 ## Los vídeos
 
@@ -39,4 +47,4 @@ El criterio es el de [la página de la asesoría](https://links.usalatinoprime.c
 
 ## Simulador
 
-`scripts/contygo-mock-server.cjs` ya tiene el servicio tal como se recomienda crearlo, para probar el contrato en local con el código `481920`. Link directo: `/preparacion-de-audiencia` (también `/preparacion-audiencia` y `/audiencia`).
+`scripts/contygo-mock-server.cjs` reproduce el servicio como está en producción: los dos paquetes, las dos preguntas, la regla de 7 días, `allowedPlanIds` y el `422 PLAN_NOT_ALLOWED`. El código de prueba es `481920`. Enlace directo: `/preparacion-de-audiencia` (también `/preparacion-audiencia` y `/audiencia`).

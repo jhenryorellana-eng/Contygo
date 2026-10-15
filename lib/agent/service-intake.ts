@@ -17,7 +17,7 @@ export type ServiceAnswers = Record<string, AnswerValue>;
 /**
  * Lo que el navegador necesita de cada pregunta. kind "state": options [{code, label}] (la respuesta es el código de
  * 2 letras). kind "date": dateMode past/birthdate (hasta hoy) o future_event (desde hoy; minNotice es informativo).
- * kind "choice": una de sus options (las preguntas propias de Reforzamiento de Asilo; contygo no tiene este kind).
+ * kind "choice": una de sus options (las propias de Reforzamiento de Asilo y las single_choice de contygo: la respuesta es su code).
  * kind "unknown": no se puede responder; la ficha ofrece WhatsApp.
  */
 export interface IntakeQuestion {
@@ -152,8 +152,8 @@ export function normalizeIntakeAnswer(question: IntakeQuestion, value: unknown):
   if (question.id === PRIORITY_FIELD) return normalizePriorityAnswer(value);
   const field = visaField(question.id);
   if (field) return validateIntakeAnswer(field, value);
-  // Las de opciones son propias de Reforzamiento de Asilo: las valida lib/agent/asylum-intake.ts.
-  if (question.kind === "choice") return null;
+  // Las de opciones de contygo (single_choice): el code de una de sus options, tal cual o por su rótulo.
+  if (question.kind === "choice") return normalizeAnswer(question, value);
   // Una fecha escrita o dicha con el mes en palabras («15 de marzo de 2024») vale igual que la del calendario.
   const written = question.kind === "date" && typeof value === "string" && value.length <= 60 && !/^\d{4}-\d{2}-\d{2}$/.test(value) ? parseWrittenDate(value) : null;
   return normalizeAnswer({ ...question, kind: question.kind }, written ?? value);

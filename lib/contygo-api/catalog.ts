@@ -82,7 +82,7 @@ export async function localServiceNameFor(remoteId: string, budget: CallBudget =
   return CONTRACT_SERVICES.find(service => service.slug === slug)?.name ?? null;
 }
 
-/** Texto de una opción (us_state): `name` {es, en} de contygo (o `label`, respaldo), y el código si no trae ninguno. */
+/** Texto de una opción (us_state o single_choice): `name` {es, en} de contygo (o `label`, respaldo), y el código si no trae ninguno. */
 function optionLabel(option: { code: string; name?: unknown; label?: unknown }): string {
   for (const value of [option.name, option.label]) {
     if (typeof value === "string" && value) return value;
@@ -103,7 +103,7 @@ export function publicQuestion(question: CatalogQuestion) {
     kind,
     ...(question.dateMode ? { dateMode: question.dateMode } : {}),
     ...(question.minNotice ? { minNotice: question.minNotice } : {}),
-    ...(kind === "state" && Array.isArray(question.options) ? { options: question.options.map(option => ({ code: option.code, label: optionLabel(option) })) } : {}),
+    ...((kind === "state" || kind === "choice") && Array.isArray(question.options) ? { options: question.options.map(option => ({ code: option.code, label: optionLabel(option) })) } : {}),
   };
 }
 

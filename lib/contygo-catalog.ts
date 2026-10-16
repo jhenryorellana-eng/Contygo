@@ -142,8 +142,9 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     audience: "Personas con una orden de deportación in absentia que necesitan preparar una solicitud de reapertura.",
     includes: ["Cuestionario sobre el motivo de la ausencia y sus evidencias.", "Preparación de la moción de reapertura.", "Proof of Service y carátula.", "EOIR-26A cuando corresponda."],
     exclusions: ["Es una moción ante la misma corte, no una apelación ante la BIA.", "El servicio no incluye representación legal ni garantiza la reapertura."],
-    price: 250,
-    plans: [{ name: "Sin abogado", price: 250 }],
+    // contygo's price (13-10-2026); the page always shows the live one.
+    price: 550,
+    plans: [{ name: "Sin abogado", price: 550 }],
   },
   {
     id: "itin",
@@ -200,7 +201,8 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     ],
     exclusions: ["Henry es consultor migratorio certificado en Utah, no abogado: la sesión es orientación personal y no incluye representación legal.", "No garantiza el resultado de tu audiencia."],
     price: 150,
-    plans: [{ name: "Segunda audiencia", price: 150 }, { name: "Tercera audiencia", price: 350 }],
+    // Names as in contygo (13-10-2026): the live price is matched by name.
+    plans: [{ name: "Preparación para la segunda audiencia", price: 150 }, { name: "Preparación para la tercera audiencia", price: 350 }],
   },
 ];
 

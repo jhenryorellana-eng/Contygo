@@ -24,7 +24,7 @@ function TouchHand(){return <svg viewBox="0 0 56 72" fill="none" aria-hidden="tr
 /** onContract: abre la ficha de contratación del recorrido; sin ella, el botón sigue enlazando a ContyGo. */
 /** priority: el resultado de la fecha de prioridad (Ajuste de estatus); asylum: el del plazo de pruebas (Reforzamiento
  *  de Asilo). Cambian la invitación tras el vídeo. */
-type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null;hearing?:{kind:string;advisor:boolean}|null;eligible?:boolean|null};
+type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null;hearing?:{kind:string;advisor:boolean;reason?:string}|null;eligible?:boolean|null};
 export default function PaperPlaneClosing(props:ClosingProps){
   return props.preparedVoice?<ClosingScene {...props} voice={props.preparedVoice}/>:<LocalClosing {...props}/>;
 }
@@ -34,7 +34,8 @@ function LocalClosing(props:ClosingProps){
 }
 function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum,hearing,eligible}:{voice:ClosingVoice}&ClosingProps){
   const [serviceId,setServiceId]=useState(providedService?.id??"visa-juvenil"),[name,setName]=useState(closingName(displayName)),[take,setTake]=useState(0);
-  const [phase,setPhase]=useState<"watch"|"flying"|"invitation">("watch"),[blocked,setBlocked]=useState(false),[failed,setFailed]=useState(false);
+  const [phase,setPhase]=useState<"watch"|"flying"|"invitation">("watch"),[blocked,setBlocked]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false),stallTimer=useRef(0);
+  useEffect(()=>()=>window.clearTimeout(stallTimer.current),[]);
   const [calling,setCalling]=useState(false),[ctaInvited,setCtaInvited]=useState(false);
   const scene=useRef<HTMLDivElement>(null),frame=useRef<HTMLDivElement>(null),video=useRef<HTMLVideoElement>(null),plane=useRef<HTMLDivElement>(null),symbol=useRef<HTMLDivElement>(null),brand=useRef<HTMLDivElement>(null),cta=useRef<HTMLAnchorElement>(null),title=useRef<HTMLHeadingElement>(null);
   const context=useRef<gsap.Context|null>(null),flying=useRef(false),voiceRef=useRef(voice);voiceRef.current=voice;
@@ -73,7 +74,7 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
       onCue:()=>{setCalling(true);setCtaInvited(true);},
     });
   }
-  function replay(){voice.stop();setCalling(false);setCtaInvited(false);context.current?.revert();setPhase("watch");setBlocked(false);setFailed(false);setTake(n=>n+1);}
+  function replay(){voice.stop();setCalling(false);setCtaInvited(false);context.current?.revert();setPhase("watch");setBlocked(false);setFailed(false);setStalled(false);setTake(n=>n+1);}
   function play(){voice.unlock();setBlocked(false);void video.current?.play().catch(()=>setBlocked(true));}
   function finish(){
     if(flying.current||!scene.current||!frame.current||!plane.current||!symbol.current||!brand.current||!cta.current)return;
@@ -134,7 +135,7 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
           From the paper plane on, a calm stage light takes over (no threads at the invitation). */}
       <div className={s.stageLight} aria-hidden="true"/>
       <div className={s.light} aria-hidden="true"><LiquidGlow intensity={phase==="watch"?.5:1} level={voice.level}/></div>
-      <div ref={frame} className={s.filmFrame}><video ref={video} src={film.src??undefined} poster={film.poster} playsInline controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} autoPlay={autoPlay} onEnded={finish} onPlay={()=>{voice.unlock();setBlocked(false);}} onError={()=>setFailed(true)} onPause={event=>{if(!flying.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setBlocked(true);}} onContextMenu={event=>event.preventDefault()} aria-label={`Cómo te acompaña ContyGo · ${service.name}${film.provisional?" · vídeo provisional":""}`}>{film.captions&&<track data-external-captions default ref={element=>{if(element)element.track.mode="hidden";}} kind="captions" src={film.captions} srcLang="es" label="Español"/>}</video></div>
+      <div ref={frame} className={s.filmFrame}><video ref={video} src={film.src??undefined} poster={film.poster} playsInline controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} autoPlay={autoPlay} onEnded={finish} onPlay={()=>{voice.unlock();setBlocked(false);}} onError={()=>setFailed(true)} onWaiting={()=>{window.clearTimeout(stallTimer.current);stallTimer.current=window.setTimeout(()=>setStalled(true),10000);}} onPlaying={()=>{window.clearTimeout(stallTimer.current);setStalled(false);}} onPause={event=>{if(!flying.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setBlocked(true);}} onContextMenu={event=>event.preventDefault()} aria-label={`Cómo te acompaña ContyGo · ${service.name}${film.provisional?" · vídeo provisional":""}`}>{film.captions&&<track data-external-captions default ref={element=>{if(element)element.track.mode="hidden";}} kind="captions" src={film.captions} srcLang="es" label="Español"/>}</video></div>
       {/* Same subtitles as the first film, shown as soon as this film has its WebVTT file. */}
       {film.captions&&phase==="watch"&&<div className={s.filmCaptions} data-film-captions><ExternalVideoCaptions videoRef={video} src={film.captions} toggle={!film.onScreenText}/></div>}
       <div className={s.plane} ref={plane} aria-hidden="true"><svg viewBox="0 0 104 60" fill="none"><polygon data-plane-wing data-plane-top points="2,6 101,1 44,30 44,30" fill="#F6F8F7"/><polygon data-plane-wing data-plane-bottom points="101,1 64,56 44,30 44,30" fill="#B8CABC"/><path data-plane-crease d="m101 1-62 29 5 24 7-18Z" fill="#087F46"/><path data-plane-crease d="m39 30 62-29-57 29" stroke="#fff" strokeWidth=".8"/></svg></div>
@@ -159,7 +160,7 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
         <p data-message className={s.footnote}>{service.id==="evaluacion-asilo"?"Conoce el alcance. Después decides.":"Primero lees. Después decides y firmas."}</p>
         {phase==="invitation"&&<div className={s.voiceControls}><button onClick={()=>{voice.unlock();speakInvitation();}}>{voice.status==="blocked"?"Activar voz":voice.status==="unavailable"?"Reintentar voz":"Escuchar invitación"}</button><button onClick={voice.toggleMute}>{voice.muted?"Activar sonido":"Silenciar"}</button><details><summary>Leer invitación</summary><p>{script}</p></details></div>}
       </div>
-      {phase==="watch"&&(!autoPlay||blocked||failed)&&<div className={s.watchTools}><button onClick={()=>{if(failed){setFailed(false);video.current?.load();}play();}}>{failed?"Reintentar vídeo":blocked?"Continuar vídeo":"Reproducir vídeo + cierre"}</button>{failed&&<p>No se pudo cargar el vídeo.</p>}{!autoPlay&&<><button onClick={()=>{voice.unlock();video.current?.pause();finish();}}>Probar solo la transición</button><small>{film.provisional?"Clip temporal · ":""}la transición comienza después del vídeo.</small></>}</div>}
+      {phase==="watch"&&(!autoPlay||blocked||failed||stalled)&&<div className={s.watchTools}><button onClick={()=>{if(failed){setFailed(false);video.current?.load();}play();}}>{failed?"Reintentar vídeo":blocked?"Continuar vídeo":stalled?"Seguir esperando el vídeo":"Reproducir vídeo + cierre"}</button>{(failed||stalled)&&<button onClick={()=>{voice.unlock();video.current?.pause();setFailed(false);setStalled(false);finish();}}>Continuar sin el vídeo</button>}{failed&&<p>No se pudo cargar el vídeo.</p>}{stalled&&!failed&&<p>El vídeo está tardando en cargar.</p>}{!autoPlay&&<><button onClick={()=>{voice.unlock();video.current?.pause();finish();}}>Probar solo la transición</button><small>{film.provisional?"Clip temporal · ":""}la transición comienza después del vídeo.</small></>}</div>}
     </div>
   </main>;
 }

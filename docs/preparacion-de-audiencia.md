@@ -14,7 +14,7 @@ Henry es consultor migratorio certificado en Utah, no abogado: la sesión es ori
 El contrato se hace por la API de contygo, como los demás servicios. El servicio **ya existe** en producción (lo montó el dueño desde el admin de contygo, guía `docs/guides/preparacion-de-audiencia-desde-el-admin.md` de x-legal):
 
 - **Slug:** `preparacion-de-audiencia` (la landing lo une por slug: `lib/contygo-catalog.ts`).
-- **Dos paquetes de pago único:** «Preparación para la segunda audiencia» ($150) y «Preparación para la tercera audiencia» ($350).
+- **Dos paquetes de pago único:** «Preparación para la segunda audiencia» ($150) y «Preparación para la tercera audiencia» ($350). `lib/contygo-catalog.ts` usa esos mismos nombres, porque la página busca el precio vivo de cada paquete por su nombre (con «Segunda audiencia» no se veía).
 - **Dos preguntas de elegibilidad propias de contygo:**
   - «¿Cuándo es su próxima audiencia?»: `date` + `future_event`, con **7 días naturales** de antelación. Una audiencia más cercana la descalifica (`event_too_close`).
   - «¿En qué audiencia se encuentra?»: `single_choice` con `segunda-audiencia` y `tercera-audiencia`. Limita el paquete: Segunda → $150, Tercera → $350. `/eligibility/evaluate` devuelve `allowedPlanIds` y `POST /contracts` rechaza otro paquete con `422 PLAN_NOT_ALLOWED`.
@@ -22,7 +22,7 @@ El contrato se hace por la API de contygo, como los demás servicios. El servici
 **El chat no repite esas dos preguntas:** las responde con las suyas (`hearingRemoteAnswers` en `lib/agent/hearing-intake.ts`, que las encuentra por `kind` y por sus opciones, nunca por posición ni id). La fecha va tal cual; «¿Es la de mérito?» sí → `tercera-audiencia`, no → `segunda-audiencia`.
 
 - **«No la tengo a mano»:** la fecha queda sin responder. No es un «no»: la ficha del contrato la pide en su paso «Preguntas» y contygo vuelve a evaluar antes de enviar el código.
-- **Audiencia en menos de 7 días:** el chat lo dice («Henry necesita al menos 7 días…»), el cierre es «Hablar con Henry» y la ficha manda a WhatsApp.
+- **Audiencia en menos de 7 días:** el chat lo dice («Henry necesita al menos 7 días…»), el cierre dice «Tu audiencia es en pocos días: Henry te ayuda a prepararla por WhatsApp» con el botón «Hablar con Henry», y la ficha manda a WhatsApp. Con otro reparo de contygo, el cierre es «Antes de reservar, Henry revisa tu caso contigo».
 - **La ficha solo ofrece el paquete de su audiencia.** El servidor de la landing también comprueba `allowedPlanIds` antes de enviar el código, y un `PLAN_NOT_ALLOWED` de contygo devuelve a la persona al paso del paquete.
 
 Que el servicio exista no basta: hasta el 15-10-2026 la ficha lo mandaba a WhatsApp porque la landing no conocía el `kind` `single_choice` (lo trataba como «desconocido»). Desde entonces lo responde, para este y cualquier otro servicio.

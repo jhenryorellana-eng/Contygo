@@ -371,6 +371,10 @@ export function buildContractBody(options: {
 
 // ---------------- Respuestas de POST /contracts ----------------
 
+/** Los ids de paquete de una lista de contygo (allowedPlanIds), sin nada que no sea un id. */
+export const planIds = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((id): id is string => typeof id === "string" && id.length > 0 && id.length <= 100).slice(0, 50) : [];
+
 /** El paquete elegido no corresponde a las respuestas (PLAN_NOT_ALLOWED): se vuelve al paso del paquete. */
 export const PLAN_NOT_ALLOWED_MESSAGE = "Este paquete no corresponde a lo que nos contaste. Elige el paquete que te corresponde.";
 

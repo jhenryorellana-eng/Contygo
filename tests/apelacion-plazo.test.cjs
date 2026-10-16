@@ -56,6 +56,15 @@ test('el cierre: con un «no» de contygo, «Hablar con un asesor» y no «Revis
   assert.match(closingScript('Ana', 'apelacion', 'apelacion-asesor'), /^Ana, tu próximo paso.*un asesor revisa tu plazo contigo.*Toca Hablar con un asesor/);
 });
 
+test('ningún cierre que invita a contratar en línea sobrevive al «no» de contygo', () => {
+  assert.equal(closingVariant('i-485', { status: 'current', previo: false }, null, null, false), 'asesor', 'fecha vigente pero otro reparo (soltero, I-360, deportación)');
+  assert.equal(closingVariant('i-485', { status: 'current', previo: false }, null, null, true), 'current');
+  assert.equal(closingVariant('i-485', { status: 'waiting', previo: true, near: true }, null, null, false), 'near', 'el contrato previo conserva su cierre');
+  assert.equal(closingVariant('reforzar-asilo', null, { kind: 'time', advisor: true, appeal: false }, null, false), 'asesor', 'con tiempo pero otro reparo: no «Tu fecha está muy cerca»');
+  assert.equal(closingVariant('reforzar-asilo', null, { kind: 'late', advisor: true, appeal: false }, null, false), 'asilo-asesor');
+  assert.equal(closingVariant('preparacion-audiencia', null, null, { kind: 'tercera', advisor: false }, false), 'asesor');
+});
+
 test('la ficha dice qué pasa y deja el aviso general para cuando el contrato lo rechaza', () => {
   assert.equal(ineligibleMessage('apelacion').title, 'Revisemos tu plazo para apelar.');
   assert.match(ineligibleMessage('apelacion').detail, /WhatsApp/);

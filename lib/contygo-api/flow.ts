@@ -22,8 +22,9 @@
    · 1.ª llamada: tras un corte NO se repite con la misma clave (contygo no
      guarda ese 409 y respondería IN_PROGRESS 120 s): RETRY_LATER fresh_key.
      2.ª llamada: corte, 503, 500 o IN_PROGRESS repiten con la MISMA clave.
-   · HUMAN, UNAVAILABLE_ONLINE y los errores no transitorios dejan, sin PII,
-     un resumen en el lead (PUT /leads) y una referencia corta WEB-XXXXXX.
+   · HUMAN, UNAVAILABLE_ONLINE, NOT_ELIGIBLE (desde el 15-10-2026) y los errores no
+     transitorios dejan, sin PII, un resumen en el lead (PUT /leads) y una referencia
+     corta WEB-XXXXXX: ventas sabe que esa persona intentó contratar.
    · EXISTING_CLIENT (CLIENT_NEEDS_HUMAN con resolution existing_client) se avisa como HUMAN, con su propio código.
    · FIX_CONTACT (CLIENT_NEEDS_HUMAN con una pista segura: solo canal web y tras un código válido) NO es
      un fallo: la persona corrige el teléfono y empieza otra vez; no se avisa a ventas.
@@ -122,6 +123,12 @@ async function human(attempt: Attempt, code: string): Promise<BrowserOutcome> {
 async function existingClient(attempt: Attempt): Promise<BrowserOutcome> {
   await reportAttempt(attempt, "EXISTING_CLIENT");
   return { step: "EXISTING_CLIENT", ref: publicRef(attempt.externalRef) };
+}
+
+/** contygo dijo que no al contratar: la persona sale por WhatsApp y ventas lo ve en el lead. */
+async function notEligible(attempt: Attempt): Promise<BrowserOutcome> {
+  await reportAttempt(attempt, "NOT_ELIGIBLE");
+  return { step: "NOT_ELIGIBLE" };
 }
 
 async function unavailableOnline(attempt: Attempt, code: string): Promise<BrowserOutcome> {
@@ -230,11 +237,11 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
     logCode("elegibilidad", code);
     return { step: "RETRY_LATER", reason: "busy", retryAfter: evaluation.retryAfter };
   }
-  if (!evaluation.data.eligible) return { step: "NOT_ELIGIBLE" };
+  if (!evaluation.data.eligible) return notEligible(attempt);
   // Una opción única puede limitar los paquetes (Segunda → $150): el código no sale con un paquete que contygo rechazaría.
   const allowed = evaluation.data.allowedPlanIds;
   if (Array.isArray(allowed)) {
-    if (!allowed.length) return { step: "NOT_ELIGIBLE" };
+    if (!allowed.length) return notEligible(attempt);
     if (!allowed.includes(form.value.servicePlanId)) return { step: "INVALID", errors: { servicePlanId: PLAN_NOT_ALLOWED_MESSAGE } };
   }
 
@@ -292,7 +299,9 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
     case "RESTART":
       logCode("alta (1.ª llamada) inesperada", outcome.step);
       return failed(attempt, outcome.step);
-    default: // INVALID, NOT_ELIGIBLE, INVALID_PARTIES, RETRY_LATER
+    case "NOT_ELIGIBLE":
+      return notEligible(attempt);
+    default: // INVALID, INVALID_PARTIES, RETRY_LATER
       return outcome;
   }
 }
@@ -360,7 +369,9 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
     case "UNAVAILABLE":
       invalidateCatalog();
       return outcome;
-    default: // WRONG_CODE, RETRY_LATER, RESTART, NOT_ELIGIBLE, INVALID_PARTIES
+    case "NOT_ELIGIBLE":
+      return notEligible(attempt);
+    default: // WRONG_CODE, RETRY_LATER, RESTART, INVALID_PARTIES
       return outcome;
   }
 }

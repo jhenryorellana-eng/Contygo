@@ -41,7 +41,9 @@ import PhoneField, { COUNTRIES, splitPhone } from "../guide/PhoneField";
 import s from "./ContractCheckout.module.css";
 
 type Terms = { version: string; es: string; en: string };
-type ServiceData = { service: PublicServiceView | null; checkoutEnabled?: boolean; reason?: string; terms: Terms; captchaSiteKey: string | null };
+/** contygo's verdict asked by the form itself (when the chat had none, or after answering what was missing); null: unknown. */
+type EarlyVerdict = { eligible: boolean; reasons: string[]; allowedPlanIds?: string[] } | null;
+type ServiceData = { service: PublicServiceView | null; checkoutEnabled?: boolean; reason?: string; terms: Terms; captchaSiteKey: string | null; eligibility?: EarlyVerdict };
 /** The same data once the service is known to be contractable. */
 type ReadyData = Omit<ServiceData, "service"> & { service: PublicServiceView };
 type Person = DraftPerson;
@@ -138,6 +140,10 @@ const hearingPlan = (plans: PublicServiceView["plans"], kind: HearingOutcome["ki
   return words ? plans.find(plan => words.test(text(plan.name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) : undefined;
 };
 
+/** The packages contygo allows with these answers (allowedPlanIds), when it says so and they are in the catalog; else all. */
+const allowedPlans = (plans: PublicServiceView["plans"], allowed: string[] | undefined) =>
+  allowed?.length && plans.some(plan => allowed.includes(plan.id)) ? plans.filter(plan => allowed.includes(plan.id)) : plans;
+
 /** Sin la fecha a mano falta la respuesta del boletín: el contrato en línea no puede salir aunque contygo no diga que no. */
 const previoWithAdvisor = (priority: PriorityOutcome | undefined, eligible: boolean | null | undefined) =>
   Boolean(priority?.previo && (eligible === false || priority.status === "unknown"));
@@ -175,6 +181,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const [notice, setNotice] = useState<Notice | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
+  /** contygo's «no» found by the form itself (the chat had no verdict): the same exit as the chat's «no». */
+  const [verdict, setVerdict] = useState<boolean | null>(null);
   const [maskedEmail, setMaskedEmail] = useState("");
   const [code, setCode] = useState("");
   const [result, setResult] = useState<Result | null>(null);
@@ -188,6 +196,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const [sent, setSent] = useState<SentVerification | null>(null);
   /** While the flow runs, this tab keeps it in sessionStorage; at the end it forgets it. */
   const [keeping, setKeeping] = useState(false);
+  /** A form restored from this tab (the guide reopened, or Básico ↔ Premium) opens on its first unfinished step. */
+  const resumeAtGap = useRef(false);
   const reference = useRef("");
   const pending = useRef<Pending | null>(null);
   const resendKey = useRef<string | null>(null);
@@ -200,10 +210,27 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const uid = useId();
   const captcha = useTurnstile(data?.captchaSiteKey ?? null, stage === "code" ? "code" : stage === "form" && step === "review" ? "review" : "");
 
+  /** What a «no» of contygo says here: a hearing too close for its notice has its own words. */
+  const refusal = useCallback((reasons: string[] = []) =>
+    service.id === "preparacion-audiencia" && reasons.includes("event_too_close") ? HEARING_TOO_CLOSE_MESSAGE : ineligibleMessage(service.id), [service.id]);
+
   const load = useCallback(async () => {
     setStage("loading"); setNotice(null);
+    // What the conversation already decided (an advisor on WhatsApp) does not depend on loading the service:
+    // «No pudimos cargar los datos» never stands in for it.
+    const known = journey.current;
+    reference.current = known.externalRef || reference.current;
+    const advisorNotice = previoWithAdvisor(known.priority, known.eligible) ? previoMessage(known.priority!.status === "unknown" ? "unknown" : known.priority!.near ? "near" : "far")
+      // Asilo con el plazo vencido, sin fecha o con la audiencia en pocos días: el contrato lo prepara un asesor, aunque contygo lo acepte.
+      : known.asylum?.advisor ? asylumMessage(known.asylum)
+      // Preparación de audiencia sin una audiencia programada (o tan pronto que no da tiempo): Henry, por WhatsApp.
+      : known.hearing?.advisor ? (known.hearing.tooClose ? HEARING_TOO_CLOSE_MESSAGE : known.hearing.kind === "none" ? HEARING_ADVISOR_MESSAGE : ineligibleMessage(service.id))
+      : known.eligible === false ? ineligibleMessage(service.id) : null;
+    if (advisorNotice) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...advisorNotice }); return; }
     try {
-      const { status, data: body } = await postJson("/api/contratar/servicio", { serviceId: service.id });
+      // Without the chat's verdict (contygo did not answer then, or this is another variant), the form asks for it now:
+      // a «no» is said before the person types anything, not at the end.
+      const { status, data: body } = await postJson("/api/contratar/servicio", { serviceId: service.id, ...(known.eligible == null ? { answers: known.answers ?? {} } : {}) });
       // Not in contygo's catalog (yet): not a connection problem, the service is not contracted online.
       if (status === 404 && body?.error === "service_not_contractable") { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
       if (status !== 200 || !body?.ok) throw new Error(body?.error ?? String(status));
@@ -215,9 +242,12 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) });
         return;
       }
-      // Preparación de audiencia: solo el paquete de la audiencia que dio la conversación (contygo no acepta el otro).
-      const only = hearingPlan(answer.service.plans, journey.current.hearing?.kind);
-      const next: ReadyData = { ...answer, service: only ? { ...answer.service, plans: [only] } : answer.service };
+      if (answer.eligibility?.eligible === false) { setVerdict(false); setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...refusal(answer.eligibility.reasons) }); return; }
+      // Only the packages these answers allow; in Preparación de audiencia, the one of the hearing the chat gave (contygo
+      // does not accept the other).
+      const permitted = allowedPlans(answer.service.plans, answer.eligibility?.allowedPlanIds);
+      const only = hearingPlan(permitted, journey.current.hearing?.kind);
+      const next: ReadyData = { ...answer, service: { ...answer.service, plans: only ? [only] : permitted } };
       setData(next);
       // A contract already made in this tab goes straight to its screen (the link can be resent).
       const saved = readContract();
@@ -226,13 +256,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         setStage("done"); setNotice({ tone: "info", ...outcomeMessage({ step: "ALREADY_DONE", caseNumber: saved.caseNumber }) });
         return;
       }
-      // Ajuste sin fecha vigente (o sin la fecha a mano): el contrato previo va con un asesor mientras contygo no lo acepte en línea.
-      if (previoWithAdvisor(from.priority, from.eligible)) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...previoMessage(from.priority!.status === "unknown" ? "unknown" : from.priority!.near ? "near" : "far") }); return; }
-      // Asilo con el plazo vencido, sin fecha o con la audiencia en pocos días: el contrato lo prepara un asesor, aunque contygo lo acepte.
-      if (from.asylum?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...asylumMessage(from.asylum) }); return; }
-      // Preparación de audiencia sin una audiencia programada (o tan pronto que no da tiempo): Henry, por WhatsApp.
-      if (from.hearing?.advisor) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...(from.hearing.tooClose ? HEARING_TOO_CLOSE_MESSAGE : from.hearing.kind === "none" ? HEARING_ADVISOR_MESSAGE : ineligibleMessage(service.id)) }); return; }
-      if (from.eligible === false) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...ineligibleMessage(service.id) }); return; }
+      // Ajuste sin fecha vigente (contrato previo), asilo o audiencia con asesor, o un «no» de contygo: ya resuelto al empezar
+      // (advisorNotice), antes de cargar el servicio.
       // A question this web cannot answer (a kind it does not know) is never guessed: WhatsApp.
       if (next.service.questions.some(question => question.kind === "unknown")) { setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...outcomeMessage({ step: "UNAVAILABLE_ONLINE" }) }); return; }
       // A question the conversation did not ask (another variant of the service) is asked here, first.
@@ -242,6 +267,9 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
 
       const draft = readDraft();
       const mine = draft?.serviceId === service.id ? draft : null;
+      // Visa Juvenil Básico ↔ Premium (15-10-2026): the same conversation keeps what the person already wrote (name, contact,
+      // address and people). The package, the acceptance and a code already sent belong to the other contract: they start again.
+      const sibling = !mine && draft && from.externalRef && draft.externalRef === from.externalRef ? draft : null;
       reference.current = from.externalRef || mine?.externalRef || reference.current || newExternalRef();
       if (mine) {
         // A draft from before the US-only phone may carry a foreign number: it does not go in the contract.
@@ -252,24 +280,34 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         personKey.current = Math.max(personKey.current, ...mine.persons.map(person => person.key));
       } else {
         const plan = hearingPlan(next.service.plans, from.hearing?.kind) ?? next.service.plans[0];
-        const name = from.displayName.trim();
-        // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
-        const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
-        if (from.phone?.trim() && !prefill) setPhoneHint(true);
-        setForm(current => ({ ...current, ...reconcileSelection(next.service.plans, current.planId || plan?.id || "", current.installmentId), firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
-        setPersons(current => current.length ? current : next.service.partyRoles.filter(role => role.isRequired).map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" })));
+        if (sibling) {
+          const roles = new Set(next.service.partyRoles.map(role => role.roleKey));
+          const kept = sibling.persons.filter(person => roles.has(person.role));
+          personKey.current = Math.max(personKey.current, ...kept.map(person => person.key));
+          const added = next.service.partyRoles.filter(role => role.isRequired && !kept.some(person => person.role === role.roleKey))
+            .map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" }));
+          setForm({ ...sibling.form, phone: isUsPhone(sibling.form.phone) ? sibling.form.phone : "", ...reconcileSelection(next.service.plans, plan?.id ?? "", "") });
+          setPersons([...kept, ...added]);
+        } else {
+          const name = from.displayName.trim();
+          // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
+          const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
+          if (from.phone?.trim() && !prefill) setPhoneHint(true);
+          setForm(current => ({ ...current, ...reconcileSelection(next.service.plans, current.planId || plan?.id || "", current.installmentId), firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
+          setPersons(current => current.length ? current : next.service.partyRoles.filter(role => role.isRequired).map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" })));
+        }
       }
       setKeeping(true);
       // A code already sent in this same conversation is still waiting on its screen.
       if (mine?.sent && mine.externalRef === reference.current) {
         setSent(mine.sent); setMaskedEmail(mine.sent.maskedEmail); setStage("code");
         setNotice({ tone: "info", ...outcomeMessage({ step: "ASK_CODE", maskedEmail: mine.sent.maskedEmail }) });
-      } else setStage("form");
+      } else { resumeAtGap.current = Boolean(mine || sibling); setStage("form"); }
     } catch {
       setStage("failed");
       setNotice({ tone: "error", title: "No pudimos cargar los datos de tu servicio.", detail: "Revisa tu conexión e inténtalo de nuevo." });
     }
-  }, [service.id]);
+  }, [service.id, refusal]);
   useEffect(() => { void load(); }, [load]);
 
   // Guía §2 bis: while the flow runs this tab remembers it, so a refresh or a trip back to the video
@@ -295,6 +333,14 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     parties: persons.map(({ role, firstName, middleName, lastName, dateOfBirth }) => ({ role, firstName, ...(middleName.trim() ? { middleName } : {}), lastName, ...(dateOfBirth ? { dateOfBirth } : {}) })),
     consent,
   }), [form, persons, consent, installmentOptionId]);
+  useEffect(() => {
+    if (!resumeAtGap.current || stage !== "form" || !data) return;
+    resumeAtGap.current = false;
+    if (missing.length) return;
+    const check = validateContractForm(input, data.service);
+    const gap = check.ok ? "review" : steps.find(item => Object.keys(check.errors).some(key => STEPS[item].owns(key)));
+    if (gap) setStep(gap);
+  }, [stage, data, missing.length, input, steps]);
 
   // The guide speaks when a step (or the code / done screen) appears, once the screen has settled.
   const spokenFor = useRef("");
@@ -427,6 +473,27 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     setNotice(null);
     setErrors(current => Object.fromEntries(Object.entries(current).filter(([key]) => !STEPS[step].owns(key))));
     const following = steps[stepIndex + 1];
+    // The answers just given complete what contygo needs: its verdict now, not after the whole form.
+    if (step === "questions" && journey.current.eligible == null) { void confirmAnswers(following); return; }
+    if (following) goTo(following);
+  }
+  async function confirmAnswers(following: Step | undefined) {
+    if (!data) return;
+    setBusy(true);
+    try {
+      const { status, data: body } = await postJson("/api/contratar/servicio", { serviceId: service.id, answers: { ...journey.current.answers, ...extraAnswers } });
+      const early = status === 200 && body?.ok ? (body as unknown as ServiceData).eligibility : null;
+      if (early?.eligible === false) { finish(); setVerdict(false); setRetryable(false); setStage("blocked"); setNotice({ tone: "info", ...refusal(early.reasons) }); return; }
+      if (early?.eligible) {
+        setVerdict(true);
+        const permitted = allowedPlans(data.service.plans, early.allowedPlanIds);
+        if (permitted.length !== data.service.plans.length) {
+          setData({ ...data, service: { ...data.service, plans: permitted } });
+          setForm(current => ({ ...current, ...reconcileSelection(permitted, current.planId, current.installmentId) }));
+        }
+      }
+    } catch { /* No verdict: «Enviar mi código» asks contygo again anyway. */ }
+    finally { setBusy(false); }
     if (following) goTo(following);
   }
   function back() { setNotice(null); const previous = steps[stepIndex - 1]; if (previous) goTo(previous); }
@@ -525,8 +592,9 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     </label>;
   // El contrato previo (fecha de prioridad sin llegar) lo pide con su propio mensaje: la persona no está atascada, está reservando.
   const previo = previoWithAdvisor(priority, eligible);
-  const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor) || eligible === false;
-  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor || eligible === false ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
+  const refused = eligible === false || verdict === false;
+  const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor) || refused;
+  const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor || refused ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
   const appealUrl = asylum?.appeal ? getServiceGuideUrl("apelacion") : null;
   /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
   function retryFromBlocked() {
@@ -559,7 +627,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     ...(roles.length ? [{ step: "people" as const, title: "Personas", lines: persons.map(person => `${text(roles.find(role => role.roleKey === person.role)?.label)}: ${[person.firstName, person.lastName].filter(Boolean).join(" ") || "—"}`) }] : []),
     { step: "plan", title: "Paquete", lines: [...planSummary, form.locale === "es" ? "Contrato y correos en español" : "Contract and emails in English"] },
   ];
-  const title = stage === "done" ? "Tu contrato está listo para firmar." : stage === "code" ? "Confirma que eres tú." : stage === "form" ? STEPS[step].title : "Preparemos tu contrato.";
+  const talk = stage === "blocked" && (refused || Boolean(hearing?.advisor) || asylum?.kind === "late");
+  const title = stage === "done" ? "Tu contrato está listo para firmar." : stage === "code" ? "Confirma que eres tú." : stage === "form" ? STEPS[step].title : talk ? "Hablemos de tu caso." : "Preparemos tu contrato.";
 
   return <div ref={root} className={s.checkout} data-stage={stage} aria-busy={busy || stage === "loading"}>
     <div className={s.card}>

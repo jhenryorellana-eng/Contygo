@@ -62,7 +62,8 @@ La persona contrata dentro del recorrido de cada servicio y firma en contygo. Nu
 
 - **En `sessionStorage`** (`lib/contygo-api/browser.ts`):
   - los datos de la ficha;
-  - el `verificationId`, el **cuerpo exacto** de la 1.ª llamada y su ticket firmado.
+  - el `verificationId`, el **cuerpo exacto** de la 1.ª llamada y su ticket firmado;
+  - desde el 15-10-2026, **la guía de cada servicio** (`readJourney` / `saveJourney`): la conversación, la etapa y la variante elegida. Quien cierra la guía sin querer (la X, Escape) y vuelve a abrir ese servicio en la misma pestaña sigue donde la dejó, con el aviso «Seguimos donde lo dejaste» y el botón «Empezar de nuevo». Una guía de más de un día no se retoma. La ficha restaurada abre en su primer paso sin terminar.
 - **Solo en memoria:**
   - la `Idempotency-Key` de cada intento, generada con `crypto.randomUUID()`;
   - el `signingUrl`, que no se guarda nunca.
@@ -112,11 +113,13 @@ Esto evita también un fallo real del diseño anterior. Reconstruir el cuerpo en
 | `yes_no` | Un booleano | Botones Sí / No |
 | `date` | `"YYYY-MM-DD"` | Depende de `dateMode`:<br>• `past`, `birthdate` o sin `dateMode`: fecha hasta hoy (`max` = hoy).<br>• `future_event`: fecha desde hoy (`min` = hoy, `max` = 2100-12-31), con aviso de `minNotice` |
 | `us_state` | El código de 2 letras de `options` (`"TX"`) | Botón «Elegir mi estado» con las `options` del catálogo. También vale el rótulo de la opción, por ejemplo «Texas» |
+| `single_choice` (desde el 14-10-2026) | El `code` de una de sus `options` (`"segunda-audiencia"`) | Un botón por opción. También vale el rótulo escrito. En la ficha, si el chat no la respondió, una lista para elegir. Preparación de audiencia la responde desde sus propias preguntas (`docs/preparacion-de-audiencia.md`) |
 | cualquier otro | — | No se adivina. Se escala a WhatsApp:<br>• el chat devuelve `escalate`;<br>• la ficha se bloquea;<br>• `/iniciar` responde `HUMAN` con el código `UNKNOWN_QUESTION_KIND` |
 
 - **Texto libre o voz.** Gemini solo interpreta la respuesta a la pregunta en curso; «vivo en Texas» da `TX`. La elegibilidad la decide `POST /eligibility/evaluate`, nunca el modelo.
 - **`minNotice`** es solo informativo: quien decide es contygo. Su forma no está documentada. El chat lee `message.es`, `days` o `minDays` y, si no encuentra ninguno, muestra un aviso genérico. **Pendiente:** confirmarla con un `GET /catalog` de solo lectura. El `{days: 30}` del simulador es una suposición.
 - **Motivos de descarte.** `disqualified[].reason` (`answer`, `deadline_passed`, `event_too_close`, `age_limit_passed`…) se traduce a un texto neutro, sin «no aplica» y sin prometer un asesor.
+- **`allowedPlanIds`** (aditivo, 14-10-2026): con una `single_choice` que limita paquetes, la elegibilidad dice cuáles permiten las respuestas. `/iniciar` lo mira antes de enviar el código: con otro paquete responde `INVALID` con el error en el paquete; con la lista vacía, `NOT_ELIGIBLE`. Un 422 `PLAN_NOT_ALLOWED` de contygo se trata igual que ese `INVALID`. En Preparación de audiencia la ficha solo ofrece el paquete de esa audiencia.
 - **`principalFallbackWhenEmpty`** de `partyRoles` está tipado y llega a la ficha, pero la ficha todavía no lo usa.
 
 ### Formas de pago: `plans[].paymentOptions` (campo aditivo)
@@ -283,6 +286,7 @@ Sin base de datos no hay contadores compartidos: en Vercel cada instancia tiene 
 | Última respuesta | Contygo evalúa; el navegador guarda respuestas y veredicto | `POST /eligibility/evaluate` con `answers[{questionId, value}]` |
 | Pantalla del nombre | Nombre y teléfono, los dos opcionales; aquí el teléfono puede ser internacional. Aviso: «Al dejar tu teléfono aceptas que ContyGo te escriba por WhatsApp sobre este trámite». Si están los dos, se registra el lead | `PUT /leads/web-<uuid>`, `source: "web"`, URL y UTM |
 | Botón «Revisar mi contrato» del cierre | Se abre la ficha guiada: nombre, contacto (+1), dirección, personas, paquete y revisión | `GET /catalog` (vía `/servicio`) |
+| La ficha no trae el veredicto del chat (contygo no respondió entonces, u otra variante) o acaba de pedir las respuestas que faltaban (15-10-2026) | `/servicio` recibe `answers` y devuelve `eligibility` (`{eligible, reasons, allowedPlanIds?}`, o `null`). Con un «no», la ficha lo dice **antes** de pedir los datos: «Hablemos de tu caso.» y WhatsApp. Sin respuesta de contygo, sigue: `/iniciar` evalúa igual | `POST /eligibility/evaluate` |
 | «Enviar mi código» | Interruptor, CAPTCHA y límite propio. Después se repite la elegibilidad, se actualiza el lead y se hace la 1.ª llamada | `POST /contracts` → `409 CLIENT_VERIFICATION_REQUIRED` |
 | Código | El **mismo cuerpo** guardado, más `verificationId` y `verificationCode`, con una clave nueva | `POST /contracts` → `201` con `signingUrl` |
 | Firma | El botón «Firmar mi contrato» abre contygo | — |
@@ -311,7 +315,7 @@ Si la elegibilidad es negativa, el recorrido continúa: el segundo vídeo sigue 
 | `ASK_CODE` | 409 `CLIENT_VERIFICATION_REQUIRED` | Pantalla del código: «Te enviamos un código de 6 dígitos a j***@….» / «Escríbelo aquí. Vale durante 15 minutos.». Botones «Confirmar», «Corregir» y «¿No te llegó? Enviar otro código». El campo acepta «481 920» o «481-920» | La UI guarda el cuerpo, el ticket y el `verificationId` en `sessionStorage` |
 | `WRONG_CODE` | 409 `VERIFICATION_INVALID` | «El código no es correcto.» / «Te quedan N intentos.» | El mismo `verificationId`; un código distinto lleva clave nueva |
 | `RESTART` | 409 `VERIFICATION_EXPIRED`; un ticket caducado, ajeno o con el cuerpo cambiado; o un `INVALID` o `ASK_CODE` inesperado en la 2.ª llamada | «El código caducó. Te enviamos uno nuevo.» | En cuanto hay un token de CAPTCHA, la UI lanza sola una 1.ª llamada nueva, con clave nueva |
-| `NOT_ELIGIBLE` | La elegibilidad da `eligible: false`, o contygo responde 422 `NOT_ELIGIBLE` | «Con estas respuestas no podemos iniciar este servicio en línea.» / «¿Tienes dudas? Escríbenos por WhatsApp.» | Bloqueo con WhatsApp; se borra la ficha |
+| `NOT_ELIGIBLE` | La elegibilidad da `eligible: false`, o contygo responde 422 `NOT_ELIGIBLE` | «Con estas respuestas no podemos iniciar este servicio en línea.» / «¿Tienes dudas? Escríbenos por WhatsApp.» | Bloqueo con WhatsApp; se borra la ficha. Desde el 15-10-2026 deja el aviso en el lead (`NOT_ELIGIBLE`), para que ventas sepa que lo intentó |
 | `UNAVAILABLE` | El servicio no está en el catálogo, o contygo responde 422 `PLAN_NOT_CONTRACTABLE` (se invalida la caché del catálogo) | «Este servicio no está disponible ahora mismo.» | Bloqueo con WhatsApp; se borra la ficha |
 | `UNAVAILABLE_ONLINE` | Cualquiera de estos:<br>• el interruptor (`CHECKOUT_DISABLED`);<br>• `DEV_WRITES_DISABLED`;<br>• un 401 o 403;<br>• `COMPLIANCE_INCOMPLETE` o `COMPLIANCE_EXPIRED`;<br>• `CASE_PAYMENT_PLAN_INVALID`, `CONSENT_CHANNEL_MISMATCH` o `NO_SALES_OWNER`;<br>• un 500 en la 1.ª llamada;<br>• un 401 o 403 del catálogo o de la elegibilidad | «La contratación en línea no está disponible en este momento.» / «Escríbenos por WhatsApp y te ayudamos a terminar.» | Bloqueo con WhatsApp; se borra la ficha. Deja el log `[contygo:config] <dónde> <código>` y el aviso en el lead, salvo con `CHECKOUT_DISABLED` y `DEV_WRITES_DISABLED` |
 | `INVALID_PARTIES` | 422 `INVALID_PARTIES` | «Revisa las personas del expediente: falta <rol>.» | Vuelve al paso «Personas»; el código enviado se descarta |
@@ -708,8 +712,8 @@ Responde 200 con `"channel":"web"` y la organización UsaLatinoPrime (comprobado
 ## Variantes de un servicio: Visa Juvenil Básico o Premium (12-10-2026)
 
 - `visa-juvenil-premium` (contygo.app/servicios/visa-juvenil-premium) es una **variante** de Visa Juvenil: está en `CONTYGO_VARIANTS` (`lib/contygo-catalog.ts`), no en `CONTYGO_SERVICES`, así que no tiene tarjeta, link ni entrada propia en el sitemap. `contractService(id)` la resuelve en `/servicio`, `/iniciar` y `/lead`.
-- Tras los dos vídeos, «Revisar mi contrato» abre `ServiceVariantPicker`: una carpeta por opción, con las etapas como pestañas y el precio vivo de `/api/contratar/servicio`. El contrato es de la opción elegida y la ficha tiene «Cambiar de servicio».
-- Las respuestas del chat son de las preguntas de Básico. `carryAnswers` (`lib/contygo-api/variants.ts`) las reutiliza si Premium hace la misma pregunta (mismo texto y tipo) y la respuesta encaja. Lo que falte lo pide la ficha en un primer paso, «Preguntas», en vez de bloquear con `NEEDS_ANSWERS`. El veredicto del chat solo vale para Básico: Premium lo evalúa contygo al contratar.
+- Tras los dos vídeos, «Revisar mi contrato» abre `ServiceVariantPicker`: una carpeta por opción, con las etapas como pestañas y el precio vivo de `/api/contratar/servicio`. El contrato es de la opción elegida y la ficha tiene «Cambiar de servicio». Al cambiar (15-10-2026), la ficha conserva lo ya escrito en la misma conversación (nombre, contacto, dirección y personas) y abre en el primer paso sin terminar; el paquete, la aceptación y un código ya enviado empiezan de nuevo, porque son de otro contrato.
+- Las respuestas del chat son de las preguntas de Básico. `carryAnswers` (`lib/contygo-api/variants.ts`) las reutiliza si Premium hace la misma pregunta (mismo texto y tipo) y la respuesta encaja. Lo que falte lo pide la ficha en un primer paso, «Preguntas», en vez de bloquear con `NEEDS_ANSWERS`. El veredicto del chat solo vale para Básico: la ficha de Premium pide el suyo a `/servicio` al abrir (o tras el paso «Preguntas»), y contygo lo repite al contratar.
 - Simulador: Premium es una copia de Básico con su precio publicado ($3,500) y sus propios ids. Sin `MOCK_PLAIN_CATALOG` también pregunta la fecha de nacimiento del menor, para ver el paso «Preguntas». Probador: `/contygo-motion/visa-transicion?demo=selector` abre el cierre con el selector ya abierto (solo en desarrollo).
 
 ## Qué queda fuera del recorrido

@@ -270,6 +270,11 @@ test('ajuste: «No la tengo a mano» dice dónde buscarla; con otro reparo de co
   assert.equal(blocked.eligible, false);
   assert.equal(blocked.priority.previo, false);
   assert.equal(blocked.guidance.title, 'Revisemos tu caso con más detalle');
+  // El agente lo dice (no «¡Listo!») y el cierre no invita a «Revisar mi contrato» con la fecha vigente (13-10-2026).
+  assert.match(blocked.message, /^Gracias por responder\. .*Antes de contratar, un asesor revisa tu caso contigo por WhatsApp\./);
+  const closing = require('../components/contygo/juvenil/closingSpeech.ts');
+  assert.equal(closing.closingVariant('i-485', blocked.priority, null, null, blocked.eligible), 'asesor');
+  assert.equal(closing.closingAction('i-485', 'asesor'), 'Hablar con un asesor');
 });
 
 test('ajuste: Gemini entiende «no sé» como UNKNOWN solo en la fecha de prioridad', async () => {

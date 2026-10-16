@@ -11,22 +11,30 @@ export const closingName = (value:string) => value.replace(new RegExp("[^\\p{L}\
  *  contrato con un asesor. El botón dice «Revisar mi contrato», como pide el final del vídeo 2. Con el plazo vencido
  *  («asilo-asesor», y «asilo-apelacion» si el mérito final ya está encima) no hay contrato que revisar: «Hablar con un asesor». */
 /** Preparación de audiencia: el cierre nombra la preparación que le toca («audiencia-segunda» o «audiencia-tercera»).
- *  Sin audiencia programada («audiencia-henry») no hay sesión que reservar todavía: «Hablar con Henry». */
+ *  Sin audiencia programada («audiencia-henry») no hay sesión que reservar todavía: «Hablar con Henry». Tampoco se reserva
+ *  en línea con la audiencia antes de la antelación de contygo («audiencia-pronto», tooClose) o con otro reparo de contygo
+ *  («audiencia-revisar»): también «Hablar con Henry». Sin la fecha a mano sí hay contrato: la ficha pide la fecha. */
 /** Los demás servicios, cuando contygo dice que no (13-10-2026): no hay contrato en línea que revisar, así que el cierre no
  *  invita a revisarlo («asesor»; en Apelación, «apelacion-asesor», por el plazo). Botón: «Hablar con un asesor». */
-export type ClosingVariant = "current" | "near" | "far" | "unknown" | "asilo-tiempo" | "asilo-sinfecha" | "asilo-pronto" | "asilo-asesor" | "asilo-apelacion" | "audiencia-segunda" | "audiencia-tercera" | "audiencia-henry" | "asesor" | "apelacion-asesor" | null;
+export type ClosingVariant = "current" | "near" | "far" | "unknown" | "asilo-tiempo" | "asilo-sinfecha" | "asilo-pronto" | "asilo-asesor" | "asilo-apelacion" | "audiencia-segunda" | "audiencia-tercera" | "audiencia-henry" | "audiencia-pronto" | "audiencia-revisar" | "asesor" | "apelacion-asesor" | null;
 type AsylumClosing = { kind: string; advisor: boolean; appeal: boolean };
-type HearingClosing = { kind: string; advisor: boolean };
-export const closingVariant = (serviceId:string, priority?:{status:string;previo:boolean;near?:boolean}|null, asylum?:AsylumClosing|null, hearing?:HearingClosing|null, eligible?:boolean|null):ClosingVariant =>
-  ownVariant(serviceId,priority,asylum,hearing)??(eligible===false&&serviceId!=="evaluacion-asilo"?serviceId==="apelacion"?"apelacion-asesor":"asesor":null);
+type HearingClosing = { kind: string; advisor: boolean; tooClose?: boolean };
+export const closingVariant = (serviceId:string, priority?:{status:string;previo:boolean;near?:boolean}|null, asylum?:AsylumClosing|null, hearing?:HearingClosing|null, eligible?:boolean|null):ClosingVariant => {
+  const own=ownVariant(serviceId,priority,asylum,hearing);
+  // A closing that invites to contract online («current», «asilo-tiempo»…) never survives contygo's «no»; nor does
+  // «Tu fecha está muy cerca» when the reason is another answer (Reforzamiento with its time but another blocker).
+  const invitesOnline=own==="current"||own==="asilo-tiempo"||own==="audiencia-segunda"||own==="audiencia-tercera";
+  if(eligible===false&&(invitesOnline||(own==="asilo-asesor"&&asylum?.kind==="time")))return "asesor";
+  return own??(eligible===false&&serviceId!=="evaluacion-asilo"?serviceId==="apelacion"?"apelacion-asesor":"asesor":null);
+};
 const ownVariant = (serviceId:string, priority?:{status:string;previo:boolean;near?:boolean}|null, asylum?:AsylumClosing|null, hearing?:HearingClosing|null):ClosingVariant =>
-  serviceId==="preparacion-audiencia"?!hearing?null:hearing.advisor?"audiencia-henry":hearing.kind==="tercera"?"audiencia-tercera":"audiencia-segunda"
+  serviceId==="preparacion-audiencia"?!hearing?null:hearing.advisor?hearing.kind==="none"?"audiencia-henry":hearing.tooClose?"audiencia-pronto":"audiencia-revisar":hearing.kind==="tercera"?"audiencia-tercera":"audiencia-segunda"
   :serviceId==="reforzar-asilo"?!asylum?null:!asylum.advisor?"asilo-tiempo":asylum.appeal?"asilo-apelacion"
   :asylum.kind==="nodate"?"asilo-sinfecha":asylum.kind==="soon"?"asilo-pronto":"asilo-asesor"
   :serviceId!=="i-485"||!priority?null:priority.status==="current"?"current":!priority.previo?null
   :priority.status==="unknown"?"unknown":priority.near?"near":"far";
 export const closingAction=(serviceId:string,variant:ClosingVariant=null)=>serviceId==="evaluacion-asilo"?"Conocer mi evaluación"
-  :variant==="asilo-asesor"||variant==="asilo-apelacion"||variant==="asesor"||variant==="apelacion-asesor"?"Hablar con un asesor":variant==="audiencia-henry"?"Hablar con Henry":"Revisar mi contrato";
+  :variant==="asilo-asesor"||variant==="asilo-apelacion"||variant==="asesor"||variant==="apelacion-asesor"?"Hablar con un asesor":variant==="audiencia-henry"||variant==="audiencia-pronto"||variant==="audiencia-revisar"?"Hablar con Henry":"Revisar mi contrato";
 const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
   current:["Tu fecha ya está vigente:","revisa tu contrato","y presentemos juntos","el ajuste del menor.","Tu historia sigue. ContyGo."],
   near:["Tu fecha está muy cerca:","asegura hoy tu lugar","con el contrato previo","y llega listo a tu fecha.","Tu historia sigue. ContyGo."],
@@ -40,6 +48,8 @@ const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
   "audiencia-segunda":["Tu segunda audiencia se prepara mejor acompañado:","revisa tu contrato","y prepárala con Henry,","a tu ritmo y en español.","Tu historia sigue. ContyGo."],
   "audiencia-tercera":["Tu audiencia de mérito merece un plan claro:","revisa tu contrato","y recorre tu historia con Henry","antes de ese día.","Tu historia sigue. ContyGo."],
   "audiencia-henry":["Cuando tengas tu audiencia,","Henry te ayuda a prepararla.","Mientras tanto,","escríbele por WhatsApp.","Tu historia sigue. ContyGo."],
+  "audiencia-pronto":["Tu audiencia es en pocos días:","Henry te ayuda a prepararla","por WhatsApp,","cuanto antes.","Tu historia sigue. ContyGo."],
+  "audiencia-revisar":["Antes de reservar,","Henry revisa tu caso contigo","por WhatsApp","y te dice cómo seguir.","Tu historia sigue. ContyGo."],
   asesor:["Por lo que nos contaste,","un asesor revisa tu caso contigo","por WhatsApp","antes de contratar.","Tu historia sigue. ContyGo."],
   "apelacion-asesor":["Por la fecha de la decisión,","un asesor revisa tu plazo contigo","por WhatsApp,","hoy mismo.","Tu historia sigue. ContyGo."],
 };

@@ -8,7 +8,7 @@
    · La signingUrl no se guarda nunca: vive en memoria, para el botón.
    Sin dependencias del servidor: lo usan la ficha y la página de «gracias».
    ============================================================ */
-import type { ContractBody, Locale } from "./types";
+import type { AnswerValue, ContractBody, Locale } from "./types";
 
 export type DraftForm = {
   firstName: string; middleName: string; lastName: string; email: string; phone: string;
@@ -33,8 +33,26 @@ export type CheckoutDraft = {
 /** Al terminar solo queda esto (sin datos personales), para la página de «gracias». */
 export type SavedContract = { v: 1; serviceId: string; token: string; caseNumber: string; clientCreated: boolean };
 
+/**
+ * La guía de un servicio (15-10-2026): la conversación, la etapa y la variante elegida. Quien cierra la guía sin querer
+ * (la X, Escape) la retoma donde la dejó al volver a abrir ese servicio en la misma pestaña. `session` es la conversación
+ * tal como la guarda la guía (VisaIntakeSession): este módulo no depende de los componentes.
+ */
+export type SavedJourney<Session = unknown> = {
+  v: 1;
+  serviceId: string;
+  savedAt: number;
+  stage: "service" | "platform" | "decision";
+  session: Session;
+  /** Visa Juvenil: la variante elegida para el contrato (Básico o Premium) y sus respuestas. */
+  variant?: { serviceId: string; answers: Record<string, AnswerValue> };
+};
+
 const DRAFT_KEY = "contygo-contratacion";
 const CONTRACT_KEY = "contygo-contrato";
+const JOURNEY_KEY = "contygo-recorrido";
+/** Una guía de hace más de un día no se retoma: las fechas y la evaluación pueden haber cambiado. */
+const JOURNEY_MAX_AGE_MS = 24 * 60 * 60_000;
 
 // En modo privado, con el almacenamiento bloqueado o en una vista previa, sessionStorage puede
 // faltar o lanzar: la ficha sigue funcionando en memoria.
@@ -54,6 +72,15 @@ function remove(key: string) { try { storage()?.removeItem(key); } catch { /* na
 export const readDraft = () => read<CheckoutDraft>(DRAFT_KEY);
 export const saveDraft = (draft: CheckoutDraft) => write(DRAFT_KEY, draft);
 export const clearDraft = () => remove(DRAFT_KEY);
+
+/** La guía guardada de ESTE servicio, si es reciente; si no, null. */
+export function readJourney<Session>(serviceId: string): SavedJourney<Session> | null {
+  const saved = read<SavedJourney<Session>>(JOURNEY_KEY);
+  if (!saved || saved.serviceId !== serviceId || !saved.session || typeof saved.session !== "object") return null;
+  return typeof saved.savedAt === "number" && Date.now() - saved.savedAt < JOURNEY_MAX_AGE_MS ? saved : null;
+}
+export function saveJourney<Session>(journey: Omit<SavedJourney<Session>, "v" | "savedAt">) { write(JOURNEY_KEY, { v: 1, savedAt: Date.now(), ...journey }); }
+export const clearJourney = () => remove(JOURNEY_KEY);
 
 export const readContract = () => read<SavedContract>(CONTRACT_KEY);
 export const saveContract = (contract: SavedContract) => write(CONTRACT_KEY, contract);

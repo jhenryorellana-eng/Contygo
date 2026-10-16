@@ -451,7 +451,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
             </div>}
           </div>}
         </div>}
-        {error&&<div className={s.notice} role="alert"><p>{error}</p><button type="button" onClick={()=>{setError("");void ask();}}>Recuperar pregunta</button></div>}
+        {error&&<div className={s.notice} role="alert"><p>{error}</p><button type="button" onClick={()=>{setError("");void ask();}}>Recuperar pregunta</button><a href={helpLink} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a></div>}
         {microphone.error&&<p className={s.notice} role="status">{microphone.error} Puedes responder por escrito.</p>}
         {(voice.status==="blocked"||voice.status==="unavailable")&&<div className={s.audioNotice} role="status"><Icon name="volume"/><span>{voice.status==="blocked"?"Activa el audio para escucharme.":"Puedes seguir leyendo mientras recuperamos la voz."}</span><button type="button" onClick={()=>{voice.unlock();voice.retry();}}>{voice.status==="blocked"?"Activar voz":"Reintentar voz"}</button></div>}
         {session.messages.length>1&&!session.complete&&<button type="button" className={s.historyButton} disabled={busy} onClick={()=>setShowHistory(!showHistory)} aria-expanded={showHistory}>{showHistory?"Volver a la pregunta":"Ver conversación"}</button>}

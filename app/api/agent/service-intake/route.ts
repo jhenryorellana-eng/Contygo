@@ -189,14 +189,14 @@ export async function POST(req: NextRequest) {
       if (!verdict) return { ...payload, ...done };
       const outcome = asylumOutcome(verdict, result, dateId);
       // Otro reparo de contygo que no es la fecha: manda su orientación general, y el contrato va con un asesor.
-      if (otherBlockers(result, hearingQuestion?.id)) return { ...payload, ...done, asylum: { ...outcome, advisor: true } };
+      if (otherBlockers(result, hearingQuestion?.id)) return { ...payload, ...done, ...(result ? { message: ineligibleFinish(result) } : {}), asylum: { ...outcome, advisor: true } };
       return { ...payload, ...done, message: asylumFinish(outcome), guidance: asylumGuidance(outcome, result), asylum: outcome };
     }
     const verdict = adjustment ? adjustmentFlow(payload.answers, usableBulletin).verdict : null;
     if (!verdict) return { ...payload, ...done, ...(result?.eligible === false ? { message: ineligibleFinish(result) } : {}) };
     // Si contygo pone otro reparo (I-360, matrimonio, deportación), manda su orientación general.
     const blocked = otherBlockers(result, bulletinQuestion?.id);
-    return { ...payload, ...done, ...(blocked ? {} : { message: adjustmentFinish(verdict), guidance: adjustmentGuidance(verdict, usableBulletin, result) }), priority: priorityOutcome(verdict, usableBulletin, blocked) };
+    return { ...payload, ...done, ...(blocked ? (result ? { message: ineligibleFinish(result) } : {}) : { message: adjustmentFinish(verdict), guidance: adjustmentGuidance(verdict, usableBulletin, result) }), priority: priorityOutcome(verdict, usableBulletin, blocked) };
   };
   /** En cuanto se sabe si la fecha está vigente, el agente lo dice antes de la siguiente pregunta. */
   const announce = (payload: ReturnType<typeof turn>, before: ServiceAnswers) => {

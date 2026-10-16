@@ -407,3 +407,14 @@
 
 /* iOS zooms into any focused field under 16px and the composition is lost: fields stay at 16px on touch screens. */
 @media (hover:none) and (pointer:coarse){.dialog :is(input,select,textarea){font-size:16px!important}}
+
+/* «Seguimos donde lo dejaste»: the guide was closed and opened again in the same tab (15-10-2026). Left of the close button. */
+.resumeNotice{position:absolute;z-index:21;top:max(22px,env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left));width:max-content;max-width:min(520px,calc(100vw - 96px));display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 10px 10px 16px;border-radius:20px;background:#F6F8F7;color:#061B3D;font-size:15px;font-weight:650;line-height:1.25;box-shadow:0 12px 40px #061B3D47;animation:resumeIn .35s ease both}
+.resumeNotice button{font:inherit;font-size:14px;font-weight:750;color:#061B3D;background:#25D36633;border:1px solid #1DCE6466;border-radius:999px;padding:7px 12px;min-height:36px;cursor:pointer}
+.resumeNotice .resumeDismiss{display:grid;place-items:center;width:36px;padding:0;background:transparent;border-color:#061B3D24}
+.resumeNotice span{flex:1 1 100%}
+@media (min-width:600px){.resumeNotice span{flex:0 1 auto}}
+.resumeNotice .resumeDismiss svg{width:18px;height:18px}
+.resumeNotice button:focus-visible{outline:3px solid #25D366;outline-offset:2px}
+@keyframes resumeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.resumeNotice{animation:none}}

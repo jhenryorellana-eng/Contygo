@@ -5,6 +5,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { gsap } from "gsap";
 import { serviceVariants, type ContygoService } from "@/lib/contygo-catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
+import { clearJourney, readJourney, saveJourney } from "@/lib/contygo-api/browser";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import { waLink } from "@/lib/config";
 import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
@@ -180,6 +181,13 @@ function Film({ film, title, caption, onEnded, autoPlay = false, immersive = fal
   </figure>;
 }
 
+/** A saved conversation worth resuming: the shape the guide keeps, with something already done. */
+const resumableSession = (value: unknown): value is VisaIntakeSession => {
+  const session = value as VisaIntakeSession | null;
+  return Boolean(session && typeof session === "object" && session.answers && typeof session.answers === "object" && Array.isArray(session.messages)
+    && typeof session.complete === "boolean" && (session.watched || session.messages.length > 0));
+};
+
 function OpenDialog({ service, origin, onClose, initialStage = "service", initialPlanName, previewFilm, previewCompletedIntake = false, previewPicker = false, visualTheme = "lagoon" }: Omit<ServiceCinemaDialogProps, "service"> & { service: ContygoService }) {
   const isVisa = service.id === "visa-juvenil";
   const completedPreview = process.env.NODE_ENV !== "production" && isVisa && previewCompletedIntake;
@@ -194,15 +202,28 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const animation = useRef<Animation | null>(null);
   const closing = useRef(false);
   const mounted = useRef(false);
-  const [stage, setStage] = useState<Stage>(pickerPreview ? "platform" : "service");
+  // Closed by mistake (the X, Escape)? The same tab picks the guide up where it was: conversation, stage and variant
+  // (15-10-2026). Never in the development previews.
+  const resumable = !completedPreview && !pickerPreview && !previewFilm;
+  const [saved] = useState(() => {
+    const journey = resumable ? readJourney<VisaIntakeSession>(service.id) : null;
+    return journey && resumableSession(journey.session) ? journey : null;
+  });
+  const [resumed, setResumed] = useState(Boolean(saved));
+  /** A new conversation («Empezar de nuevo») mounts a fresh guide. */
+  const [attempt, setAttempt] = useState(0);
+  const [stage, setStage] = useState<Stage>(pickerPreview ? "platform" : saved?.session.complete ? saved.stage : "service");
   const [visaSession, setVisaSession] = useState<VisaIntakeSession | null>(() => completedPreview || pickerPreview
     ? { ...DEBUG_COMPLETED_INTAKE, answers: { ...DEBUG_COMPLETED_INTAKE.answers }, messages: [...DEBUG_COMPLETED_INTAKE.messages], ...(pickerPreview ? { complete: true, field: null, displayName: "Ana" } : {}) }
-    : null);
-  const [visaPhase, setVisaPhase] = useState<"watch" | "packing" | "interview">(completedPreview ? "interview" : "watch");
+    : saved?.session ?? null);
+  const [visaPhase, setVisaPhase] = useState<"watch" | "packing" | "interview">(completedPreview || saved?.session.watched ? "interview" : "watch");
   // Visa Juvenil: «Revisar mi contrato» first asks Básico or Premium; the contract is for the chosen one.
   const variants = useMemo(() => serviceVariants(service.id), [service.id]);
   const [picker, setPicker] = useState(false);
-  const [contract, setContract] = useState<{ service: ContygoService; answers: Record<string, AnswerValue> } | null>(null);
+  const [contract, setContract] = useState<{ service: ContygoService; answers: Record<string, AnswerValue> } | null>(() => {
+    const chosen = saved?.variant && serviceVariants(service.id).find(item => item.id === saved.variant!.serviceId);
+    return chosen ? { service: chosen, answers: saved!.variant!.answers } : null;
+  });
   const contractService = contract?.service ?? service;
   // This owner survives the chat -> film switch, retaining decoded personalized speech.
   const closingVoice=useVisaVoice();
@@ -268,6 +289,24 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     };
   }, []);
 
+  // Everything done so far stays in this tab (sessionStorage) until the guide starts over.
+  useEffect(() => {
+    if (!resumable || !visaSession || (!visaSession.watched && !visaSession.messages.length)) return;
+    saveJourney<VisaIntakeSession>({ serviceId: service.id, stage, session: visaSession, ...(contract ? { variant: { serviceId: contract.service.id, answers: contract.answers } } : {}) });
+  }, [resumable, service.id, stage, visaSession, contract]);
+  // «Seguimos donde lo dejaste» says it once, then gets out of the way.
+  useEffect(() => {
+    if (!resumed) return;
+    const timer = window.setTimeout(() => setResumed(false), 12_000);
+    return () => window.clearTimeout(timer);
+  }, [resumed]);
+  function startOver() {
+    clearJourney();
+    closingVoice.stop();
+    dialog.current?.querySelector("video")?.pause();
+    setResumed(false); setPicker(false); setContract(null); setVisaSession(null); setVisaPhase("watch"); setStage("service"); setAttempt(count => count + 1);
+  }
+
   // The picker preview opens only once this dialog is open, so the picker sits above it.
   useEffect(() => { if (pickerPreview) setPicker(true); }, [pickerPreview]);
 
@@ -329,6 +368,11 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       <span className={s.headerCaption}>{isVisa ? "Un paso a la vez, contigo." : "Un paso más cerca."}</span>
       <button ref={closeButton} className={s.close} type="button" aria-label="Cerrar y volver a los servicios" onClick={requestClose}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg></button>
     </header>
+    {resumed && <div className={s.resumeNotice} role="status">
+      <span>Seguimos donde lo dejaste.</span>
+      <button type="button" onClick={startOver}>Empezar de nuevo</button>
+      <button type="button" className={s.resumeDismiss} aria-label="Cerrar este aviso" onClick={() => setResumed(false)}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
+    </div>}
 
     {!immersive && (isVisa ? <nav className={`${s.stepNav} ${s.visaStepNav}`} aria-label="Tu recorrido de Visa Juvenil"><ol>
       <li><span className={s.visaStep} data-current={stage === "service" && visaPhase !== "interview"} data-complete={visaSession?.watched}><span>{visaSession?.watched ? "✓" : "01"}</span>La guía</span></li>
@@ -345,13 +389,13 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
           {stage !== "service" && <p className={s.serviceContext}>{service.name}</p>}
         </div>
 
-        {stage === "service" && <VisaJuvenilExperience serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
+        {stage === "service" && <VisaJuvenilExperience key={attempt} serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} onContract={() => variants.length > 1 ? setPicker(true) : changeStage("decision")} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} onContract={() => variants.length > 1 && visaSession?.eligible !== false ? setPicker(true) : changeStage("decision")} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
         {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}
-        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 ? () => setPicker(true) : undefined} />}
+        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 && visaSession?.eligible !== false ? () => setPicker(true) : undefined} />}
 
         {stage === "decision" && !immersive && <>
           <div className={s.decisionGrid}>

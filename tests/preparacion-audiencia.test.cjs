@@ -25,7 +25,7 @@ test('es un servicio público y destacado de la corte, con un paquete por audien
   const service = CONTYGO_SERVICES.find(item => item.id === hearing.HEARING_SERVICE);
   assert.equal(service.slug, 'preparacion-de-audiencia');
   assert.equal(service.category, 'corte');
-  assert.deepEqual(service.plans, [{ name: 'Segunda audiencia', price: 150 }, { name: 'Tercera audiencia', price: 350 }]);
+  assert.deepEqual(service.plans, [{ name: 'Preparación para la segunda audiencia', price: 150 }, { name: 'Preparación para la tercera audiencia', price: 350 }], 'los nombres de contygo: el precio vivo se busca por nombre');
 });
 
 test('sus dos vídeos ya están (portadas, tarjeta del cierre y vista previa de WhatsApp)', () => {
@@ -184,8 +184,13 @@ test('una audiencia en menos de 7 días: contygo la descalifica y Henry la atien
   assert.deepEqual({ kind: done.hearing.kind, advisor: done.hearing.advisor, tooClose: done.hearing.tooClose }, { kind: 'tercera', advisor: true, tooClose: true });
   assert.match(done.message, /al menos 7 días/);
   assert.equal(done.guidance.status, 'review');
-  const { closingVariant } = require('../components/contygo/juvenil/closingSpeech.ts');
-  assert.equal(closingVariant(hearing.HEARING_SERVICE, null, null, done.hearing), 'audiencia-henry');
+  const { closingAction, closingLines, closingVariant } = require('../components/contygo/juvenil/closingSpeech.ts');
+  // Tiene audiencia: no «Cuando tengas tu audiencia…» (eso es para quien aún no la tiene).
+  assert.equal(closingVariant(hearing.HEARING_SERVICE, null, null, done.hearing), 'audiencia-pronto');
+  assert.equal(closingAction(hearing.HEARING_SERVICE, 'audiencia-pronto'), 'Hablar con Henry');
+  assert.match(closingLines(hearing.HEARING_SERVICE, 'audiencia-pronto').join(' '), /^Tu audiencia es en pocos días/);
+  assert.equal(closingVariant(hearing.HEARING_SERVICE, null, null, { kind: 'segunda', advisor: true }), 'audiencia-revisar', 'otro reparo de contygo');
+  assert.equal(closingVariant(hearing.HEARING_SERVICE, null, null, { kind: 'none', advisor: true }), 'audiencia-henry');
 });
 
 test('el contrato: solo el paquete de su audiencia; otro se rechaza antes de enviar el código', async () => {

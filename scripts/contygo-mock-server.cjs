@@ -78,6 +78,19 @@ const asylum = catalog.services.find(service => service.slug === 'reforzar-asilo
 if (asylum && !asylum.eligibilityQuestions.length) asylum.eligibilityQuestions.push(
   { id: 'cd2b9568-77fc-4e9c-886a-2b78bc8e093c', kind: 'date', dateMode: 'future_event', minNotice: { value: 5, unit: 'business_days' }, prompt: { es: '¿Cuál es la fecha de su próxima audiencia en corte?', en: 'What is the date of your next court hearing?' } },
 );
+// Cambio de corte y Reapertura como en producción (13-10-2026): la fecha de la próxima audiencia (7 días naturales de
+// antelación) y, en Reapertura, la fecha de la orden (pasada) y una tercera pregunta sobre el motivo.
+const courtChange = catalog.services.find(service => service.slug === 'cambio-de-corte');
+if (courtChange && !courtChange.eligibilityQuestions.length) courtChange.eligibilityQuestions.push(
+  { id: 'eea0f7fe-27d3-4ffa-8d1c-e85dac2817a1', kind: 'date', dateMode: 'future_event', minNotice: { value: 7, unit: 'calendar_days' }, prompt: { es: '¿Cuál es la fecha de su próxima audiencia en corte?', en: 'What is the date of your next court hearing?' } },
+);
+const reopening = catalog.services.find(service => service.slug === 'reapertura-in-absentia');
+if (reopening) {
+  for (const question of reopening.eligibilityQuestions) if (question.kind === 'date') question.dateMode = 'past';
+  if (!reopening.eligibilityQuestions.some(question => question.id === 'c366e4d2-c331-44ad-a6b2-61793cd0c84a')) reopening.eligibilityQuestions.push(
+    { id: 'c366e4d2-c331-44ad-a6b2-61793cd0c84a', kind: 'yes_no', prompt: { es: '¿El motivo fue que no le llegó la notificación (aunque haya cambiado bien de dirección o de corte), que estaba detenido, o que asistió a la audiencia (en persona o virtual) y el juez no registró su asistencia?', en: 'Was the reason that you never received the notice, that you were detained, or that you attended and the judge did not record it?' } },
+  );
+}
 // future_event como la API real (probado el 10-10-2026): una fecha pasada descalifica («answer»); una que no deja la
 // antelación de minNotice, también («event_too_close»). Los días hábiles se cuentan después de hoy, hasta la fecha incluida.
 const todayYmd = () => new Date().toISOString().slice(0, 10);

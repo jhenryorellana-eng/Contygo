@@ -37,7 +37,7 @@ const conversation = [
 
 const visaService = CONTYGO_SERVICES.find(service => service.id === "visa-juvenil")!;
 type Origin = { x: number; y: number; width: number; height: number };
-type PreviewMode = "quick" | "full" | "completed" | "picker";
+type PreviewMode = "quick" | "full" | "completed" | "picker" | "closing";
 
 function Arrow() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
@@ -70,6 +70,8 @@ export default function VisaTransitionPreview() {
     const demo = process.env.NODE_ENV !== "production" ? new URLSearchParams(window.location.search).get("demo") : null;
     if (demo === "final") setPreviewMode("completed");
     if (demo === "selector") setPreviewMode("picker");
+    // «?demo=cierre»: el final del vídeo 2, justo antes de «Revisar mi contrato» (que abre «¿Cómo quieres crear tu contrato?»).
+    if (demo === "cierre") setPreviewMode("closing");
     try {
       const saved = localStorage.getItem(APPEARANCE_KEY); if (saved === "light" || saved === "dark") setAppearance(saved);
       const savedDay = localStorage.getItem(DAY_KEY); if (savedDay === "tinta" || savedDay === "papel") setDay(savedDay);
@@ -161,7 +163,7 @@ export default function VisaTransitionPreview() {
 
     <footer className={s.footer}><span>SIEMPRE CONTIGO. PASO A PASO.</span><p>ContyGo · Luz que acompaña la voz</p></footer>
     <div className={themeStyles.surface} data-contygo-theme={appearance} data-contygo-dia={day}>
-      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? PROVISIONAL_PLATFORM_FILM : undefined} previewCompletedIntake={previewMode === "completed"} previewPicker={previewMode === "picker"} visualTheme="lagoon" />
+      <ServiceCinemaDialog service={open ? visaService : null} origin={origin} onClose={() => setPreviewMode(null)} previewFilm={previewMode === "quick" ? PROVISIONAL_PLATFORM_FILM : undefined} previewCompletedIntake={previewMode === "completed"} previewPicker={previewMode === "picker"} previewClosing={previewMode === "closing"} visualTheme="lagoon" />
       {responseDemo && <ThinkingOverlayDemo onClose={() => setResponseDemo(false)} />}
       {statePickerDemo && <VisaStatePicker onChoose={() => setStatePickerDemo(false)} onClose={() => setStatePickerDemo(false)} />}
     </div>

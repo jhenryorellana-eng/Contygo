@@ -7,13 +7,16 @@ import { serviceVariants, type ContygoService } from "@/lib/contygo-catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
 import { clearJourney, readJourney, saveJourney } from "@/lib/contygo-api/browser";
 import { getContygoServiceUrl } from "@/lib/contygo";
-import { waLink } from "@/lib/config";
+import { crmWaLink, waLink } from "@/lib/config";
+import { publicRef } from "@/lib/contygo-api/checkout";
+import { whatsappAdvisorContractMessage } from "@/lib/contygo-api/messages";
 import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_DELIVERABLES } from "@/lib/contygo-deliverables";
 import { getRebuildPlatformFilm, getRebuildServiceFilm, PROVISIONAL_PLATFORM_FILM, type RebuildFilm } from "@/lib/contygo-rebuild-media";
 import VisaJuvenilExperience, { type VisaIntakeSession } from "../juvenil/VisaJuvenilExperience";
-import ContractCheckout from "../contract/ContractCheckout";
+import ContractCheckout, { journeyNeedsAdvisor } from "../contract/ContractCheckout";
+import ContractModeChooser from "../contract/ContractModeChooser";
 import ServiceVariantPicker from "../contract/ServiceVariantPicker";
 import ContractClosingConcept from "../juvenil/PaperPlaneClosing";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
@@ -36,6 +39,8 @@ export type ServiceCinemaDialogProps = {
   previewCompletedIntake?: boolean;
   /** Development preview only: open on the second film's closing with the Básico / Premium picker already open. */
   previewPicker?: boolean;
+  /** Development preview only: open on the second film's closing, before «Revisar mi contrato» (the button opens the modal). */
+  previewClosing?: boolean;
   visualTheme?: VisaVisualTheme;
 };
 
@@ -188,10 +193,10 @@ const resumableSession = (value: unknown): value is VisaIntakeSession => {
     && typeof session.complete === "boolean" && (session.watched || session.messages.length > 0));
 };
 
-function OpenDialog({ service, origin, onClose, initialStage = "service", initialPlanName, previewFilm, previewCompletedIntake = false, previewPicker = false, visualTheme = "lagoon" }: Omit<ServiceCinemaDialogProps, "service"> & { service: ContygoService }) {
+function OpenDialog({ service, origin, onClose, initialStage = "service", initialPlanName, previewFilm, previewCompletedIntake = false, previewPicker = false, previewClosing = false, visualTheme = "lagoon" }: Omit<ServiceCinemaDialogProps, "service"> & { service: ContygoService }) {
   const isVisa = service.id === "visa-juvenil";
   const completedPreview = process.env.NODE_ENV !== "production" && isVisa && previewCompletedIntake;
-  const pickerPreview = process.env.NODE_ENV !== "production" && isVisa && previewPicker;
+  const pickerPreview = process.env.NODE_ENV !== "production" && isVisa && (previewPicker || previewClosing);
   const dialog = useRef<HTMLDialogElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -220,6 +225,8 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   // Visa Juvenil: «Revisar mi contrato» first asks Básico or Premium; the contract is for the chosen one.
   const variants = useMemo(() => serviceVariants(service.id), [service.id]);
   const [picker, setPicker] = useState(false);
+  /** «Revisar mi contrato» first asks how (20-10-2026): by oneself (the form) or with an advisor (the CRM's WhatsApp). */
+  const [chooser, setChooser] = useState(false);
   const [contract, setContract] = useState<{ service: ContygoService; answers: Record<string, AnswerValue> } | null>(() => {
     const chosen = saved?.variant && serviceVariants(service.id).find(item => item.id === saved.variant!.serviceId);
     return chosen ? { service: chosen, answers: saved!.variant!.answers } : null;
@@ -304,11 +311,12 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     clearJourney();
     closingVoice.stop();
     dialog.current?.querySelector("video")?.pause();
-    setResumed(false); setPicker(false); setContract(null); setVisaSession(null); setVisaPhase("watch"); setStage("service"); setAttempt(count => count + 1);
+    setResumed(false); setPicker(false); setChooser(false); setContract(null); setVisaSession(null); setVisaPhase("watch"); setStage("service"); setAttempt(count => count + 1);
   }
 
-  // The picker preview opens only once this dialog is open, so the picker sits above it.
-  useEffect(() => { if (pickerPreview) setPicker(true); }, [pickerPreview]);
+  // The picker preview opens only once this dialog is open, so the sheet sits above it. It starts where the button
+  // leads now: «¿Cómo quieres crear tu contrato?» («por ti mismo» then opens Básico / Premium).
+  useEffect(() => { if (pickerPreview && previewPicker) setChooser(true); }, [pickerPreview, previewPicker]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -391,7 +399,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
 
         {stage === "service" && <VisaJuvenilExperience key={attempt} serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} onContract={() => variants.length > 1 && visaSession?.eligible !== false ? setPicker(true) : changeStage("decision")} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} skipFilm={process.env.NODE_ENV !== "production" && previewClosing} onContract={() => journeyNeedsAdvisor(visaSession) ? changeStage("decision") : setChooser(true)} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
         {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}
@@ -421,6 +429,10 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       <div className={s.footerMeta}>{stageIndex > 0 ? <button className={s.back} type="button" onClick={() => changeStage(stages[stageIndex - 1].id)}><Arrow back />Volver</button> : <span className={s.atYourPace}>A tu ritmo.</span>}<span className={s.stepCount}>{String(stageIndex + (isVisa ? 2 : 1)).padStart(2, "0")} / {isVisa ? "04" : "03"}</span></div>
       {stage === "decision" ? <div className={s.decisionActions}><a className={s.whatsapp} href={whatsappUrl} target="_blank" rel="noopener noreferrer">Hablar con un agente <Arrow /></a><a className={s.primary} href={contractUrl} target="_blank" rel="noopener noreferrer">{isEvaluation ? "Continuar con mi evaluación" : "Ir a mi contrato"}<Arrow /></a></div> : <button type="button" className={s.primary} onClick={() => changeStage(stage === "service" ? "platform" : "decision")}>{stage === "service" ? "Ver cómo funciona ContyGo" : "Ver opciones para empezar"}<Arrow /></button>}
     </footer>}
+    {chooser && <ContractModeChooser serviceName={isVisa ? "Visa Juvenil" : service.name}
+      advisorHref={crmWaLink(whatsappAdvisorContractMessage(isVisa ? "Visa Juvenil" : service.name, visaSession?.displayName, visaSession?.externalRef ? publicRef(visaSession.externalRef) : null))}
+      onSelf={() => { setChooser(false); if (variants.length > 1) setPicker(true); else changeStage("decision"); }}
+      onAdvisor={() => setChooser(false)} onClose={() => setChooser(false)} />}
     {picker && <ServiceVariantPicker variants={variants} answers={visaSession?.answers} current={stage === "decision" ? contractService.id : undefined} onClose={() => setPicker(false)} onChoose={(chosen, answers) => { setContract({ service: chosen, answers }); setPicker(false); changeStage("decision"); }} />}
   </dialog>;
 }

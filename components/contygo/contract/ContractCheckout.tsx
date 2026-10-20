@@ -148,6 +148,10 @@ const allowedPlans = (plans: PublicServiceView["plans"], allowed: string[] | und
 const previoWithAdvisor = (priority: PriorityOutcome | undefined, eligible: boolean | null | undefined) =>
   Boolean(priority?.previo && (eligible === false || priority.status === "unknown"));
 
+/** The conversation already sends this person to an advisor (the form would only show that): no online contract to choose. */
+export const journeyNeedsAdvisor = (journey: { eligible?: boolean | null; priority?: PriorityOutcome; asylum?: AsylumOutcome; hearing?: HearingOutcome } | null | undefined) =>
+  Boolean(journey && (previoWithAdvisor(journey.priority, journey.eligible) || journey.asylum?.advisor || journey.hearing?.advisor || journey.eligible === false));
+
 type Props = {
   service: ContygoService;
   /** From the journey: its conversation lives in this browser, not on the server (guía §2 bis). */

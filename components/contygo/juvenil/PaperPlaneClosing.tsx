@@ -24,7 +24,9 @@ function TouchHand(){return <svg viewBox="0 0 56 72" fill="none" aria-hidden="tr
 /** onContract: abre la ficha de contratación del recorrido; sin ella, el botón sigue enlazando a ContyGo. */
 /** priority: el resultado de la fecha de prioridad (Ajuste de estatus); asylum: el del plazo de pruebas (Reforzamiento
  *  de Asilo). Cambian la invitación tras el vídeo. */
-type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null;hearing?:{kind:string;advisor:boolean;reason?:string}|null;eligible?:boolean|null};
+type ClosingProps={autoPlay?:boolean;displayName?:string;preparedVoice?:ClosingVoice;service?:ContygoService;film?:RebuildFilm;onContract?:()=>void;priority?:{status:string;previo:boolean;near?:boolean}|null;asylum?:{kind:string;advisor:boolean;appeal:boolean}|null;hearing?:{kind:string;advisor:boolean;reason?:string}|null;eligible?:boolean|null;
+  /** Development preview only: straight to the closing (the browser blocks a film with sound nobody has touched yet). */
+  skipFilm?:boolean};
 export default function PaperPlaneClosing(props:ClosingProps){
   return props.preparedVoice?<ClosingScene {...props} voice={props.preparedVoice}/>:<LocalClosing {...props}/>;
 }
@@ -32,7 +34,7 @@ function LocalClosing(props:ClosingProps){
   const voice=useVisaVoice();
   return <ClosingScene {...props} voice={voice}/>;
 }
-function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum,hearing,eligible}:{voice:ClosingVoice}&ClosingProps){
+function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service:providedService,film:providedFilm,onContract,priority,asylum,hearing,eligible,skipFilm=false}:{voice:ClosingVoice}&ClosingProps){
   const [serviceId,setServiceId]=useState(providedService?.id??"visa-juvenil"),[name,setName]=useState(closingName(displayName)),[take,setTake]=useState(0);
   const [phase,setPhase]=useState<"watch"|"flying"|"invitation">("watch"),[blocked,setBlocked]=useState(false),[failed,setFailed]=useState(false),[stalled,setStalled]=useState(false),stallTimer=useRef(0);
   useEffect(()=>()=>window.clearTimeout(stallTimer.current),[]);
@@ -66,7 +68,7 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
   },[]);
   useClosingSpeechWarmup(voice,preparedVoice?null:script);
   useEffect(()=>()=>voiceRef.current.stop(),[]);
-  useEffect(()=>{if(autoPlay)void video.current?.play().catch(()=>setBlocked(true));},[autoPlay,take]);
+  useEffect(()=>{if(skipFilm){video.current?.pause();finish();return;}if(autoPlay)void video.current?.play().catch(()=>setBlocked(true));},[autoPlay,take]); // eslint-disable-line react-hooks/exhaustive-deps
   function speakInvitation(){
     setCalling(false);setCtaInvited(false);
     void voiceRef.current.speak(scriptRef.current,{

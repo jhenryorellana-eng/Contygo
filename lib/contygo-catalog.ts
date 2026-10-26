@@ -26,22 +26,23 @@ export const CONTYGO_CATALOG_VERIFIED_AT = "2026-09-10";
 
 export const CONTYGO_SERVICES: readonly ContygoService[] = [
   {
+    // Solo Premium (26-10-2026): contygo ocultó Básico el 25-10-2026 y GET /catalog ya no lo lista.
     id: "visa-juvenil",
-    slug: "visa-juvenil-basico",
+    slug: "visa-juvenil-premium",
     legacySlug: "visa-juvenil",
-    name: "Visa Juvenil Básico",
-    variant: { label: "Básico", stages: ["Custodia", "I-360"], summary: "Custodia en corte estatal y petición I-360." },
+    name: "Visa Juvenil Premium",
     category: "familia",
-    description: "Organiza la custodia en corte estatal y la petición I-360 del menor en un mismo proceso.",
-    audience: "Tutores y menores que necesitan preparar las etapas de custodia y petición SIJS.",
+    description: "Custodia en corte estatal, petición I-360 y ajuste de estatus I-485 del menor en un mismo proceso.",
+    audience: "Tutores y menores que quieren preparar la custodia, la petición SIJS y el ajuste de estatus.",
     includes: [
       "Preparación documental de la custodia estatal.",
       "Declaraciones del tutor y de cada menor; testigos cuando corresponda.",
       "Preparación del formulario I-360 y sus documentos de respaldo.",
+      "Preparación del ajuste de estatus I-485.",
     ],
-    exclusions: ["El ajuste de estatus I-485 se contrata por separado.", "Las tasas gubernamentales no forman parte de los honorarios."],
-    price: 2500,
-    plans: [{ name: "Básico", price: 2500 }],
+    exclusions: ["Las tasas gubernamentales no forman parte de los honorarios."],
+    price: 3500,
+    plans: [{ name: "Premium", price: 3500 }],
   },
   {
     id: "i-360",
@@ -208,29 +209,9 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
 
 /**
  * Variants sold inside another service's guide: never their own card, link or sitemap entry.
- * Visa Juvenil Premium (contygo.app/servicios/visa-juvenil-premium, 2026-10-12) is chosen next to
- * Básico after the two films. Prices, plans, people and questions come live from GET /catalog.
+ * None today: Visa Juvenil is only Premium since 2026-10-26 (it had Básico and Premium from 2026-10-12).
  */
-export const CONTYGO_VARIANTS: readonly (ContygoService & { variantOf: string })[] = [
-  {
-    id: "visa-juvenil-premium",
-    slug: "visa-juvenil-premium",
-    variantOf: "visa-juvenil",
-    name: "Visa Juvenil Premium",
-    variant: { label: "Premium", stages: ["Custodia", "I-360", "I-485"], summary: "Custodia, petición I-360 y ajuste de estatus I-485." },
-    category: "familia",
-    description: "Custodia en corte estatal, petición I-360 y ajuste de estatus I-485 del menor en un mismo proceso.",
-    audience: "Tutores y menores que quieren preparar la custodia, la petición SIJS y el ajuste de estatus.",
-    includes: [
-      "Preparación documental de la custodia estatal.",
-      "Preparación del formulario I-360 y sus documentos de respaldo.",
-      "Preparación del ajuste de estatus I-485.",
-    ],
-    exclusions: ["Las tasas gubernamentales no forman parte de los honorarios."],
-    price: 3500,
-    plans: [{ name: "Premium", price: 3500 }],
-  },
-];
+export const CONTYGO_VARIANTS: readonly (ContygoService & { variantOf: string })[] = [];
 
 /** Every service a contract can be made for: the public ones and their variants. */
 export const CONTRACT_SERVICES: readonly ContygoService[] = [...CONTYGO_SERVICES, ...CONTYGO_VARIANTS];

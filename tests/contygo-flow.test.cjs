@@ -41,7 +41,7 @@ Module._load = function (request, ...args) {
 const ServiceFunnel = require('../components/ServiceFunnel.tsx').default;
 Module._load = load;
 const destinations = {
-  'visa-juvenil': 'visa-juvenil-basico', 'i-360': 'i-360', 'i-485': 'i-485',
+  'visa-juvenil': 'visa-juvenil-premium', 'i-360': 'i-360', 'i-485': 'i-485',
   asilo: 'asilo-politico', 'reforzar-asilo': 'reforzar-asilo', apelacion: 'apelacion',
   'cambio-corte': 'cambio-de-corte', itin: 'itin-number', impuestos: 'taxes',
   'evaluacion-asilo': 'evaluacion-asilo', reapertura: 'reapertura-in-absentia', llc: 'llc-florida',

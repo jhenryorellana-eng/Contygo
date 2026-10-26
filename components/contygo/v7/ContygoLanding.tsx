@@ -74,7 +74,7 @@ const LANDING_FROM_CENTS = 25000;
 // Prices are live (GET /catalog through /api/contratar/precios): with no price loaded, the text just does not quote one.
 const faqs = (from: string | null, visaFrom: string | null) => [
   ["¿Qué hace ContyGo por mí?", "Te acompaña en la preparación de los documentos y formularios incluidos en tu servicio. La plataforma organiza la información que aportas y te permite conocer tus siguientes pasos. Revisa el alcance específico antes de contratar."],
-  ["¿Cuánto cuesta?", `Cada servicio publica sus honorarios antes de empezar${from ? `: desde ${from}${visaFrom ? `; Visa Juvenil Básico, ${visaFrom}` : ""}` : ""}. Las tasas del gobierno, cuando aplican, van aparte y se indican en tu contrato.`],
+  ["¿Cuánto cuesta?", `Cada servicio publica sus honorarios antes de empezar${from ? `: desde ${from}${visaFrom ? `; Visa Juvenil Premium, ${visaFrom}` : ""}` : ""}. Las tasas del gobierno, cuando aplican, van aparte y se indican en tu contrato.`],
   ["¿Puedo hacerlo desde mi celular?", "Sí. Puedes conocer el servicio, aportar información y documentos y consultar tus siguientes pasos desde tu cuenta. Si tu proceso requiere originales o actuaciones externas, recibirás las indicaciones correspondientes."],
   ["¿Hay una persona que me acompañe?", "Sí. Puedes comunicarte con el equipo a través de Soporte en tu cuenta. Antes de contratar, también puedes resolver tus dudas por WhatsApp."],
   ["¿Cuándo empieza mi servicio?", "Después de crear tu cuenta, revisar y firmar tu contrato y confirmar el pago inicial correspondiente. Antes de hacerlo podrás consultar el alcance, el precio y las condiciones."],

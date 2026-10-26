@@ -565,7 +565,7 @@ test('B5 · HUMAN (2.ª llamada): PUT /leads con aiSummary sin PII, y referencia
   const put = puts.at(-1);
   assert.equal(put.path, `/leads/${EXTERNAL_REF}`);
   assert.deepEqual(Object.keys(put.json).sort(), ['aiSummary', 'fullName', 'phoneE164', 'source'], 'cuerpo estricto: sin correo ni atribución');
-  assert.equal(put.json.aiSummary, 'Web · Visa Juvenil Básico. Intentó contratar en línea y necesita ayuda (CLIENT_NEEDS_HUMAN).');
+  assert.equal(put.json.aiSummary, 'Web · Visa Juvenil Premium. Intentó contratar en línea y necesita ayuda (CLIENT_NEEDS_HUMAN).');
   assert.ok(put.json.aiSummary.length <= 2000);
   assert.equal(put.json.phoneE164, '+13055550199');
   assert.equal(put.json.fullName, 'Ana Pérez López');
@@ -612,7 +612,7 @@ test('B5 · el resumen del intento es corto, con código saneado y sin datos de 
 
 test('B7 · GET /precios: «desde» y paquetes del catálogo vivo, cacheable, sin ids; 503 si no hay catálogo', async () => {
   const cat = JSON.parse(JSON.stringify(catalog));
-  cat.services[0].plans.push({ id: 'p2', name: { es: 'Premium', en: null }, priceCents: 400000, extraPartyPriceCents: 0, installmentOptions: [] });
+  cat.services[0].plans.push({ id: 'p2', name: { es: 'Familiar', en: null }, priceCents: 400000, extraPartyPriceCents: 0, installmentOptions: [] });
   cat.services.push({ id: 'zzz', slug: 'servicio-fuera-de-la-landing', name: { es: 'Otro', en: null }, plans: [{ id: 'z', name: { es: 'Z', en: null }, priceCents: 100, extraPartyPriceCents: 0, installmentOptions: [] }], eligibilityQuestions: [], partyRoles: [] });
   net.on('GET', '/catalog', { status: 200, body: cat });
   const response = await pricesRoute.GET(new NextRequest("https://landing.invalid/api/contratar/precios"));
@@ -620,8 +620,8 @@ test('B7 · GET /precios: «desde» y paquetes del catálogo vivo, cacheable, si
   assert.match(response.headers.get('cache-control'), /public, s-maxage=300, stale-while-revalidate=\d+/);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.equal(body.prices['visa-juvenil-basico'].fromCents, 250000);
-  assert.deepEqual(body.prices['visa-juvenil-basico'].plans, [{ name: { es: 'Básico', en: null }, priceCents: 250000 }, { name: { es: 'Premium', en: null }, priceCents: 400000 }]);
+  assert.equal(body.prices['visa-juvenil-premium'].fromCents, 350000);
+  assert.deepEqual(body.prices['visa-juvenil-premium'].plans, [{ name: { es: 'Premium', en: null }, priceCents: 350000 }, { name: { es: 'Familiar', en: null }, priceCents: 400000 }]);
   assert.equal(body.prices.apelacion.fromCents, 70000);
   assert.equal(body.prices['servicio-fuera-de-la-landing'], undefined, 'solo servicios de la landing');
   assert.equal(JSON.stringify(body).includes('fbb0dc08'), false, 'sin ids internos');

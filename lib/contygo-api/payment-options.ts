@@ -6,7 +6,7 @@
    Contrato: docs/contygo-contratacion-api.md §«Formas de pago».
    ============================================================ */
 import type {
-  CatalogPaymentBreakdown, CatalogPaymentOption, CatalogPaymentRow, CatalogPlan, CatalogService, InstallmentOption,
+  CatalogPaymentBreakdown, CatalogPaymentOption, CatalogPaymentRow, CatalogPlan, CatalogRoleCountRow, CatalogRolePricingRule, CatalogService, InstallmentOption,
 } from "./types";
 
 // ---------------------------------------------------------------- normalizador
@@ -35,7 +35,33 @@ function paymentOptionOf(value: unknown): CatalogPaymentOption | null {
       if (row && isCents(count) && count >= 1) rows.push({ ...row, extraPartyCount: count });
     }
   }
-  return { ...base, installmentOptionId: id, isDefault: value.isDefault, frequency: value.frequency, ...(rows.length ? { byExtraParties: rows } : {}) };
+  const roleRows = list(value.byRoleCount, roleCountRowOf);
+  return {
+    ...base, installmentOptionId: id, isDefault: value.isDefault, frequency: value.frequency,
+    ...(rows.length ? { byExtraParties: rows } : {}),
+    ...(roleRows.length ? { byRoleCount: roleRows } : {}),
+  };
+}
+
+/** Una fila de byRoleCount: cotizada (con desglose válido) o not_quotable; lo demás se descarta. */
+function roleCountRowOf(value: unknown): CatalogRoleCountRow | null {
+  if (!isObject(value) || typeof value.roleKey !== "string" || !value.roleKey || !isCents(value.count) || value.count < 1) return null;
+  const { roleKey, count } = value;
+  if (value.status === "not_quotable") return { roleKey, count, status: "not_quotable" };
+  const row = value.status === "quoted" ? breakdownOf(value) : null;
+  return row ? { ...row, roleKey, count, status: "quoted" } : null;
+}
+
+const isCentsOrNull = (value: unknown): value is number | null => value === null || isCents(value);
+
+function pricingRuleOf(value: unknown): CatalogRolePricingRule | null {
+  if (!isObject(value) || typeof value.roleKey !== "string" || !value.roleKey) return null;
+  if (value.mode !== "linear" && value.mode !== "tiered") return null;
+  const { includedCount, unitPriceCents, beyondUnitPriceCents } = value;
+  if (!isCents(includedCount) || !isCentsOrNull(unitPriceCents) || !isCentsOrNull(beyondUnitPriceCents)) return null;
+  const tiers = list(value.tiers, tier => isObject(tier) && isCents(tier.roleCount) && tier.roleCount >= 1 && isCents(tier.adjustmentCents)
+    ? { roleCount: tier.roleCount, adjustmentCents: tier.adjustmentCents } : null);
+  return { roleKey: value.roleKey, mode: value.mode, includedCount, unitPriceCents, beyondUnitPriceCents, tiers };
 }
 
 function installmentOptionOf(value: unknown): InstallmentOption | null {
@@ -57,6 +83,7 @@ export function normalizePlan(value: unknown): CatalogPlan | null {
     ...(value as unknown as CatalogPlan),
     installmentOptions: list(value.installmentOptions, installmentOptionOf),
     extraPartyPriceCents: isCents(extra) ? extra : 0,
+    pricingRules: list(value.pricingRules, pricingRuleOf),
     paymentOptions: list(value.paymentOptions, paymentOptionOf),
   };
 }
@@ -97,6 +124,53 @@ export function breakdownFor(option: CatalogPaymentOption, extraParties: number)
 export function breakdownForPlan(plan: Pick<CatalogPlan, "extraPartyPriceCents">, option: CatalogPaymentOption, extraParties: number): CatalogPaymentBreakdown | null {
   if (!(plan.extraPartyPriceCents > 0)) return option;
   return breakdownFor(option, extraParties);
+}
+
+// ---------------------------------------------------------------- precio por rol
+
+/** Lo que la ficha puede decir de un paquete con N personas. La landing nunca suma: solo elige una fila publicada. */
+export type PlanQuote =
+  /** Una fila publicada (o los números base): estos son los números. */
+  | { kind: "row"; row: CatalogPaymentBreakdown }
+  /** contygo no publica precio para esa cantidad: se deriva a la oficina. */
+  | { kind: "not_quotable"; roleKey: string; count: number }
+  /** Hay precio, pero no hay fila que lo diga (cantidad fuera de las filas publicadas): el contrato trae el plan exacto. */
+  | { kind: "unknown" }
+  /** Varios roles con regla a la vez: contygo no publica filas combinadas; se enseña el precio base con la nota. */
+  | { kind: "base_only"; row: CatalogPaymentBreakdown };
+
+/** Cuántas personas hay de cada rol. */
+export function roleCountsOf(parties: readonly { role: string }[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const party of parties) counts[party.role] = (counts[party.role] ?? 0) + 1;
+  return counts;
+}
+
+/** ¿El paquete cobra por rol? Con reglas, `extraPartyPriceCents` y `byExtraParties` ya no cuentan. */
+export const hasRolePricing = (plan: { pricingRules?: CatalogRolePricingRule[] } | null | undefined): boolean =>
+  Array.isArray(plan?.pricingRules) && plan.pricingRules.length > 0;
+
+/**
+ * La cotización de una opción de pago según las personas del formulario.
+ * - Sin `pricingRules`: el comportamiento de siempre (extraPartyPriceCents + byExtraParties), con k = personas.
+ * - Con reglas: solo cuentan los roles CON regla (un rol sin regla cuesta 0). Ninguno con personas → números base;
+ *   uno → su fila de byRoleCount; varios → contygo no publica filas combinadas, así que no se calcula nada
+ *   (`base_only`), salvo que alguno de ellos ya sea not_quotable, que lo hace no cotizable en cualquier combinación.
+ */
+export function quoteForPlan(plan: Pick<CatalogPlan, "extraPartyPriceCents" | "pricingRules">, option: CatalogPaymentOption, parties: readonly { role: string }[]): PlanQuote {
+  if (!hasRolePricing(plan)) {
+    const row = breakdownForPlan(plan, option, parties.length);
+    return row ? { kind: "row", row } : { kind: "unknown" };
+  }
+  const counts = roleCountsOf(parties);
+  const active = (plan.pricingRules ?? []).map(rule => ({ roleKey: rule.roleKey, count: counts[rule.roleKey] ?? 0 })).filter(item => item.count > 0);
+  if (active.length === 0) return { kind: "row", row: option };
+  const found = active.map(item => ({ ...item, row: option.byRoleCount?.find(row => row.roleKey === item.roleKey && row.count === item.count) }));
+  const blocked = found.find(item => item.row?.status === "not_quotable");
+  if (blocked) return { kind: "not_quotable", roleKey: blocked.roleKey, count: blocked.count };
+  if (found.length > 1) return { kind: "base_only", row: option };
+  const only = found[0]?.row;
+  return only && only.status === "quoted" ? { kind: "row", row: only } : { kind: "unknown" };
 }
 
 /** La opción preseleccionada: la isDefault; si ninguna, la primera; sin opciones, null. */
@@ -175,4 +249,7 @@ export function extraPartiesNote(extraParties: number, extraPartyPriceCents: num
 }
 
 export const PAYMENT_NOTE_NO_OPTIONS = "El plan de pagos aparece en tu contrato antes de firmar.";
+export const PAYMENT_NOTE_EXACT_TOTAL = "El total exacto aparece en tu contrato antes de firmar.";
+/** Cuando contygo no publica precio para esa cantidad de personas. */
+export const PAYMENT_NOTE_NOT_QUOTABLE = "Para esa cantidad, consulta el precio con la oficina.";
 export const PAYMENT_NOTE_NO_ROW = "Tu contrato mostrará tu plan de pagos exacto.";

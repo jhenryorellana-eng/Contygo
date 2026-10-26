@@ -18,10 +18,14 @@ export type ScreenOutcome =
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "INVALID_PARTIES"; role: string | null }
+  | { step: "PRICE_NOT_QUOTABLE" }
   | { step: "SIGN_LINK_PENDING"; caseNumber: string; firstName?: string }
   | { step: "UNAVAILABLE_ONLINE" }
   | { step: "RETRY_LATER"; reason: "destination" | "verification" | "general" | "busy" | "conflict" | "fresh_key"; retryAfter?: number | null }
   | { step: "ERROR" };
+
+/** Precio por rol sin cotización publicada para esa cantidad de personas (PRICE_NOT_QUOTABLE, o la misma regla aplicada en la ficha). */
+export const PRICE_NOT_QUOTABLE_MESSAGE = { title: "Para esa cantidad, consulta el precio con la oficina.", detail: "Con ese número de personas el precio no está publicado en línea. Escríbenos por WhatsApp y te lo confirmamos." };
 
 /** Texto neutro para CLIENT_NEEDS_HUMAN: nunca se explica el motivo ni se promete que alguien llamará. */
 export const HUMAN_MESSAGE = "Para terminar tu contratación, escríbenos por WhatsApp.";
@@ -129,6 +133,7 @@ export function outcomeMessage(outcome: ScreenOutcome, roleLabel?: string): { ti
     case "UNAVAILABLE_ONLINE": return { title: "La contratación en línea no está disponible en este momento.", detail: "Escríbenos por WhatsApp y te ayudamos a terminar." };
     case "SIGN_LINK_PENDING": return { title: `Tu contrato está preparado (caso ${outcome.caseNumber}).`, detail: "Toca «Enviarme el enlace» para recibir el enlace de firma." };
     case "UNAVAILABLE": return { title: "Este servicio no está disponible ahora mismo." };
+    case "PRICE_NOT_QUOTABLE": return PRICE_NOT_QUOTABLE_MESSAGE;
     case "INVALID_PARTIES": return { title: `Revisa las personas del expediente${roleLabel ? `: falta ${roleLabel.toLowerCase()}` : ""}.` };
     case "RETRY_LATER":
       switch (outcome.reason) {

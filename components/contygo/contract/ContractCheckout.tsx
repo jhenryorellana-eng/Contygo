@@ -24,8 +24,8 @@ import type { AsylumOutcome } from "@/lib/agent/asylum-intake";
 import type { HearingOutcome } from "@/lib/agent/hearing-intake";
 import { getServiceGuideUrl } from "@/lib/contygo";
 import {
-  PAYMENT_NOTE_NO_OPTIONS, PAYMENT_NOTE_NO_ROW, breakdownForPlan, defaultPaymentOption, extraPartiesNote, formatMoney, installmentIdForRequest,
-  optionForSelection, paymentLabel, paymentOptionsOf, paymentShape, reconcileSelection, selectionOf,
+  PAYMENT_NOTE_EXACT_TOTAL, PAYMENT_NOTE_NO_OPTIONS, PAYMENT_NOTE_NO_ROW, PAYMENT_NOTE_NOT_QUOTABLE, defaultPaymentOption, extraPartiesNote, formatMoney, hasRolePricing, installmentIdForRequest,
+  optionForSelection, paymentLabel, paymentOptionsOf, paymentShape, quoteForPlan, reconcileSelection, selectionOf,
 } from "@/lib/contygo-api/payment-options";
 import {
   clearDraft, newExternalRef, newIdempotencyKey, pageAttribution, readContract, readDraft, saveContract, saveDraft,
@@ -328,6 +328,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const stepIndex = Math.max(0, steps.indexOf(step));
   const plan = data?.service.plans.find(item => item.id === form.planId) ?? data?.service.plans[0];
   const installmentOptionId = installmentIdForRequest(plan, form.installmentId);
+  const chosenOption = plan ? optionForSelection(plan, form.installmentId) ?? defaultPaymentOption(plan) : null;
+  /** The people of the form against the package price by role: contygo publishes no price for this many (PRICE_NOT_QUOTABLE). */
+  const chosenQuote = plan && chosenOption ? quoteForPlan(plan, chosenOption, persons) : null;
+  const notQuotable = chosenQuote?.kind === "not_quotable";
   const input = useMemo(() => ({
     firstName: form.firstName, middleName: form.middleName, lastName: form.lastName, email: form.email, phone: form.phone,
     address: { line1: form.line1, apartment: form.apartment, city: form.city, state: form.state, zip: form.zip },
@@ -450,6 +454,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       case "WRONG_CODE": setCode(""); show(outcome); return;
       case "RESTART": setSent(null); show(outcome); setStage("code"); setPendingRestart(true); return;
       case "INVALID_PARTIES": setSent(null); show(outcome); setStage("form"); goTo(steps.includes("people") ? "people" : "review"); return;
+      case "PRICE_NOT_QUOTABLE": setSent(null); setStage("form"); goTo(steps.includes("people") ? "people" : "review"); setNotice({ tone: "error", ...outcomeMessage(outcome), action: "whatsapp" }); return;
       case "RETRY_LATER": show(outcome); return;
       // ERROR keeps the form (and a code already sent) so «Reintentar» comes back to where the person was.
       case "ERROR": setRetryable(true); setStage("blocked"); show(outcome); return;
@@ -474,6 +479,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
       window.requestAnimationFrame(() => root.current?.querySelector<HTMLElement>("[data-invalid=true] input, [data-invalid=true] select")?.focus());
       return;
     }
+    if (notQuotable && step === "plan") { setNotice({ tone: "error", ...outcomeMessage({ step: "PRICE_NOT_QUOTABLE" }), action: "whatsapp" }); return; }
     setNotice(null);
     setErrors(current => Object.fromEntries(Object.entries(current).filter(([key]) => !STEPS[step].owns(key))));
     const following = steps[stepIndex + 1];
@@ -508,6 +514,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     if (!check.ok) { show({ step: "INVALID" }); reopen(check.errors); return; }
     const unanswered = questionErrors();
     if (Object.keys(unanswered).length) { show({ step: "INVALID" }); reopen(unanswered); return; }
+    // Nothing is sent when contygo publishes no price for these people: the office quotes it.
+    if (notQuotable) { setNotice({ tone: "error", ...outcomeMessage({ step: "PRICE_NOT_QUOTABLE" }), action: "whatsapp" }); return; }
     if (!captcha.token) { setNotice({ tone: "info", title: "Un momento: estamos confirmando que no eres un robot.", detail: "Cuando termine la verificación, toca «Enviar mi código» otra vez." }); return; }
     const answersNow = { ...journey.current.answers, ...extraAnswers };
     // After a cut, the same form and answers go again with the same key: contygo answers the same
@@ -608,16 +616,15 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     setStage("form"); goTo("review");
   }
   const extraCount = persons.length;
-  const chosenOption = plan ? optionForSelection(plan, form.installmentId) ?? defaultPaymentOption(plan) : null;
-  const chosenRow = plan && chosenOption ? breakdownForPlan(plan, chosenOption, extraCount) : null;
+  const rolePriced = hasRolePricing(plan);
   const payOptions = paymentOptionsOf(plan);
   const stateName = US_STATES.find(item => item.code === form.state)?.name ?? (form.state === "PR" ? "Puerto Rico" : form.state);
   /** Review: «{name} · Total $T», the chosen breakdown and the extra people included. Old API (no paymentOptions): name · base price. */
-  const planSummary: string[] = !plan ? [] : chosenOption
-    ? chosenRow
-      ? [`${text(plan.name)} · Total ${cents(chosenRow.totalCents)}`, paymentLabel(chosenRow, chosenOption.frequency).line, ...(extraPartiesNote(extraCount, plan.extraPartyPriceCents) ? [extraPartiesNote(extraCount, plan.extraPartyPriceCents) as string] : [])]
-      : [text(plan.name), PAYMENT_NOTE_NO_ROW]
-    : [`${text(plan.name)} · ${cents(plan.priceCents)}`];
+  const planSummary: string[] = !plan ? [] : !chosenOption ? [`${text(plan.name)} · ${cents(plan.priceCents)}`]
+    : chosenQuote?.kind === "row" ? [`${text(plan.name)} · Total ${cents(chosenQuote.row.totalCents)}`, paymentLabel(chosenQuote.row, chosenOption.frequency).line, ...(!rolePriced && extraPartiesNote(extraCount, plan.extraPartyPriceCents) ? [extraPartiesNote(extraCount, plan.extraPartyPriceCents) as string] : [])]
+    : chosenQuote?.kind === "base_only" ? [`${text(plan.name)} · Desde ${cents(chosenQuote.row.totalCents)}`, paymentLabel(chosenQuote.row, chosenOption.frequency).line, PAYMENT_NOTE_EXACT_TOTAL]
+    : chosenQuote?.kind === "not_quotable" ? [text(plan.name), PAYMENT_NOTE_NOT_QUOTABLE]
+    : [text(plan.name), PAYMENT_NOTE_NO_ROW];
   /** «Sí», «14/05/2012» or «Texas», for the summary. */
   const answerLabel = (question: ContractQuestion, value: AnswerValue | undefined) => value === undefined ? "—"
     : typeof value === "boolean" ? value ? "Sí" : "No"
@@ -739,12 +746,13 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
             <div className={s.options} role="radiogroup" aria-label="Tu paquete" data-guided-zone={guide.target === "plan" || undefined}>
               {data.service.plans.map(item => {
                 const itemOption = defaultPaymentOption(item);
-                const itemRow = itemOption ? breakdownForPlan(item, itemOption, extraCount) : null;
+                const itemQuote = itemOption ? quoteForPlan(item, itemOption, persons) : null;
+                const itemRow = itemQuote?.kind === "row" ? itemQuote.row : null;
                 return <label key={item.id} className={s.option} data-selected={form.planId === item.id}>
                   <input type="radio" name={`${uid}-plan`} checked={form.planId === item.id} onChange={() => setForm(current => ({ ...current, planId: item.id, installmentId: selectionOf(defaultPaymentOption(item)) }))} />
                   <span className={s.optionMark} aria-hidden="true" />
-                  <span className={s.optionText}>{text(item.name)}{item.extraPartyPriceCents > 0 && (!itemRow || extraCount === 0) && <small>+ {cents(item.extraPartyPriceCents)} por persona adicional</small>}</span>
-                  <strong>{cents(itemRow ? itemRow.totalCents : item.priceCents)}</strong>
+                  <span className={s.optionText}>{text(item.name)}{!hasRolePricing(item) && item.extraPartyPriceCents > 0 && (!itemRow || extraCount === 0) && <small>+ {cents(item.extraPartyPriceCents)} por persona adicional</small>}</span>
+                  {itemQuote?.kind === "not_quotable" ? <strong className={s.optionOffice}>Consulta con la oficina</strong> : <strong>{cents(itemRow ? itemRow.totalCents : item.priceCents)}</strong>}
                 </label>;
               })}
             </div>
@@ -754,8 +762,11 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
               {/* The guide highlights only the cards: the title stays outside the glowing zone. */}
               <div className={s.options} role={payOptions.length > 1 ? "radiogroup" : "group"} aria-labelledby={`${uid}-pay-title`} data-guided-zone={guide.target === "pay" || undefined}>
               {payOptions.map(option => {
-                const row = breakdownForPlan(plan, option, extraCount);
-                const label = row ? paymentLabel(row, option.frequency) : { title: paymentShape(option), detail: PAYMENT_NOTE_NO_ROW };
+                const quote = quoteForPlan(plan, option, persons);
+                const label = quote.kind === "row" ? paymentLabel(quote.row, option.frequency)
+                  : quote.kind === "base_only" ? { ...paymentLabel(quote.row, option.frequency), detail: `${paymentLabel(quote.row, option.frequency).detail}. ${PAYMENT_NOTE_EXACT_TOTAL}` }
+                  : quote.kind === "not_quotable" ? { title: paymentShape(option), detail: "Precio según la oficina" }
+                  : { title: paymentShape(option), detail: PAYMENT_NOTE_NO_ROW };
                 const card = <span className={s.optionText}>{label.title}<small>{label.detail}</small></span>;
                 if (payOptions.length === 1) return <div key={selectionOf(option) || "default"} className={`${s.option} ${s.optionStatic}`} data-selected="true">{card}</div>;
                 const value = selectionOf(option);
@@ -767,6 +778,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
               })}
               </div>
             </div> : <p className={s.note} data-guided-zone={guide.target === "pay" || undefined}>{PAYMENT_NOTE_NO_OPTIONS}</p>}
+            {notQuotable && <p className={s.note} role="status">{PAYMENT_NOTE_NOT_QUOTABLE} <a href={whatsapp} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a></p>}
             {errors.installmentOptionId && <small className={s.error} role="alert">{errors.installmentOptionId}</small>}
             <div className={s.options} role="radiogroup" aria-label="Idioma de tu contrato">
               <p className={s.groupTitle}>Idioma de tu contrato y tus correos</p>

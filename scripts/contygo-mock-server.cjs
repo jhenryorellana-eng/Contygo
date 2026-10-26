@@ -11,6 +11,10 @@
 //   taxes · Individual $100              → sin opciones activas: UNA opción por defecto (installmentOptionId null → la landing OMITE el id)
 //   taxes · Familiar $150 (+$50 por persona adicional) → una opción por defecto con byExtraParties k=1..10
 //   llc-florida · Constitución $500      → 2 opciones (3 mensuales por defecto y pago único); «+ Identidad de Marca» $1,000 → sin opciones (una por defecto)
+//   visa-juvenil-premium · Premium $3,500 → PRECIO POR ROL (pricingRules + byRoleCount): rol minor escalonado, 1 menor $3,500 · 2 $5,000 · 3 $5,500 ·
+//                                          4 o más not_quotable (POST /contracts → 422 PRICE_NOT_QUOTABLE); lead no cuenta y witness cuesta $0. 2 opciones: 6 pagos y pago único
+//   i-485 · Estándar $1,500              → 2 opciones: $200 + 13 × $100 mensual (por defecto) y $500 + 5 × $200 mensual
+//   reforzar-asilo · Sin abogado $600    → 2 opciones: $300 + 1 × $300 y pago único $600
 // Los demás paquetes salen con paymentOptions [] (API antigua: la ficha dice que el plan aparece en el contrato).
 // Correos mágicos (cualquier dominio) para recorrer los caminos raros desde la pantalla:
 //   nolink@…  → 201 sin signingUrl (la ficha ofrece «Enviarme el enlace»)
@@ -143,6 +147,29 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'cccccccc-0000-4000-8000-000000000005', count: 1, down: 50000 },
   ]);
   addPayments('llc-florida', 'Constitución + Identidad de Marca', [{ id: null, count: 4, down: 30000, isDefault: true }]);
+  // Precio por rol (2026-10): la base del paquete + el ajuste del escalón de cada rol. El motor publica una fila por rol y cantidad
+  // (los demás roles en 0); la landing nunca combina filas.
+  const premium = catalog.services.find(service => service.slug === 'visa-juvenil-premium')?.plans[0];
+  if (premium) {
+    const MINOR_ADJUSTMENTS = [0, 150000, 200000]; // cantidad 1, 2, 3 (sobre la base)
+    premium.pricingRules = [{ roleKey: 'minor', mode: 'tiered', includedCount: 0, unitPriceCents: null, beyondUnitPriceCents: null, tiers: MINOR_ADJUSTMENTS.map((adjustmentCents, index) => ({ roleCount: index + 1, adjustmentCents })) }];
+    const specs = [{ id: 'cccccccc-0000-4000-8000-000000000010', count: 6, down: 100000, isDefault: true }, { id: 'cccccccc-0000-4000-8000-000000000011', count: 1, down: 0 }];
+    premium.paymentOptions = specs.map(spec => ({
+      ...payOption(premium, spec),
+      byRoleCount: Array.from({ length: 10 }, (_, index) => index < MINOR_ADJUSTMENTS.length
+        ? { roleKey: 'minor', count: index + 1, status: 'quoted', ...breakdown(premium.priceCents + MINOR_ADJUSTMENTS[index], spec.count, spec.count === 1 ? 0 : spec.down) }
+        : { roleKey: 'minor', count: index + 1, status: 'not_quotable' }),
+    }));
+    premium.installmentOptions = specs.map(spec => ({ id: spec.id, installmentCount: spec.count, downpaymentCents: spec.count === 1 ? null : spec.down, frequency: 'monthly' }));
+  }
+  addPayments('i-485', 'Estándar', [
+    { id: 'cccccccc-0000-4000-8000-000000000020', count: 14, down: 20000, isDefault: true },
+    { id: 'cccccccc-0000-4000-8000-000000000021', count: 6, down: 50000 },
+  ]);
+  addPayments('reforzar-asilo', 'Sin abogado', [
+    { id: 'cccccccc-0000-4000-8000-000000000030', count: 2, down: 30000, isDefault: true },
+    { id: 'cccccccc-0000-4000-8000-000000000031', count: 1, down: 0 },
+  ]);
 }
 const log = path.join(require('node:os').tmpdir(), 'contygo-mock.log');
 fs.writeFileSync(log, '');
@@ -183,6 +210,10 @@ http.createServer((req, res) => {
       if (!/^\+1\d{10}$/.test(body.client?.phoneE164 ?? '')) return send(400, { error: { code: 'INVALID_REQUEST', message: 'Invalid', details: { fields: [{ path: 'client.phoneE164', reason: 'unsupported_country' }] } } });
       const allowed = allowedPlans(body.eligibilityAnswers ?? []);
       if (allowed && !allowed.includes(body.servicePlanId)) return send(422, { error: { code: 'PLAN_NOT_ALLOWED', message: 'The answers qualify, but not for this plan', details: { questionIds: [], allowedPlanIds: allowed } } });
+      // Precio por rol: 4 menores o más en Visa Juvenil Premium no tienen precio publicado (como el motor, en la primera llamada).
+      const premiumPlan = catalog.services.find(service => service.slug === 'visa-juvenil-premium')?.plans[0];
+      const minors = (body.parties ?? []).filter(party => party.role === 'minor').length;
+      if (premiumPlan?.id === body.servicePlanId && premiumPlan.pricingRules && minors >= 4) return send(422, { error: { code: 'PRICE_NOT_QUOTABLE', message: 'No published price', details: { roleKey: 'minor', count: minors } } });
       if (/^forbidden@/i.test(email)) return send(403, { error: { code: 'FORBIDDEN', message: 'Key cannot create contracts' } });
       if (/^ratelimit@/i.test(email) && !body.verificationId) return send(429, { error: { code: 'VERIFICATION_RATE_LIMITED', message: 'Too many codes' } }, { 'retry-after': '3600' });
       if (/^human@/i.test(email) && !body.verificationId) return send(409, { error: { code: 'CLIENT_NEEDS_HUMAN', message: 'Needs a person' } });

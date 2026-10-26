@@ -392,6 +392,7 @@ export type ContractOutcome =
   | { step: "NOT_ELIGIBLE" }
   | { step: "UNAVAILABLE" }
   | { step: "INVALID_PARTIES"; role: string | null }
+  | { step: "PRICE_NOT_QUOTABLE" }
   | { step: "RETRY_LATER"; reason: RetryReason; retryAfter: number | null }
   | { step: "ERROR"; code: string };
 
@@ -557,6 +558,8 @@ export function mapContractResponse(response: ApiResponse<ContractCreated>, phas
     // Las respuestas califican, pero para otro paquete (single_choice con reglas «respuesta → paquetes»).
     case "PLAN_NOT_ALLOWED":
     case "CASE_PLAN_NOT_ALLOWED": return { step: "INVALID", errors: { servicePlanId: PLAN_NOT_ALLOWED_MESSAGE } };
+    // Con esas personas de un rol el paquete no tiene precio publicado (details: {roleKey, count}): reintentar no cambia nada.
+    case "PRICE_NOT_QUOTABLE": return { step: "PRICE_NOT_QUOTABLE" };
     case "INVALID_PARTIES": return { step: "INVALID_PARTIES", role: typeof details.role === "string" ? details.role : null };
     case "DESTINATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "destination", retryAfter: response.retryAfter };
     case "VERIFICATION_RATE_LIMITED": return { step: "RETRY_LATER", reason: "verification", retryAfter: response.retryAfter ?? 3600 };

@@ -13,7 +13,7 @@ const { waLink } = require('../lib/config.ts');
 const EVERY_OUTCOME = [
   { step: 'INVALID' }, { step: 'NEEDS_ANSWERS' }, { step: 'ASK_CODE', maskedEmail: 'a***@e2e.local' }, { step: 'WRONG_CODE', attemptsLeft: 2 }, { step: 'RESTART' },
   { step: 'HUMAN' }, { step: 'FIX_CONTACT', reason: 'email_has_account', phoneHint: '42' }, { step: 'FIX_CONTACT', reason: 'phone_in_use' }, { step: 'NOT_ELIGIBLE' }, { step: 'UNAVAILABLE' }, { step: 'UNAVAILABLE_ONLINE' }, { step: 'ERROR' },
-  { step: 'SIGN_LINK_PENDING', caseNumber: 'U26-000001' }, { step: 'INVALID_PARTIES', role: null },
+  { step: 'SIGN_LINK_PENDING', caseNumber: 'U26-000001' }, { step: 'INVALID_PARTIES', role: null }, { step: 'PRICE_NOT_QUOTABLE' },
   ...['destination', 'verification', 'general', 'busy', 'conflict', 'fresh_key'].map(reason => ({ step: 'RETRY_LATER', reason, retryAfter: 3600 })),
 ];
 

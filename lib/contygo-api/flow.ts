@@ -64,6 +64,7 @@ export type BrowserOutcome =
   | { step: "UNAVAILABLE" }
   | { step: "UNAVAILABLE_ONLINE"; code: string; ref: string }
   | { step: "INVALID_PARTIES"; role: string | null }
+  | { step: "PRICE_NOT_QUOTABLE" }
   | { step: "RETRY_LATER"; reason: RetryReason; retryAfter: number | null }
   | { step: "ERROR"; code: string; ref: string };
 
@@ -301,7 +302,7 @@ export async function startContract(input: StartInput, idempotencyKey: string, o
       return failed(attempt, outcome.step);
     case "NOT_ELIGIBLE":
       return notEligible(attempt);
-    default: // INVALID, INVALID_PARTIES, RETRY_LATER
+    default: // INVALID, INVALID_PARTIES, PRICE_NOT_QUOTABLE, RETRY_LATER
       return outcome;
   }
 }
@@ -371,7 +372,7 @@ export async function confirmContract(input: ConfirmInput, idempotencyKey: strin
       return outcome;
     case "NOT_ELIGIBLE":
       return notEligible(attempt);
-    default: // WRONG_CODE, RETRY_LATER, RESTART, INVALID_PARTIES
+    default: // WRONG_CODE, RETRY_LATER, RESTART, INVALID_PARTIES, PRICE_NOT_QUOTABLE
       return outcome;
   }
 }

@@ -34,6 +34,14 @@ export interface CatalogPaymentBreakdown {
 /** Fila de personas adicionales: extraPartyCount = k (1..maxRows). */
 export type CatalogPaymentRow = CatalogPaymentBreakdown & { extraPartyCount: number };
 
+/**
+ * Fila del precio por rol: `count` personas de `roleKey` y los demás roles en 0 (aditivo, 2026-10).
+ * `not_quotable`: esa cantidad no tiene precio publicado (POST /contracts respondería 422 PRICE_NOT_QUOTABLE).
+ */
+export type CatalogRoleCountRow =
+  | (CatalogPaymentBreakdown & { roleKey: string; count: number; status: "quoted" })
+  | { roleKey: string; count: number; status: "not_quotable" };
+
 /** Una forma de pagar un paquete. Los números base son para 0 personas adicionales. */
 export interface CatalogPaymentOption extends CatalogPaymentBreakdown {
   /** null ⇒ el plan por defecto del paquete (sin opciones activas): en POST /contracts se OMITE installmentOptionId (null es un 400). */
@@ -43,6 +51,21 @@ export interface CatalogPaymentOption extends CatalogPaymentBreakdown {
   frequency: "weekly" | "monthly";
   /** Solo si el paquete cobra por persona adicional y el servicio declara roles. */
   byExtraParties?: CatalogPaymentRow[];
+  /** Precio por rol (aditivo, 2026-10): solo con `pricingRules`. Reemplaza a byExtraParties. */
+  byRoleCount?: CatalogRoleCountRow[];
+}
+
+/**
+ * Regla de precio de un rol. La landing solo la lee para saber QUÉ roles cuentan: nunca evalúa la fórmula
+ * (el total ya viene calculado en `byRoleCount`).
+ */
+export interface CatalogRolePricingRule {
+  roleKey: string;
+  mode: "linear" | "tiered";
+  includedCount: number;
+  unitPriceCents: number | null;
+  beyondUnitPriceCents: number | null;
+  tiers: { roleCount: number; adjustmentCents: number }[];
 }
 
 export interface CatalogPlan {
@@ -52,7 +75,10 @@ export interface CatalogPlan {
   priceCents: number;
   /** Se conserva tal cual (el bot de WhatsApp y landings viejas lo leen). La landing nueva pinta paymentOptions. */
   installmentOptions: InstallmentOption[];
+  /** Obsoleto: solo cuenta cuando `pricingRules` está vacío. */
   extraPartyPriceCents: number;
+  /** Aditivo (2026-10). Vacío o ausente ⇒ precio legacy (extraPartyPriceCents). */
+  pricingRules?: CatalogRolePricingRule[];
   /** Aditivo. Ausente o [] en una API antigua o un paquete no contratable. */
   paymentOptions?: CatalogPaymentOption[];
 }

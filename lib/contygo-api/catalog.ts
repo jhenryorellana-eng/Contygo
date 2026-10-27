@@ -133,9 +133,11 @@ export function publicServiceView(service: CatalogService) {
       name: plan.name,
       priceCents: plan.priceCents,
       extraPartyPriceCents: plan.extraPartyPriceCents,
+      // Aditivo (2026-10): con reglas por rol, extraPartyPriceCents ya no cuenta.
+      pricingRules: (plan.pricingRules ?? []).map(rule => ({ ...rule, tiers: rule.tiers.map(tier => ({ ...tier })) })),
       installmentOptions: plan.installmentOptions.map(option => ({ ...option })),
       // Aditivo: el desglose lo calcula contygo; la landing solo lo muestra. [] = API antigua o paquete sin plan publicado.
-      paymentOptions: (plan.paymentOptions ?? []).map(option => ({ ...option, ...(option.byExtraParties ? { byExtraParties: option.byExtraParties.map(row => ({ ...row })) } : {}) })),
+      paymentOptions: (plan.paymentOptions ?? []).map(option => ({ ...option, ...(option.byExtraParties ? { byExtraParties: option.byExtraParties.map(row => ({ ...row })) } : {}), ...(option.byRoleCount ? { byRoleCount: option.byRoleCount.map(row => ({ ...row })) } : {}) })),
     })),
     questions: service.eligibilityQuestions.map(publicQuestion),
     partyRoles: partyRolesToAsk(service.partyRoles).map(role => ({ ...role })),

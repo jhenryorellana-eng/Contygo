@@ -32,7 +32,7 @@ test('busy conserva la clave (RETRY_LATER busy, 502/503/504, página que no es J
 
 test('una respuesta definitiva estrena clave (fresh_key, WRONG_CODE, ERROR, RESTART…)', () => {
   for (const reason of ['fresh_key', 'destination', 'verification', 'general', 'conflict']) assert.equal(keepsKey({ status: 200, outcome: outcome('RETRY_LATER', { reason }) }), false, reason);
-  for (const step of ['WRONG_CODE', 'ERROR', 'RESTART', 'INVALID', 'ASK_CODE', 'SIGN', 'SIGN_LINK_PENDING', 'HUMAN', 'FIX_CONTACT', 'NOT_ELIGIBLE', 'UNAVAILABLE', 'UNAVAILABLE_ONLINE', 'INVALID_PARTIES', 'NEEDS_ANSWERS']) {
+  for (const step of ['WRONG_CODE', 'ERROR', 'RESTART', 'INVALID', 'ASK_CODE', 'SIGN', 'SIGN_LINK_PENDING', 'HUMAN', 'FIX_CONTACT', 'NOT_ELIGIBLE', 'UNAVAILABLE', 'UNAVAILABLE_ONLINE', 'INVALID_PARTIES', 'PRICE_NOT_QUOTABLE', 'NEEDS_ANSWERS']) {
     assert.equal(keepsKey({ status: 200, outcome: outcome(step) }), false, step);
   }
   // A 429 that does carry an outcome is contygo's answer, not ours.

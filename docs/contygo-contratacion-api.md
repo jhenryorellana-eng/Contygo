@@ -155,6 +155,36 @@ interface CatalogPaymentOptionDto extends CatalogPaymentBreakdownDto { // númer
 
 **El simulador publica** (`scripts/contygo-mock-server.cjs`, no con `MOCK_PLAIN_CATALOG=1`): `visa-juvenil-basico` con 3 opciones (6 mensuales por defecto, 8 mensuales con resto de centavos, 11 semanales); `taxes` Individual (una opción por defecto con id `null`) y Familiar (+$50 por persona adicional, `byExtraParties` k=1..10); `llc-florida` con dos paquetes, solo «Constitución» con opciones (3 mensuales y pago único). El resto sale con `paymentOptions: []` (API antigua).
 
+#### Precio por rol: `plans[].pricingRules` y `paymentOptions[].byRoleCount` (aditivo, 2026-10)
+
+contygo cobra por **rol** (no por «persona adicional»). `extraPartyPriceCents` y `byExtraParties` quedan **obsoletos** y solo cuentan cuando `pricingRules` está vacío o ausente.
+
+```ts
+interface CatalogRolePricingRule {         // plans[].pricingRules
+  roleKey: string; mode: "linear" | "tiered";
+  includedCount: number; unitPriceCents: number | null;                       // lineal
+  beyondUnitPriceCents: number | null; tiers: { roleCount: number; adjustmentCents: number }[]; // escalonada
+}
+// paymentOptions[].byRoleCount: por cada rol CON regla, filas count = 1..N (el resto de roles en 0)
+type CatalogRoleCountRow =
+  | (CatalogPaymentBreakdownDto & { roleKey: string; count: number; status: "quoted" })
+  | { roleKey: string; count: number; status: "not_quotable" };
+```
+
+Caso real (Visa Juvenil Premium, base $3,500, rol `minor` escalonado): 1 menor → $3,500 · 2 → $5,000 · 3 → $5,500 · 4 o más → `not_quotable`. El tutor (`lead`) no cuenta y los testigos (`witness`) cuestan $0 (un rol sin regla cuesta 0).
+
+**Reglas que la landing respeta** (`quoteForPlan` en `lib/contygo-api/payment-options.ts`):
+- **Sigue sin calcular dinero.** Solo elige una fila publicada. La fórmula de las reglas (`tiers`, `unitPriceCents`…) no se evalúa: `pricingRules` sirve únicamente para saber **qué roles cuentan**.
+- **Un rol con personas** → su fila `byRoleCount` (`roleKey` + `count`) → tarjeta de paquete, tarjetas de pago y resumen de revisión muestran ese total.
+- **Ningún rol con regla tiene personas** → los números base de la opción.
+- **`not_quotable`** → la tarjeta del paquete dice «Consulta con la oficina», la de pago y el resumen «Para esa cantidad, consulta el precio con la oficina.» con salida a WhatsApp, y **no se envía el contrato** (ni «Continuar» en los pasos Personas/Paquete ni «Enviar mi código»). Si aun así contygo responde `422 PRICE_NOT_QUOTABLE` (`details: {roleKey, count}`), `mapContractResponse` lo lleva al paso `PRICE_NOT_QUOTABLE`: la ficha vuelve a Personas con ese mismo mensaje y el botón de WhatsApp. No se reintenta ni se avisa a ventas como fallo.
+- **Varios roles con regla a la vez (decisión).** contygo publica filas **por rol**, no combinadas, y el total real es la base más la suma de los ajustes. Sumar sería calcular dinero, así que con personas de **dos o más** roles con regla la landing muestra el **precio base** de la opción («Desde $X») con la nota «El total exacto aparece en tu contrato antes de firmar.». Si alguno de esos roles ya es `not_quotable`, lo es en cualquier combinación y se bloquea igual.
+- **Una cantidad sin fila publicada** (más allá de las filas, p. ej. 11 menores en un rol `multiple`) no se inventa: forma de pago sin importes y «Tu contrato mostrará tu plan de pagos exacto.».
+- **Sin `pricingRules`** se conserva exactamente el comportamiento anterior (`extraPartyPriceCents` + `byExtraParties`).
+- **Normalizador:** reglas con `mode` desconocido o importes inválidos, y filas `byRoleCount` sin `roleKey`, con `count < 1`, con estado desconocido o con desglose inválido, se descartan; por defecto `pricingRules: []` y sin `byRoleCount`.
+
+**El simulador publica además:** `visa-juvenil-premium` con el precio por rol de arriba (2 opciones: 6 pagos por defecto y pago único; 4 menores o más → 422 `PRICE_NOT_QUOTABLE`); `i-485` Estándar ($1,500) con $200 + 13 × $100 mensual (por defecto, `installmentCount` 14) y $500 + 5 × $200 (6); `reforzar-asilo` ($600) con $300 + 1 × $300 y pago único. Pruebas: `tests/contygo-precio-por-rol.test.cjs`.
+
 ### Teléfono del contrato: solo +1
 
 - **Lo que hace contygo.** Rechaza un teléfono que no sea +1 en la 1.ª llamada, antes de enviar ningún código: responde 400 `INVALID_REQUEST` con `details.fields[{path: "client.phoneE164", reason: "unsupported_country"}]`. Los leads sí aceptan teléfonos internacionales.
@@ -558,7 +588,7 @@ Estos cambios están en una rama de contygo (`fix/web-contract-email-and-handoff
    | `slow502@…` | Corta la 1.ª llamada, una sola vez por proceso | `fresh_key`; usa un dominio distinto en cada pasada |
 
    Un teléfono que no es +1 recibe 400 `unsupported_country`, aunque la ficha ya lo frena antes.
-6. Formas de pago simuladas: ver «Formas de pago» arriba (3 opciones en `visa-juvenil-basico`, `taxes`, `llc-florida`).
+6. Formas de pago simuladas: ver «Formas de pago» arriba (3 opciones en `visa-juvenil-basico`, `taxes`, `llc-florida`; precio por rol en `visa-juvenil-premium`).
    El servicio `visa-juvenil-basico` además recibe una pregunta `us_state` y otra `future_event`, solo en el simulador. `MOCK_PLAIN_CATALOG=1` las quita.
 7. Para probar el interruptor: `CONTYGO_CHECKOUT_ENABLED=0` y reinicia `npm run dev`.
 8. El límite de `/iniciar` es de 10 por hora por IP y vive en memoria. Reinicia el servidor entre pasadas largas.

@@ -46,9 +46,13 @@ const destinations = {
   'cambio-corte': 'cambio-de-corte', itin: 'itin-number', impuestos: 'taxes',
   'evaluacion-asilo': 'evaluacion-asilo', reapertura: 'reapertura-in-absentia', llc: 'llc-florida',
   'preparacion-audiencia': 'preparacion-de-audiencia',
+  // 26-10-2026: el servicio de contygo que faltaba en la landing.
+  'permiso-de-trabajo': 'permiso-de-trabajo',
+  // 26-10-2026: gratis por cuenta propia; su camino pagado se contratará en contygo con este slug.
+  'loteria-dv-2027': 'loteria-visas-dv-2027',
 };
 
-test('los trece servicios usan el cierre aprobado, su nombre, vídeo y destino propio',()=>{
+test('los servicios usan el cierre aprobado, su nombre, vídeo y destino propio',()=>{
   for(const service of CONTYGO_SERVICES){
     const film=getRebuildPlatformFilm(service.id);
     const markup=renderToStaticMarkup(React.createElement(SharedClosing,{autoPlay:true,service,film,displayName:'Ana'}));
@@ -82,13 +86,14 @@ test('el segundo vídeo no sustituye los vídeos introductorios aprobados',()=>{
 
 test('Visa Juvenil usa su segundo vídeo final, con su propio póster',()=>{
   const second=getRebuildPlatformFilm('visa-juvenil');
-  assert.equal(second.src,'/contygo/films/visa-juvenil-video2-v1-720p.mp4');
+  // 26-10-2026: el vídeo 2 técnico (lib/contygo-video2.ts) sustituye al anterior.
+  assert.equal(second.src,require('../lib/contygo-video2.ts').TECH_PLATFORM_FILMS['visa-juvenil'].src);
   assert(fs.existsSync(path.join(root,'public',second.src)));
   assert(fs.existsSync(path.join(root,'public',second.poster)));
   assert.notEqual(second.poster,getRebuildServiceFilm('visa-juvenil').poster);
 });
 
-test('los trece servicios públicos enlazan a su ficha específica en ContyGo', () => {
+test('los servicios públicos enlazan a su ficha específica en ContyGo', () => {
   assert.deepEqual(CONTYGO_SERVICES.map(service => service.id).sort(), Object.keys(destinations).sort());
   for (const [id, slug] of Object.entries(destinations)) {
     assert.equal(getContygoServiceUrl(id), `https://contygo.app/servicios/${slug}`, id);
@@ -163,8 +168,9 @@ test('un servicio desconocido o un resultado no calificado nunca produce un dest
   assert.equal(getSelfServiceUrl('i-485', 'contact'), null);
 });
 
-test('los trece servicios pasan por presentación antes de enlazar al contrato correcto, sin cuestionario', () => {
-  for (const service of CONTYGO_SERVICES) {
+test('los servicios pasan por presentación antes de enlazar al contrato correcto, sin cuestionario', () => {
+  // La Lotería de Visas es gratis: no tiene página de contrato (/servicios), sí su guía.
+  for (const service of CONTYGO_SERVICES.filter(item => !item.free)) {
     const markup = renderToStaticMarkup(React.createElement(ServicePresentation, { service }));
     const presentation = getServicePresentation(service.id);
     assert.ok(markup.indexOf('Presentación del servicio') < markup.indexOf('Crear mi contrato en ContyGo'), service.id);

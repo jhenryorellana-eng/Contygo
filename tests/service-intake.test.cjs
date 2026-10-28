@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
-const { ids, catalog, mockFetch, contygoDefaults, browser, freshModules, visaInterview } = require('./helpers/contygo-harness.cjs');
+const { ids, catalog, mockFetch, contygoDefaults, browser, freshModules, visaInterview, scriptDone } = require('./helpers/contygo-harness.cjs');
 const visaIntake = require('../lib/agent/visa-intake.ts');
 const intake = require('../lib/agent/service-intake.ts');
 
@@ -23,7 +23,7 @@ test.beforeEach(() => { freshModules(); net = mockFetch(); contygoDefaults(net);
 test('las preguntas vienen del catálogo de contygo, con su texto y su tipo', () => {
   const questions = intake.intakeQuestions(catalog.services[0].eligibilityQuestions);
   assert.deepEqual(questions, [{ id: ids.visaQ, kind: 'yesno', text: '¿El menor tiene menos de 21 años y no está casado?' }]);
-  assert.match(intake.serviceGreeting('Visa Juvenil', questions), /una pregunta corta sobre Visa Juvenil.*¿El menor tiene menos de 21 años/);
+  assert.match(intake.serviceGreeting('Visa Juvenil', questions), /^¡Hola! Soy tu asistente de ContyGo\. Te haré una pregunta corta sobre Visa Juvenil; si tienes dudas, pregúntame cuando quieras\. ¿El menor tiene menos de 21 años/);
   assert.match(intake.serviceGreeting('Número ITIN', []), /no necesito hacerte preguntas previas/);
   assert.deepEqual(intake.serviceVoiceScripts('Número ITIN', []).length, 1);
 });
@@ -65,7 +65,7 @@ test('audio, origen, servicio y turnos se validan antes de usar el proveedor', a
   assert.equal((await raw({ serviceId: 'apelacion', answers: {}, field: ids.apelQ, audio: { data: 'not_base64', mimeType: 'audio/webm' } })).status, 400);
   assert.equal(calls.length, 0);
   provider = async () => ({ text: JSON.stringify({ clear: true, value: '2026-05-14' }) });
-  const audio = await post({ serviceId: 'apelacion', answers: {}, field: ids.apelQ, audio: { data: Buffer.from('synthetic test fixture').toString('base64'), mimeType: 'audio/mp4' } });
+  const audio = await post({ serviceId: 'apelacion', answers: scriptDone('apelacion'), field: ids.apelQ, audio: { data: Buffer.from('synthetic test fixture').toString('base64'), mimeType: 'audio/mp4' } });
   assert.equal(audio.complete, true);
   assert.equal(calls.at(-1).contents[0].parts[1].inlineData.mimeType, 'audio/m4a');
 });
@@ -104,10 +104,13 @@ test('Visa Juvenil: primero la entrevista original, con sus frases grabadas, y a
   assert.equal(last.field, ids.visaQ);
   assert.equal(last.message, 'Gracias. ¿El menor tiene menos de 21 años y no está casado?');
   assert.equal(last.complete, false);
-  const done = await say(last.answers, ids.visaQ, true);
+  const minors = await say(last.answers, ids.visaQ, true);
+  assert.equal(minors.field, 'visa-juvenil.cuantos', 'al final, la pregunta del guion');
+  assert.equal(minors.complete, false);
+  const done = await say(minors.answers, 'visa-juvenil.cuantos', 'Para dos');
   assert.equal(done.complete, true);
   assert.equal(done.eligible, true);
-  assert.deepEqual(done.answers, { 'visa.residence': true, 'visa.birthDate': '2012-03-04', 'visa.state': 'TX', 'visa.evidence': false, 'visa.witness': true, [ids.visaQ]: true });
+  assert.deepEqual(done.answers, { 'visa.residence': true, 'visa.birthDate': '2012-03-04', 'visa.state': 'TX', 'visa.evidence': false, 'visa.witness': true, [ids.visaQ]: true, 'visa-juvenil.cuantos': 'op2' });
   assert.equal(done.guidance.title, 'Hay datos para una revisión de Visa Juvenil', 'la orientación es la de la entrevista original');
   assert.ok(done.guidance.sources.some(source => /8 CFR 204\.11/.test(source.title)));
   assert.equal(calls.length, 0, 'los botones no usan Gemini');

@@ -36,7 +36,8 @@ test('sus dos vídeos ya están (portadas, tarjeta del cierre y vista previa de 
   assert.deepEqual([first.src, first.duration], ['/contygo/films/preparacion-audiencia-v1-720p.mp4', 79.58333333333333]);
   for (const file of [first.src, first.poster, '/contygo/v7/cierre-preparacion-audiencia.webp', '/contygo/compartir/preparacion-audiencia.jpg']) assert.ok(fs.existsSync(path.join(__dirname, '..', 'public', file)), file);
   const second = media.getRebuildPlatformFilm(hearing.HEARING_SERVICE);
-  assert.deepEqual([second.src, second.duration, second.provisional], ['/contygo/films/preparacion-audiencia-video2-v1-720p.mp4', 149.08333333333334, undefined]);
+  const tech = require('../lib/contygo-video2.ts').TECH_PLATFORM_FILMS[hearing.HEARING_SERVICE]; // el vídeo 2 técnico (26-10-2026)
+  assert.deepEqual([second.src, second.duration, second.provisional], [tech.src, tech.duration, undefined]);
   for (const file of [second.src, second.poster]) assert.ok(fs.existsSync(path.join(__dirname, '..', 'public', file)), file);
 });
 
@@ -77,7 +78,9 @@ test('el chat funciona aunque el servicio aún no esté en contygo, y recomienda
   assert.equal(when.question.unknownLabel, 'No la tengo a mano');
   const merit = await say({ answers: when.answers, field: hearing.DATE_FIELD, answer: ymd(40) });
   assert.equal(merit.field, hearing.MERIT_FIELD);
-  const done = await say({ answers: merit.answers, field: hearing.MERIT_FIELD, answer: true });
+  const i589 = await say({ answers: merit.answers, field: hearing.MERIT_FIELD, answer: true });
+  assert.equal(i589.field, 'preparacion-audiencia.tiene_i589', 'al final, la pregunta del guion');
+  const done = await say({ answers: i589.answers, field: 'preparacion-audiencia.tiene_i589', answer: true });
   assert.equal(done.complete, true);
   assert.equal(done.hearing.kind, 'tercera');
   assert.equal(done.message, hearing.hearingFinish(done.hearing));
@@ -152,9 +155,9 @@ test('single_choice de contygo: se responde con el code de una opción (o su ró
 test('con el servicio en contygo, el chat no repite sus dos preguntas: las responde con las suyas y contygo evalúa', async () => {
   withHearingService();
   const date = ymd(40);
-  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, date], [hearing.MERIT_FIELD, true]]);
+  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, date], [hearing.MERIT_FIELD, true], ['preparacion-audiencia.tiene_i589', false]]);
   assert.equal(done.complete, true);
-  assert.equal(done.total, 3, 'solo las tres preguntas de la landing');
+  assert.equal(done.total, 4, 'solo las tres preguntas de la landing y la del guion');
   assert.equal(done.hearing.kind, 'tercera');
   assert.equal(done.eligible, true);
   assert.equal(done.answers[H.date], date);
@@ -166,7 +169,7 @@ test('con el servicio en contygo, el chat no repite sus dos preguntas: las respo
 
 test('«No la tengo a mano»: no es un «no»; la fecha queda pendiente para la ficha del contrato', async () => {
   withHearingService();
-  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, 'no la tengo a mano'], [hearing.MERIT_FIELD, false]]);
+  const done = await chat([[hearing.HAS_FIELD, true], [hearing.DATE_FIELD, 'no la tengo a mano'], [hearing.MERIT_FIELD, false], ['preparacion-audiencia.tiene_i589', true]]);
   assert.equal(done.hearing.kind, 'segunda');
   assert.equal(done.hearing.advisor, false);
   assert.equal(done.eligible, null, 'contygo solo echa en falta la fecha');

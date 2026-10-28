@@ -55,7 +55,7 @@ export const INTAKE_EXPLANATIONS: Readonly<Record<IntakeField, string>> = {
   evidence: "Pueden servir documentos o mensajes que reflejen los hechos; un profesional debe valorar su utilidad. No necesitas enviarlos ni contar detalles sensibles aquí.",
   witness: "Los testimonios pueden ayudar a explicar los hechos, pero su valor debe revisarse. Si no puedes conseguir testigos, también puedes continuar.",
 };
-export const INTAKE_GREETING = "¡Gracias por ver el video! Qué bueno tenerte aquí. Te haré unas preguntas cortitas sobre Visa Juvenil. Esto no es un examen; vamos paso a paso. Puedes escribir o hablar, como te resulte más cómodo.";
+export const INTAKE_GREETING = "¡Hola! Soy tu asistente de ContyGo. Te haré unas preguntas cortitas sobre la Visa Juvenil; si tienes dudas, pregúntame cuando quieras.";
 export const INTAKE_FINISH_VOICE = "¡Listo! Gracias por responder. Ya diste el primer paso. Ahora sí, descubre cómo ContyGo te acompaña.";
 export const INTAKE_FOLLOWUPS: Readonly<Record<IntakeField, string>> = {
   residence: INTAKE_QUESTIONS.residence,

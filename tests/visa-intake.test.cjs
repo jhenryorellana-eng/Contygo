@@ -123,8 +123,8 @@ test('saludo sin proveedor y respuesta canónica durante caída usan modo guiado
   const welcome = await welcomeResponse.json();
   assert.equal(welcome.source, 'guided');
   assert.equal(welcome.field, 'residence');
-  assert.match(welcome.message, /Gracias por ver el video/);
-  assert.match(welcome.message, /Puedes escribir o hablar/);
+  assert.match(welcome.message, /Visa Juvenil/);
+  assert.match(welcome.message, /^¡Hola! Soy tu asistente de ContyGo/);
   assert.equal(welcomeResponse.headers.get('cache-control'), 'no-store');
   const accepted = await (await intakeRoute.POST(request({ answers: {}, field: 'residence', answer: false }))).json();
   assert.deepEqual(accepted.answers, { residence: false });

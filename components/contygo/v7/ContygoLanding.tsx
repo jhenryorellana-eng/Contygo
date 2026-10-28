@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { waLink } from "@/lib/config";
-import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { CONTYGO_SERVICES, seasonOpen, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
 import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
@@ -15,6 +15,9 @@ import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
+import BrandLoader from "../rebuild/BrandLoader";
+import type { ServiceOrigin } from "../rebuild/ServiceCinemaDialog";
+import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import ServiceShowcase, { type Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
@@ -23,7 +26,8 @@ import s from "./ContygoLanding.module.css";
 // The service flow (video, conversation, contract: gsap, voice, checkout) is the heaviest part of the page.
 // It is fetched when the phone is idle after the first paint, not before, so the landing starts light.
 const loadCinema = () => import("../rebuild/ServiceCinemaDialog");
-const ServiceCinemaDialog = dynamic(loadCinema, { ssr: false });
+// With a slow connection the window's code may still be on its way: the brand's wait covers it (only after 300 ms).
+const ServiceCinemaDialog = dynamic(loadCinema, { ssr: false, loading: () => <BrandLoader overlay label="Abriendo el servicio" /> });
 
 // V7 · «El hilo verde». Direction and reasons: docs/contygo-v7-direccion-arte.md.
 // Copy is kept from V6 unless the direction document says otherwise.
@@ -34,8 +38,8 @@ const THEME_KEY = "contygo-appearance";
 const art = (name: string) => `/contygo/v8/${name}.webp`;
 // The owner's star products, the most requested (30-09-2026; Ajuste de estatus joined them on 10-10-2026 and
 // Preparación de audiencia on 12-10-2026, still without its films): they lead
-// on their own stage («Vitrina», chosen by the owner among three concepts). Every other service follows directly,
-// without category filters.
+// on their own stage («Vitrina», chosen by the owner among three concepts). Above them, the seasonal services
+// (28-10-2026); below, the rest of the catalog in two groups.
 const featured: Star[] = [
   { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
   { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
@@ -43,8 +47,25 @@ const featured: Star[] = [
   { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia", copy: "Preparamos la solicitud de residencia del menor con I-360 aprobado, atentos a su fecha de prioridad." },
   { id: "preparacion-audiencia", name: "Preparación de Audiencia", label: "Llega a tu audiencia con calma", copy: "Una sesión de 45 minutos con Henry, en español, para repasar ese día y practicar tus respuestas." },
 ];
-const others = CONTYGO_SERVICES.filter(item => !featured.some(star => star.id === item.id));
+/** Seasonal services (the lottery, 28-10-2026): their own card above the stars while the window is open. */
+const seasonal = CONTYGO_SERVICES.filter(item => item.season);
+/** The rest of the catalog in the owner's order (28-10-2026): immigration first, then taxes and business. A service
+ *  not listed here joins its group at the end, so a new one never goes missing. */
+const CATALOG_ORDER: { title: string; note: string; art: string[]; ids: string[]; categories: ContygoCategory[] }[] = [
+  { title: "Inmigración", note: "Asilo, corte, permisos y familia", art: ["asilo", "corte", "familia"],
+    ids: ["asilo", "cambio-corte", "permiso-de-trabajo", "i-360", "reapertura", "evaluacion-asilo"], categories: ["familia", "asilo", "corte"] },
+  { title: "Impuestos y negocios", note: "Tu ITIN, tus impuestos y tu empresa", art: ["impuestos", "empresa"],
+    ids: ["itin", "impuestos", "llc"], categories: ["fiscal", "empresa"] },
+];
+const rest = CONTYGO_SERVICES.filter(item => !item.season && !featured.some(star => star.id === item.id));
+const catalogGroups = CATALOG_ORDER.map(group => ({
+  title: group.title, note: group.note, art: group.art,
+  items: [...group.ids.map(id => rest.find(item => item.id === id)).filter((item): item is ContygoService => Boolean(item)),
+    ...rest.filter(item => !CATALOG_ORDER.some(other => other.ids.includes(item.id)) && group.categories.includes(item.category))],
+})).filter(group => group.items.length);
 const visa = CONTYGO_SERVICES.find(item => item.id === "visa-juvenil");
+
+const paidCount = CONTYGO_SERVICES.filter(item => !item.free).length;
 const clients = isPublic(CONTYGO_CLAIMS.clientsServed) ? CONTYGO_CLAIMS.clientsServed.text : null;
 const guarantee = CONTYGO_COMMERCIAL_OFFER.guarantee;
 // The same person through the whole path, one action per step (Codex, 28-09-2026: material-de-diseno/v7-fotos):
@@ -109,6 +130,12 @@ function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
 /** `initialServiceId`: the link of a service (/visa-juvenil, /apelacion-bia…) opens its guide on arrival, over the landing. */
 export default function ContygoLanding({ initialServiceId }: { initialServiceId?: string } = {}) {
   const [theme, setTheme] = useState<Theme>("light");
+  // The day comes from the browser after the first paint (the page is built ahead): a season that has ended leaves then.
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => { setToday(new Date().toISOString().slice(0, 10)); }, []);
+  const inSeason = seasonal.filter(item => !today || seasonOpen(item, today));
+  /** The first product for the community (26-10-2026): free, so it doesn't count among the services with a published price. */
+  const lottery = inSeason.find(item => item.free);
   const [ready, setReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [headerCta, setHeaderCta] = useState(false);
@@ -137,7 +164,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
   const prices = useServicePrices();
   const fromPrice = formatCents(LANDING_FROM_CENTS);
   const visaFrom = visa ? fromPriceLabel(prices, visa.slug) : null;
-  const [origin, setOrigin] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [origin, setOrigin] = useState<ServiceOrigin | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLElement>(null);
   const heroCta = useRef<HTMLAnchorElement>(null);
@@ -151,6 +178,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
   }, []);
   // The other appearance's art is fetched when the person reaches for the tone button (the drop gives it time).
   const preloaded = useRef(false);
+  const warmed = useRef(new Set<string>());
   function preloadOtherTheme() {
     if (preloaded.current) return;
     preloaded.current = true;
@@ -193,9 +221,23 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     root.current.querySelectorAll("[data-anim]").forEach(el => awake.observe(el));
     return () => { observer.disconnect(); awake.disconnect(); };
   }, []);
+  /** The person reaches for a service (touch, hover or focus): its window and its first images start loading. */
+  function warm(item: ContygoService) {
+    void loadCinema();
+    if (warmed.current.has(item.id)) return;
+    warmed.current.add(item.id);
+    for (const src of [getRebuildServiceFilm(item.id).poster, `/contygo/v8/servicio-${item.id}.webp`]) if (src) { const image = new window.Image(); image.src = src; }
+  }
   function open(item: ContygoService, element: HTMLElement) {
     const rect = element.getBoundingClientRect();
-    setOrigin({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+    // The card's drawing flies to the head of the next screen (ServiceCinemaDialog): where it starts and what it is.
+    // Its frame, not the image: the image may still be rising into place when the thread lights it.
+    const holder = element.querySelector<HTMLElement>("[data-flight-art]");
+    const drawing = holder?.querySelector("img");
+    const art = holder?.getBoundingClientRect();
+    setOrigin({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, ...(drawing && art && art.width > 0 ? { art: { x: art.x, y: art.y, width: art.width, height: art.height, src: drawing.currentSrc || drawing.src } } : {}) });
+    // A light tap in the hand (Android; iPhone ignores it).
+    try { navigator.vibrate?.(8); } catch { /* Not available. */ }
     setService(item);
     const url = new URL(location.href); url.searchParams.set("servicio", item.id); history.replaceState({}, "", url);
   }
@@ -221,6 +263,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <h1>Tu historia sigue.<br />El siguiente paso,<br /><em>ContyGo.</em></h1>
           <p className={s.lead}>Tu trámite, más claro. Preparamos tus documentos contigo y te acompañamos paso a paso, desde una sola plataforma.</p>
           <a ref={heroCta} className={s.primary} href="#servicios">Encontrar mi servicio <span><Icon /></span></a>
+          {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>Nuevo · Gratis</b><span>Lotería de Visas 2027: inscríbete tú mismo</span><Icon /></button>}
           <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>
         </div>
         <div className={s.heroArt} data-anim data-thread="start" data-exit={HERO_ART[theme].exit} data-exit-dir="down">
@@ -231,14 +274,14 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       </section>
 
       <section className={s.facts} aria-label="ContyGo en cifras" data-thread="facts">
-        <div data-react="count"><strong data-value={String(CONTYGO_SERVICES.length)}>{CONTYGO_SERVICES.length}</strong><span>servicios con precio publicado</span></div>
+        <div data-react="count"><strong data-value={String(paidCount)}>{paidCount}</strong><span>servicios con precio publicado</span></div>
         {fromPrice && <div><strong>{fromPrice}</strong><span>honorarios desde</span></div>}
         {clients && <div data-react="count"><strong data-value={clients.split(" ")[0]}>{clients.split(" ")[0]}</strong><span>{clients.split(" ").slice(1).join(" ")}</span></div>}
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
       </section>
 
       <section className={s.services} id="servicios" data-thread="services" data-anim>
-        <ServiceShowcase stars={featured} others={others} open={open} />
+        <ServiceShowcase seasonal={inSeason} stars={featured} groups={catalogGroups} open={open} warm={warm} />
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
       </section>
 
@@ -312,6 +355,6 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       {/* Without JavaScript the guide never opens: the landing stays readable. */}
       <noscript dangerouslySetInnerHTML={{ __html: `<style>.${s.linkVeil}{display:none}</style>` }} />
     </div>}
-    <ServiceCinemaDialog service={service} origin={origin} onClose={() => setService(null)} />
+    {service && <ServiceCinemaDialog service={service} origin={origin} onClose={() => setService(null)} />}
   </div>;
 }

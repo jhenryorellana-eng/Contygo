@@ -8,6 +8,10 @@ import { useVisaVoice } from "./useVisaVoice";
 import { LiquidGlow } from "./ThinkingOverlay";
 import ExternalVideoCaptions from "./ExternalVideoCaptions";
 import s from "./PaperPlaneClosing.module.css";
+import BrandLoader from "../rebuild/BrandLoader";
+import FilmControls from "../rebuild/FilmControls";
+import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
+import { useVideoWaiting } from "../rebuild/useVideoWaiting";
 import { closingName, closingScript, closingAction, closingLines, closingVariant, useClosingSpeechWarmup, type ClosingVoice } from "./closingSpeech";
 
 export { closingName, closingScript } from "./closingSpeech";
@@ -47,6 +51,11 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
   const nameWords=wordCount(closingName(name)),totalWords=wordCount(script);
   // Follow the real audio clock. Word boundaries are proportional estimates:
   // the current voice endpoint does not return per-word alignment timestamps.
+  // The price beside the decision (28-10-2026): the live published fee, inside the button that opens the contract.
+  const prices=useServicePrices(),from=service.free?null:fromPriceLabel(prices,service.slug);
+  const priceNote=service.free?"Gratis por tu cuenta":from?`Desde ${from} · precio publicado`:"Conoce cómo te acompañamos";
+  // While the second film loads (or runs out of buffer), the brand's wait instead of a grey box (28-10-2026).
+  const filmWaiting=useVideoWaiting(video,phase==="watch"&&Boolean(film.src));
   const speechProgress=phase!=="invitation"?-1:calling||voice.muted||voice.status==="blocked"||voice.status==="unavailable"?1:voice.status==="speaking"?voice.progress:voice.status==="idle"?1:-1;
   let lineOffset=nameWords+7;
   const cues=closingLines(service.id,variant).map(text=>{const cue={text,offset:lineOffset};lineOffset+=wordCount(text);return cue;});
@@ -137,7 +146,8 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
           From the paper plane on, a calm stage light takes over (no threads at the invitation). */}
       <div className={s.stageLight} aria-hidden="true"/>
       <div className={s.light} aria-hidden="true"><LiquidGlow intensity={phase==="watch"?.5:1} level={voice.level}/></div>
-      <div ref={frame} className={s.filmFrame}><video ref={video} src={film.src??undefined} poster={film.poster} playsInline controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} autoPlay={autoPlay} onEnded={finish} onPlay={()=>{voice.unlock();setBlocked(false);}} onError={()=>setFailed(true)} onWaiting={()=>{window.clearTimeout(stallTimer.current);stallTimer.current=window.setTimeout(()=>setStalled(true),10000);}} onPlaying={()=>{window.clearTimeout(stallTimer.current);setStalled(false);}} onPause={event=>{if(!flying.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setBlocked(true);}} onContextMenu={event=>event.preventDefault()} aria-label={`Cómo te acompaña ContyGo · ${service.name}${film.provisional?" · vídeo provisional":""}`}>{film.captions&&<track data-external-captions default ref={element=>{if(element)element.track.mode="hidden";}} kind="captions" src={film.captions} srcLang="es" label="Español"/>}</video></div>
+      <div ref={frame} className={s.filmFrame}><video ref={video} src={film.src??undefined} poster={film.poster} playsInline controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} autoPlay={autoPlay} onEnded={finish} onPlay={()=>{voice.unlock();setBlocked(false);}} onError={()=>setFailed(true)} onWaiting={()=>{window.clearTimeout(stallTimer.current);stallTimer.current=window.setTimeout(()=>setStalled(true),10000);}} onPlaying={()=>{window.clearTimeout(stallTimer.current);setStalled(false);}} onPause={event=>{if(!flying.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setBlocked(true);}} onContextMenu={event=>event.preventDefault()} aria-label={`Cómo te acompaña ContyGo · ${service.name}${film.provisional?" · vídeo provisional":""}`}>{film.captions&&<track data-external-captions default ref={element=>{if(element)element.track.mode="hidden";}} kind="captions" src={film.captions} srcLang="es" label="Español"/>}</video>{filmWaiting&&!failed&&<BrandLoader label="Cargando el vídeo"/>}</div>
+      {autoPlay&&film.src&&phase==="watch"&&!failed&&<FilmControls video={video} onSkip={finish} skipLabel="Ir al final"/>}
       {/* Same subtitles as the first film, shown as soon as this film has its WebVTT file. */}
       {film.captions&&phase==="watch"&&<div className={s.filmCaptions} data-film-captions><ExternalVideoCaptions videoRef={video} src={film.captions} toggle={!film.onScreenText}/></div>}
       <div className={s.plane} ref={plane} aria-hidden="true"><svg viewBox="0 0 104 60" fill="none"><polygon data-plane-wing data-plane-top points="2,6 101,1 44,30 44,30" fill="#F6F8F7"/><polygon data-plane-wing data-plane-bottom points="101,1 64,56 44,30 44,30" fill="#B8CABC"/><path data-plane-crease d="m101 1-62 29 5 24 7-18Z" fill="#087F46"/><path data-plane-crease d="m39 30 62-29-57 29" stroke="#fff" strokeWidth=".8"/></svg></div>
@@ -156,10 +166,10 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
       <div className={s.actionArea} aria-hidden={phase!=="invitation"}>
         <div className={s.ctaDock} data-invited={ctaInvited} data-calling={calling&&voice.status==="speaking"} style={{"--voice-energy":voice.level} as CSSProperties}>
           <svg className={s.rimTrace} aria-hidden="true"><rect data-rim-trace x="1" y="1" rx="42" pathLength="1"/><rect className={s.voiceTrace} x="1" y="1" rx="42" pathLength="1"/></svg>
-          <a ref={cta} data-final className={s.cta} href={getContygoServiceUrl(service.id)??"https://contygo.app"} target="_blank" rel="noopener noreferrer" tabIndex={phase==="invitation"?0:-1} aria-hidden={phase!=="invitation"} onClick={event=>{voice.stop();if(onContract){event.preventDefault();onContract();}}}><span className={s.liquidInk} aria-hidden="true"/><span className={s.contactWave} aria-hidden="true"/><span data-button-copy><strong>{action}</strong><small>Conoce cómo te acompañamos</small></span><span data-button-copy className={s.arrow}><Arrow/></span></a>
+          <a ref={cta} data-final className={s.cta} href={getContygoServiceUrl(service.id)??"https://contygo.app"} target="_blank" rel="noopener noreferrer" tabIndex={phase==="invitation"?0:-1} aria-hidden={phase!=="invitation"} onClick={event=>{voice.stop();if(onContract){event.preventDefault();onContract();}}}><span className={s.liquidInk} aria-hidden="true"/><span className={s.contactWave} aria-hidden="true"/><span data-button-copy><strong>{action}</strong><small>{priceNote}</small></span><span data-button-copy className={s.arrow}><Arrow/></span></a>
           <span className={s.touchActor} aria-hidden="true"><TouchHand/></span>
         </div>
-        <p data-message className={s.footnote}>{service.id==="evaluacion-asilo"?"Conoce el alcance. Después decides.":"Primero lees. Después decides y firmas."}</p>
+        <p data-message className={s.footnote}>{service.id==="evaluacion-asilo"?"Conoce el alcance. Después decides.":service.id==="loteria-dv-2027"?"Gratis por tu cuenta, o con nuestra ayuda. Tú eliges.":"Primero lees. Después decides y firmas."}</p>
         {phase==="invitation"&&<div className={s.voiceControls}><button onClick={()=>{voice.unlock();speakInvitation();}}>{voice.status==="blocked"?"Activar voz":voice.status==="unavailable"?"Reintentar voz":"Escuchar invitación"}</button><button onClick={voice.toggleMute}>{voice.muted?"Activar sonido":"Silenciar"}</button><details><summary>Leer invitación</summary><p>{script}</p></details></div>}
       </div>
       {phase==="watch"&&(!autoPlay||blocked||failed||stalled)&&<div className={s.watchTools}><button onClick={()=>{if(failed){setFailed(false);video.current?.load();}play();}}>{failed?"Reintentar vídeo":blocked?"Continuar vídeo":stalled?"Seguir esperando el vídeo":"Reproducir vídeo + cierre"}</button>{(failed||stalled)&&<button onClick={()=>{voice.unlock();video.current?.pause();setFailed(false);setStalled(false);finish();}}>Continuar sin el vídeo</button>}{failed&&<p>No se pudo cargar el vídeo.</p>}{stalled&&!failed&&<p>El vídeo está tardando en cargar.</p>}{!autoPlay&&<><button onClick={()=>{voice.unlock();video.current?.pause();finish();}}>Probar solo la transición</button><small>{film.provisional?"Clip temporal · ":""}la transición comienza después del vídeo.</small></>}</div>}

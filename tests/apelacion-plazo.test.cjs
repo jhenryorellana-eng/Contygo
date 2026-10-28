@@ -4,7 +4,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const Module = require('node:module');
-const { ids, mockFetch, contygoDefaults, browser, freshModules } = require('./helpers/contygo-harness.cjs');
+const { ids, mockFetch, contygoDefaults, browser, freshModules, scriptDone } = require('./helpers/contygo-harness.cjs');
 const intake = require('../lib/agent/service-intake.ts');
 const { closingAction, closingLines, closingScript, closingVariant } = require('../components/contygo/juvenil/closingSpeech.ts');
 const { ineligibleMessage, outcomeMessage } = require('../lib/contygo-api/messages.ts');
@@ -33,7 +33,10 @@ test('fuera de plazo, el agente lo dice antes del vídeo en vez de «¡Listo!»'
 });
 
 test('dentro de plazo, el final de siempre', async () => {
-  const done = await say({ field: ids.apelQ, answer: ymd(5) });
+  const more = await say({ field: ids.apelQ, answer: ymd(5) });
+  assert.equal(more.complete, false, 'dentro de plazo siguen las preguntas del guion');
+  assert.equal(more.field, 'apelacion.forma_decision');
+  const done = await say({ answers: scriptDone('apelacion'), field: ids.apelQ, answer: ymd(5) });
   assert.equal(done.eligible, true);
   assert.equal(done.message, intake.SERVICE_FINISH);
 });

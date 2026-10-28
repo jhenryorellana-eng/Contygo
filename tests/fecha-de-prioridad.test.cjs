@@ -145,7 +145,7 @@ test('veredicto: el país solo se pregunta si cambia el resultado', () => {
 test('ajuste: pregunta la fecha de prioridad, la explica, dice el resultado y nunca hace la pregunta del boletín', async () => {
   const greeting = await post({ answers: {} });
   assert.equal(greeting.field, q.i360);
-  assert.equal(greeting.total, 4, 'I-360, fecha de prioridad, soltero y deportación');
+  assert.equal(greeting.total, 5, 'I-360, fecha de prioridad, soltero, deportación y, del guion, cuántos menores');
   assert.ok(greeting.scripts.some(text => text.startsWith('¡Buenas noticias!') && text.endsWith('¿El menor sigue soltero?')), 'el veredicto se precarga');
   for (const finish of Object.values(adjustment.ADJUSTMENT_FINISH).slice(0, 4)) assert.ok(greeting.scripts.includes(finish), finish);
   const date = await say(greeting.answers, q.i360, true);
@@ -161,7 +161,9 @@ test('ajuste: pregunta la fecha de prioridad, la explica, dice el resultado y nu
   assert.equal(single.answers[q.bulletin], true, 'la respuesta del boletín la calcula el servidor');
   const removal = await say(single.answers, q.single, true);
   assert.equal(removal.message, `Gracias. ${i485.eligibilityQuestions[3].prompt.es}`, 'el veredicto se dice una sola vez');
-  const done = await say(removal.answers, q.removal, false);
+  const minors = await say(removal.answers, q.removal, false);
+  assert.equal(minors.field, 'i-485.cuantos_menores', 'con la fecha vigente sigue la pregunta del guion');
+  const done = await say(minors.answers, 'i-485.cuantos_menores', 'op1');
   assert.equal(done.complete, true);
   assert.equal(done.eligible, true);
   assert.equal(done.message, adjustment.ADJUSTMENT_FINISH.current);
@@ -234,7 +236,7 @@ test('ajuste: una fecha escrita no necesita a Gemini; si es ambigua, la pregunta
   provider = async () => ({ text: JSON.stringify({ clear: false, value: '' }) });
   const ambiguous = await say({ [q.i360]: true }, adjustment.PRIORITY_FIELD, '03/04/2024');
   assert.equal(ambiguous.field, adjustment.PRIORITY_FIELD);
-  assert.equal(ambiguous.message, `Necesito confirmar tu respuesta. Puedes elegir la fecha abajo o escribirla con el mes en palabras, por ejemplo «15 de marzo de 2024». ${adjustment.PRIORITY_RETRY}`);
+  assert.equal(ambiguous.message, `Perdona, no te entendí bien. Dímela con el día, el mes y el año, por ejemplo «15 de marzo de 2024». ${adjustment.PRIORITY_RETRY}`);
   assert.match(calls[0].config.systemInstruction, /intercambiables/);
 });
 
@@ -251,7 +253,8 @@ test('cierre del segundo vídeo: va de la mano con lo que dijo el agente', () =>
   assert.match(closing.closingScript('', 'i-485', 'near'), /Tu fecha está muy cerca.*contrato previo.*Toca Revisar mi contrato/, 'el vídeo 2 termina con «Toca "Revisar mi contrato"»');
   assert.match(closing.closingScript('', 'i-485', 'far'), /Tu fecha aún está por llegar.*contrato previo.*Toca Revisar mi contrato/);
   const media = require('../lib/contygo-rebuild-media.ts');
-  assert.deepEqual([media.getRebuildPlatformFilm('i-485').src, media.getRebuildPlatformFilm('i-485').duration], ['/contygo/films/ajuste-estatus-video2-v1-720p.mp4', 392.625]);
+  const tech = require('../lib/contygo-video2.ts').TECH_PLATFORM_FILMS['i-485']; // el vídeo 2 técnico (26-10-2026)
+  assert.deepEqual([media.getRebuildPlatformFilm('i-485').src, media.getRebuildPlatformFilm('i-485').duration], [tech.src, tech.duration]);
   assert.equal(media.getRebuildPlatformFilm('i-485').provisional, undefined, 'ya no es el clip provisional');
   assert.equal(closing.closingScript('', 'visa-juvenil'), closing.closingScript('', 'visa-juvenil', null), 'los demás servicios no cambian');
 });

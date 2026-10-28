@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const { ids, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules, visaInterview } = require('./helpers/contygo-harness.cjs');
+const { ids, SIGNING_URL, VERIFICATION_ID, mockFetch, contygoDefaults, browser, freshModules, visaInterview, scriptDone } = require('./helpers/contygo-harness.cjs');
 const { signWebhook } = require('../lib/contygo-api/webhook.ts');
 const { signVerificationTicket } = require('../lib/contygo-api/tokens.ts');
 
@@ -65,7 +65,7 @@ test('las preguntas del chat salen del catálogo con su kind y al terminar se ev
   assert.equal(greeting.question.id, ids.visaQ);
   assert.equal(greeting.question.text, '¿El menor tiene menos de 21 años y no está casado?');
   assert.equal(greeting.question.kind, 'yesno');
-  assert.equal(greeting.total, 5, 'cuatro de la entrevista de Visa Juvenil (con pruebas no hay testigos) y una del catálogo');
+  assert.equal(greeting.total, 6, 'cuatro de la entrevista de Visa Juvenil (con pruebas no hay testigos), una del catálogo y la del guion');
   assert.ok(greeting.message.includes(greeting.question.text));
   assert.ok(greeting.scripts.includes(greeting.message), 'la locución del saludo se precarga');
   assert.equal(done.complete, true);
@@ -75,10 +75,12 @@ test('las preguntas del chat salen del catálogo con su kind y al terminar se ev
   const evaluate = net.calls.find(call => call.path === '/eligibility/evaluate');
   assert.deepEqual(evaluate.json, { serviceId: ids.visa, answers: [{ questionId: ids.visaQ, value: true }] });
   assert.equal(b.jar.size, 0, 'sin cookies ni sesión en el servidor');
-  // Un servicio sin preguntas se completa sin preguntar nada.
+  // Sin preguntas de contygo (ITIN), el chat hace las de su guion; respondidas, se completa.
   const itin = await (await post(intakeRoute, browser(), '/api/agent/service-intake', { serviceId: 'itin', answers: {} })).json();
-  assert.equal(itin.total, 0);
-  assert.equal(itin.complete, true);
+  assert.equal(itin.total, 4);
+  assert.equal(itin.field, 'itin.personas');
+  const itinDone = await (await post(intakeRoute, browser(), '/api/agent/service-intake', { serviceId: 'itin', answers: scriptDone('itin') })).json();
+  assert.equal(itinDone.complete, true);
 });
 
 test('la ficha recibe el servicio de contygo, sin nada de la persona', async () => {
@@ -348,6 +350,6 @@ test('Gemini solo interpreta la pregunta actual: una fecha dicha con palabras se
     reply = { value: '2026-05', clear: false };
     const unclear = await (await post(intakeRoute, browser(), '/api/agent/service-intake', { serviceId: 'apelacion', answers: {}, field: ids.apelQ, answer: 'en mayo' })).json();
     assert.equal(unclear.complete, false);
-    assert.match(unclear.message, /Necesito confirmar/);
+    assert.match(unclear.message, /Perdona, no te entendí bien/);
   } finally { agentServer.getGenAI = original; }
 });

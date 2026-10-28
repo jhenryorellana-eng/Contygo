@@ -1,9 +1,9 @@
 "use client";
 
 /* Servicios de la V7 · «Vitrina» (elegida por el dueño el 30-09-2026 entre tres conceptos).
-   Los cuatro más solicitados suben a un escenario oscuro: foco de luz, la escultura flotando sobre un
-   pedestal de papel y laureles de «favorito». Debajo, todo el catálogo directo, sin categorías: el
-   color del fondo de cada dibujo agrupa los trámites sin obligar a elegir.
+   Los más solicitados suben a un escenario oscuro: foco de luz, la escultura flotando sobre un
+   pedestal de papel y laureles de «favorito». Encima, los de temporada (28-10-2026) en su propia tarjeta cálida,
+   con sus fechas; debajo, el resto del catálogo en dos grupos: Inmigración, e Impuestos y negocios.
    Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla.
    En el celular los favoritos avanzan solos y llevan flechas (StarCarousel). */
 import Image from "next/image";
@@ -17,7 +17,10 @@ import StarCarousel from "./StarCarousel";
 import s from "./ServiceShowcase.module.css";
 
 export type Star = { id: string; name: string; label: string; copy: string };
-type Props = { stars: Star[]; others: ContygoService[]; open: (item: ContygoService, element: HTMLElement) => void };
+/** A group of the catalog: its name, a short line and the category sculptures that head it (public/contygo/v8). */
+export type CatalogGroup = { title: string; note: string; art: string[]; items: ContygoService[] };
+/** `warm`: the person reaches for a card (touch, hover, focus) and its window starts loading before the tap ends. */
+type Props = { seasonal: ContygoService[]; stars: Star[]; groups: CatalogGroup[]; open: (item: ContygoService, element: HTMLElement) => void; warm: (item: ContygoService) => void };
 
 const art = (id: string) => `/contygo/v8/servicio-${id}.webp`;
 const find = (id: string) => CONTYGO_SERVICES.find(item => item.id === id)!;
@@ -29,6 +32,10 @@ const COUNT = ["", "El servicio", "Los dos servicios", "Los tres servicios", "Lo
 const StarIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" /></svg>;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
 const Play = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 10 7-10 7Z" fill="currentColor" /></svg>;
+/** A name never breaks inside «DV-2027» or «(I-765)»: a word with a hyphen stays whole. */
+const keepWhole = (name: string) => name.split(/(\s+)/).map((part, index) => part.includes("-") ? <span key={index} className={s.whole}>{part}</span> : part);
+const Hourglass = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" /></svg>;
+const Calendar = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>;
 /** A laurel branch: the classic mark of «the favourite» (flip it for the other side). */
 const Laurel = ({ flip }: { flip?: boolean }) => <svg className={s.laurel} data-flip={flip || undefined} viewBox="0 0 24 44" aria-hidden="true">
   <path d="M17 42C7 34 4 20 11 3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -40,13 +47,27 @@ const Laurel = ({ flip }: { flip?: boolean }) => <svg className={s.laurel} data-
   </g>
 </svg>;
 
-export default function ServiceShowcase({ stars, others, open }: Props) {
+export default function ServiceShowcase({ seasonal, stars, groups, open, warm }: Props) {
   const row = useRef<HTMLDivElement>(null);
   const prices = useServicePrices();
-  const label = (item: ContygoService, star = false) => { const from = fromPriceLabel(prices, item.slug); return `Conocer ${item.name}${star ? ", uno de los más solicitados" : ""}${from ? `, desde ${from}` : ""}`; };
+  const reach = (item: ContygoService) => ({ onPointerEnter: () => warm(item), onPointerDown: () => warm(item), onFocus: () => warm(item) });
+  const label = (item: ContygoService, star = false) => { const from = fromPriceLabel(prices, item.slug); return `Conocer ${item.name}${star ? ", uno de los más solicitados" : ""}${item.free ? ", gratis" : from ? `, desde ${from}` : ""}`; };
 
   return <div className={s.showcase}>
     <div className={s.stage} data-anim>
+      {seasonal.length > 0 && <div className={s.season} data-reveal>{seasonal.map(item => <button key={item.id} type="button" className={s.seasonCard} data-service={item.id} data-react="card" onClick={e => open(item, e.currentTarget)} {...reach(item)} aria-label={`${label(item)}. De temporada: ${item.season?.dates ?? ""}`}>
+        <span className={s.seasonArt} data-flight-art><span data-loop><Image src={art(item.id)} alt="" fill sizes="(max-width:760px) 30vw, 200px" /></span></span>
+        <span className={s.seasonCopy}>
+          <span className={s.seasonEyebrow}><Hourglass />De temporada</span>
+          <strong>{keepWhole(item.name)}</strong>
+          {item.season && <span className={s.seasonText}>{item.season.headline}</span>}
+          {item.season && <span className={s.seasonDates}><Calendar />{item.season.dates}</span>}
+        </span>
+        <span className={s.seasonAction}>
+          {item.free ? <span className={s.seasonPrice}>Gratis</span> : fromPriceLabel(prices, item.slug) ? <span className={s.seasonPrice}><small>Desde</small> {fromPriceLabel(prices, item.slug)}</span> : <span />}
+          <span className={s.seasonGo}>Empezar <Arrow /></span>
+        </span>
+      </button>)}</div>}
       <div className={s.stageHead} data-reveal data-react="title">
         <span className={s.stageEyebrow}><Laurel /> Los más solicitados <Laurel flip /></span>
         <h2>Los favoritos<br /><em>de nuestras familias.</em></h2>
@@ -54,9 +75,9 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
       </div>
       <div ref={row} className={s.stageRow} data-count={stars.length}>{stars.map(star => {
         const item = find(star.id);
-        return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} aria-label={label(item, true)}>
+        return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} {...reach(item)} aria-label={label(item, true)}>
           <span className={s.spot} aria-hidden="true" />
-          <span className={s.float}><span data-loop><Image src={art(star.id)} alt="" fill sizes="(max-width:760px) 70vw, 26vw" /></span></span>
+          <span className={s.float} data-flight-art><span data-loop><Image src={art(star.id)} alt="" fill sizes="(max-width:760px) 70vw, 26vw" /></span></span>
           <span className={s.pedestal} aria-hidden="true" />
           <span className={s.stageCopy}>
             <span className={s.rosette}><StarIcon />Más solicitado</span>
@@ -70,10 +91,17 @@ export default function ServiceShowcase({ stars, others, open }: Props) {
       <StarCarousel track={row} count={stars.length} />
     </div>
     <div className={s.listHead} data-reveal><h3>Todo nuestro <em>catálogo.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
-    <div className={s.shelf}>{others.map(item => <button key={item.id} type="button" className={s.shelfItem} data-family={item.category} data-react="tile" onClick={e => open(item, e.currentTarget)} aria-label={label(item)}>
-      <span className={s.shelfArt}><Image src={art(item.id)} alt="" fill sizes="(max-width:760px) 34vw, 12vw" /></span>
-      <span className={s.shelfCopy}><strong>{item.name}</strong>{fromPriceLabel(prices, item.slug) && <span className={s.shelfPrice}><small>desde</small> {fromPriceLabel(prices, item.slug)}</span>}</span>
-      <i className={s.go}><Arrow /></i>
-    </button>)}</div>
+    {groups.map(group => <section key={group.title} className={s.group} aria-label={group.title}>
+      <header className={s.groupHead} data-reveal>
+        <span className={s.groupArt} aria-hidden="true">{group.art.map(name => <span key={name}><Image src={`/contygo/v8/categoria-${name}.webp`} alt="" fill sizes="60px" /></span>)}</span>
+        <span className={s.groupText}><h4>{group.title}</h4><span>{group.note}</span></span>
+        <span className={s.groupCount}>{group.items.length} {group.items.length === 1 ? "servicio" : "servicios"}</span>
+      </header>
+      <div className={s.shelf}>{group.items.map(item => <button key={item.id} type="button" className={s.shelfItem} data-family={item.category} data-react="tile" onClick={e => open(item, e.currentTarget)} {...reach(item)} aria-label={label(item)}>
+        <span className={s.shelfArt} data-flight-art><Image src={art(item.id)} alt="" fill sizes="(max-width:760px) 34vw, 12vw" /></span>
+        <span className={s.shelfCopy}><strong>{keepWhole(item.name)}</strong>{item.free ? <span className={s.shelfPrice}>Gratis</span> : fromPriceLabel(prices, item.slug) && <span className={s.shelfPrice}><small>desde</small> {fromPriceLabel(prices, item.slug)}</span>}</span>
+        <i className={s.go}><Arrow /></i>
+      </button>)}</div>
+    </section>)}
   </div>;
 }

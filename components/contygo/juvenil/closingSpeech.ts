@@ -33,7 +33,10 @@ const ownVariant = (serviceId:string, priority?:{status:string;previo:boolean;ne
   :asylum.kind==="nodate"?"asilo-sinfecha":asylum.kind==="soon"?"asilo-pronto":"asilo-asesor"
   :serviceId!=="i-485"||!priority?null:priority.status==="current"?"current":!priority.previo?null
   :priority.status==="unknown"?"unknown":priority.near?"near":"far";
+/** Lotería de Visas (26-10-2026): no hay contrato que revisar; el botón abre los dos caminos (gratis o con ContyGo). */
+export const LOTTERY_CLOSING_ACTION="Elegir cómo inscribirme";
 export const closingAction=(serviceId:string,variant:ClosingVariant=null)=>serviceId==="evaluacion-asilo"?"Conocer mi evaluación"
+  :serviceId==="loteria-dv-2027"?LOTTERY_CLOSING_ACTION
   :variant==="asilo-asesor"||variant==="asilo-apelacion"||variant==="asesor"||variant==="apelacion-asesor"?"Hablar con un asesor":variant==="audiencia-henry"||variant==="audiencia-pronto"||variant==="audiencia-revisar"?"Hablar con Henry":"Revisar mi contrato";
 const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
   current:["Tu fecha ya está vigente:","revisa tu contrato","y presentemos juntos","el ajuste del menor.","Tu historia sigue. ContyGo."],
@@ -55,6 +58,7 @@ const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
 };
 export const closingLines=(serviceId:string,variant:ClosingVariant=null)=>
   variant?CLOSING_LINES[variant]
+  :serviceId==="loteria-dv-2027"?["Tu inscripción puede empezar hoy:","hazla tú mismo, gratis,","o deja que ContyGo","la haga por ti.","Tu historia sigue. ContyGo."]
   :[serviceId==="evaluacion-asilo"?"Conoce tu evaluación,":"Revisa tu contrato,","conoce nuestro compromiso","y, cuando estés listo,","avancemos juntos.","Tu historia sigue. ContyGo."];
 export const closingScript = (name:string,serviceId="visa-juvenil",variant:ClosingVariant=null) => `${name ? `${name}, tu` : "Tu"} próximo paso merece claridad y compañía. ${closingLines(serviceId,variant).join(" ")} Toca ${closingAction(serviceId,variant)} y descubre cómo vamos a acompañarte. Tu siguiente paso empieza aquí.`;
 export type ClosingVoice = ReturnType<typeof useVisaVoice>;

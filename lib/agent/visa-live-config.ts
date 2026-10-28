@@ -1,5 +1,7 @@
 /** Public voice identity. Credentials stay in lib/agent/server.ts. */
 export const VISA_LIVE_MODEL = "gemini-3.8-live";
+/** A turn of the call asked with this header brings its own voice (lib/agent/voiced-reply.ts). */
+export const VOICED_REPLY_HEADER = "x-voiced-reply";
 export const VISA_LIVE_VOICE = "Laomedeia";
 export const VISA_LIVE_INSTRUCTION = [
   "PERSONA: Eres la voz de ContyGo: una anfitriona carismática, espontánea e ingeniosa, hablando de tú a tú con una persona. Español latinoamericano neutro, voz femenina con cuerpo, presencia y una sonrisa que se escucha.",

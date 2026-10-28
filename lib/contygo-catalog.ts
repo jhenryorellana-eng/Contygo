@@ -20,9 +20,16 @@ export type ContygoService = {
   legacySlug?: string;
   /** Only services with variants (Visa Juvenil): how the option reads in the picker before the contract. */
   variant?: { label: string; stages: string[]; summary: string };
+  /** A free service for the community (Lotería de Visas, 26-10-2026): the person can do it alone; ContyGo's help is optional. */
+  free?: true;
+  /** A seasonal service (28-10-2026): it leads the services on its own card while its window is open, and leaves on `until`. */
+  season?: { headline: string; dates: string; until: string };
 };
 
 export const CONTYGO_CATALOG_VERIFIED_AT = "2026-09-10";
+
+/** Whether a seasonal service's window is still open on `today` (YYYY-MM-DD). */
+export const seasonOpen = (service: Pick<ContygoService, "season">, today: string) => Boolean(service.season && today <= service.season.until);
 
 export const CONTYGO_SERVICES: readonly ContygoService[] = [
   {
@@ -107,6 +114,24 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     exclusions: ["No incluye preparación ni presentación de una solicitud de asilo.", "El informe no sustituye asesoría legal ni garantiza un resultado."],
     price: 50,
     plans: [{ name: "Sin abogado", price: 50 }],
+  },
+  {
+    // contygo.app/servicios/permiso-de-trabajo (26-10-2026): una etapa, ≈ 1 semana; GET /catalog no tiene preguntas de elegibilidad.
+    // Quién llena el I-765 y quién lo presenta a USCIS no está confirmado en producción: no se afirma.
+    id: "permiso-de-trabajo",
+    slug: "permiso-de-trabajo",
+    name: "Permiso de Trabajo (I-765)",
+    category: "asilo",
+    description: "Prepara tu solicitud de permiso de trabajo (I-765) por asilo pendiente, categoría (c)(8), para USCIS.",
+    audience: "Personas con una solicitud de asilo (I-589) pendiente desde hace al menos 150 días.",
+    includes: [
+      "Preparación del formulario I-765 en la categoría (c)(8).",
+      "Organización del recibo del I-589, tus fotos y tu identificación.",
+      "Tu paquete para USCIS, listo en la app.",
+    ],
+    exclusions: ["La aprobación y la fecha de entrega del permiso dependen de USCIS.", "Las tasas gubernamentales no forman parte de los honorarios."],
+    price: 120,
+    plans: [{ name: "Estándar", price: 120 }],
   },
   {
     id: "apelacion",
@@ -204,6 +229,28 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     price: 150,
     // Names as in contygo (13-10-2026): the live price is matched by name.
     plans: [{ name: "Preparación para la segunda audiencia", price: 150 }, { name: "Preparación para la tercera audiencia", price: 350 }],
+  },
+  {
+    // 26-10-2026: el primer producto para la comunidad (docs/loteria-dv-2027.md). Gratis por cuenta propia, con la guía y los
+    // vídeos; o, pagado, «Que ContyGo lo haga por ti» cuando el servicio exista en contygo con este slug (precio: Henry).
+    id: "loteria-dv-2027",
+    slug: "loteria-visas-dv-2027",
+    legacySlug: "loteria-de-visas",
+    name: "Lotería de Visas DV-2027",
+    category: "familia",
+    description: "Inscríbete gratis en la Lotería de Visas DV-2027 del Departamento de Estado con nuestra guía paso a paso, o deja que ContyGo lo haga por ti.",
+    audience: "Personas nacidas en un país que participa, como Perú, Argentina o Chile, con secundaria completa o dos años de experiencia en un oficio.",
+    includes: [
+      "Guía gratuita para inscribirte tú mismo en el sitio oficial, paso a paso.",
+      "Un asistente que te dice si puedes participar y qué fotos y datos preparar.",
+      "La opción de que ContyGo revise tus fotos y datos y envíe tu inscripción por ti.",
+    ],
+    exclusions: ["ContyGo no es el gobierno ni está afiliado a él.", "Nadie puede garantizar que salgas seleccionado.", "Salir seleccionado no es tener la visa: después viene el trámite consular."],
+    price: 0,
+    plans: [],
+    free: true,
+    // The court order's window (docs/loteria-dv-2027.md): announced by 29-10, open by 1-11 for 30 days. Confirm with the announcement.
+    season: { headline: "Inscríbete tú mismo, gratis, con nuestra guía paso a paso.", dates: "Inscripción oficial desde el 1 de noviembre, por 30 días", until: "2026-12-03" },
   },
 ];
 

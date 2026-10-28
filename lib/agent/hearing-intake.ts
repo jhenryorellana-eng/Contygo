@@ -28,7 +28,7 @@ export const SOON_DAYS = 3;
 export const HENRY_FAQ_URL = "https://links.usalatinoprime.com/asesoria";
 
 export const HAS_QUESTION = "¿Tienes una audiencia programada en la corte de inmigración?";
-export const DATE_QUESTION = "¿Cuándo es tu próxima audiencia? Escríbela, dímela o elígela en el calendario.";
+export const DATE_QUESTION = "¿Cuándo es tu próxima audiencia? Dímela o escríbela.";
 export const MERIT_QUESTION = "¿Esa audiencia es la de mérito, donde se presenta tu caso completo?";
 
 const HAS: IntakeQuestion = { id: HAS_FIELD, kind: "yesno", text: HAS_QUESTION };

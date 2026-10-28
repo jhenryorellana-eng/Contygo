@@ -44,8 +44,8 @@ export type Hearing = "preliminar-1" | "preliminar-2" | "merito";
 
 export const TRACK_QUESTION = "¿Tu asilo es defensivo, ante un juez de inmigración, o afirmativo, ante un oficial de asilo de USCIS?";
 export const SCOPE_QUESTION = "¿Tu asilo es personal o familiar, es decir, incluye a tu pareja o a tus hijos?";
-export const COURT_DATE_QUESTION = "¿Cuándo es tu próxima audiencia en la corte de inmigración? Escríbela, dímela o elígela en el calendario.";
-export const INTERVIEW_DATE_QUESTION = "¿Cuándo es tu entrevista de asilo en USCIS? Está en tu aviso de entrevista. Escríbela, dímela o elígela en el calendario.";
+export const COURT_DATE_QUESTION = "¿Cuándo es tu próxima audiencia en la corte de inmigración? Dímela o escríbela.";
+export const INTERVIEW_DATE_QUESTION = "¿Cuándo es tu entrevista de asilo en USCIS? Está en tu aviso de entrevista. Dímela o escríbela.";
 export const HEARING_QUESTION = "¿Qué tipo de audiencia es: preliminar 1, preliminar 2 o de mérito final, la audiencia individual donde el juez decide tu caso?";
 export const NO_DATE_LABEL = "Aún no tengo fecha";
 const OPTIONS = {
@@ -93,7 +93,7 @@ export function normalizeAsylumAnswer(question: IntakeQuestion, value: unknown):
     if (value === NO_DATE) return NO_DATE;
     if (typeof value !== "string" || value.length > 60) return null;
     if (NO_DATE_WORDS.test(fold(value))) return NO_DATE;
-    const written = /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : parseWrittenDate(value);
+    const written = /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : parseWrittenDate(value, { dateMode: "future_event" });
     return normalizeAnswer({ kind: "date", dateMode: "future_event" }, written ?? value);
   }
   return normalizeIntakeAnswer(question, value);

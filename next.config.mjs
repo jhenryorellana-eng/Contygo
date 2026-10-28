@@ -35,6 +35,7 @@ const nextConfig = {
       "peticion-i-360": ["i-360", "i360", "peticioni360"],
       "ajuste-de-estatus": ["i-485", "i485", "ajustedeestatus", "ajuste-estatus"],
       "asilo-politico": ["asilo", "asilopolitico"],
+      "permiso-de-trabajo": ["permiso-trabajo", "permisodetrabajo", "permiso", "i-765", "i765", "work-permit"],
       "reforzar-asilo": [
         "reforzarasilo",
         "reforzamiento-de-asilo",
@@ -48,6 +49,7 @@ const nextConfig = {
         "taxes",
         "declaraciondeimpuestos",
       ],
+      "loteria-de-visas": ["loteria-visas-dv-2027", "loteria-dv-2027", "loteria", "loteria-visas", "loteria-de-visas-2027", "dv-2027", "dv2027", "visa-2027"],
       terminos: ["terminos-y-condiciones", "terminos-condiciones"],
       privacidad: ["politica-de-privacidad", "privacidad-politica"],
     };

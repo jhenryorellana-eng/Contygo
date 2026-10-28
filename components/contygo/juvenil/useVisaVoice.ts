@@ -12,6 +12,8 @@ export interface VisaSpeechEvents {
   onContinuation?: () => void;
   cuePhrase?: string;
   onCue?: () => void;
+  /** The reply's own voice, streamed with it (readVoicedReply); without it, or if it fails before a sound, the voice is asked for. */
+  voiced?: Response;
 }
 
 /** Transcript chunks provide an approximate phrase cue, not word-level alignment. */
@@ -41,6 +43,18 @@ function trimSpeechEdges(context: AudioContext, audio: AudioBuffer) {
 }
 
 const MAX_RECORDING_SECONDS = 25;
+/* Hands-free answers (21-10-2026, «como una llamada»): the recording ends by itself after this much silence once the
+   person has spoken, and gives up (without sending) if nobody speaks at all. Levels are RMS of the microphone signal. */
+const SILENCE_AFTER_SPEECH_MS = 1400;
+const NO_SPEECH_MS = 12000;
+const SPEECH_MIN_MS = 250;
+const SPEECH_FLOOR = .018;
+/* 23-10-2026: someone who answers at once must not teach the room's noise with their own voice (the threshold
+   would end above their speech and the answer would be cut), so the learned floor has a ceiling. */
+const NOISE_FLOOR_CAP = .015;
+
+/** Start options: `auto` listens hands-free (ends on silence) using the given AudioContext; `onNoSpeech` when nobody spoke. */
+export type MicrophoneStart = { auto?: boolean; context?: AudioContext | null; onNoSpeech?: () => void; /** Silence that ends the answer (longer for a date, which people stop to remember). */ silenceMs?: number };
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const SPEECH_TIMEOUT_MS = 60_000;
 const SPEECH_CACHE_LIMIT = 8;
@@ -122,10 +136,12 @@ export function useVisaVoice() {
     return contextRef.current;
   }, []);
 
-  const prepareSpeech = useCallback((text: string, prefetched: boolean): PreparedSpeech => {
+  const prepareSpeech = useCallback((text: string, prefetched: boolean, supplied?: Response): PreparedSpeech => {
     const cache = cacheRef.current;
     const existing = cache.get(text);
+    const dropSupplied = () => { void supplied?.body?.cancel().catch(() => undefined); };
     if (existing && !existing.controller.signal.aborted) {
+      dropSupplied();
       existing.prefetched ||= prefetched;
       cache.delete(text);
       cache.set(text, existing);
@@ -153,27 +169,38 @@ export function useVisaVoice() {
       chunks: [], listeners: new Set(), duration: 0, transcript: [],
       promise: Promise.resolve().then(async () => {
         if (controller.signal.aborted || !mountedRef.current) throw new Error("Speech cancelled");
-        const response = await fetch("/api/agent/visa-live-speech", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error("Speech unavailable");
-        const audio = response.headers?.get("content-type")?.includes("application/x-ndjson")
+        const request = async () => {
+          const response = await fetch("/api/agent/visa-live-speech", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("Speech unavailable");
+          return response;
+        };
+        const decode = async (response: Response) => response.headers?.get("content-type")?.includes("application/x-ndjson")
           ? await readLiveSpeech(response, context, controller.signal, chunk => {
             if(controller.signal.aborted||!mountedRef.current)return;
             entry.chunks.push(chunk);entry.duration+=chunk.duration;
             entry.listeners.forEach(listener=>listener(chunk));
           },(text,seconds)=>entry.transcript.push({text,seconds}))
           : await context.decodeAudioData(await response.arrayBuffer());
+        let audio: AudioBuffer;
+        try { audio = await decode(supplied ?? await request()); }
+        catch (cause) {
+          // The reply's own voice failed before a sound: asked for once, as usual.
+          if (!supplied || entry.chunks.length || controller.signal.aborted || !mountedRef.current) throw cause;
+          audio = await decode(await request());
+        }
         if (controller.signal.aborted || !mountedRef.current) throw new Error("Speech cancelled");
         if (!Number.isFinite(audio.duration) || audio.duration <= 0) throw new Error("Empty speech");
         entry.audio = audio;
         entry.duration = audio.duration;
         return audio;
       }).catch((cause: unknown) => {
+        dropSupplied();
         if (cache.get(text) === entry) cache.delete(text);
         throw cause;
       }).finally(() => {
@@ -234,9 +261,11 @@ export function useVisaVoice() {
     const generation = generationRef.current;
     const isCurrent = () => mountedRef.current && generationRef.current === generation;
     lastTextRef.current = trimmed;
-    lastEventsRef.current = events;
+    // A replay asks for the voice again (or plays it from memory): a streamed one is read only once.
+    lastEventsRef.current = events?.voiced ? { ...events, voiced: undefined } : events;
     setLevel(0);
     if (!trimmed || mutedRef.current) {
+      void events?.voiced?.body?.cancel().catch(() => undefined);
       setStatus("idle");
       setProgress(1);
       return;
@@ -249,7 +278,7 @@ export function useVisaVoice() {
       // Attempt this before the network await; unlock() may already have resumed it.
       // A blocked resume promise can remain pending, so never wait on that promise.
       const resumeAttempt = context.state === "running" ? null : context.resume().catch(() => undefined);
-      const entry = prepareSpeech(trimmed, false);
+      const entry = prepareSpeech(trimmed, false, events?.voiced);
       activeEntryRef.current = entry;
       let continuationAt: number | null = null;
       // Prepare the CTA concurrently, but never hold the greeting behind it.
@@ -432,7 +461,9 @@ export function useVisaVoice() {
     };
   }, [cancelWork]);
 
-  return { status, progress, level, muted, speak, stop, unlock, retry, toggleMute, prefetch, discardPrefetch };
+  /** The context that plays the bot's voice (already unlocked by a tap): the microphone measures silence with it. */
+  const audioContext = useCallback((): AudioContext | null => { try { return getContext(); } catch { return null; } }, [getContext]);
+  return { status, progress, level, muted, speak, stop, unlock, retry, toggleMute, prefetch, discardPrefetch, audioContext };
 }
 
 /** start() belongs in a user action. stop() submits; cancel() discards, including pending permission. */
@@ -449,6 +480,10 @@ export function useVisaMicrophone(onRecorded: (audio: VisaRecordedAudio) => void
   const readerRef = useRef<FileReader | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const limitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listenRef = useRef<{ timer: ReturnType<typeof setInterval>; source: MediaStreamAudioSourceNode } | null>(null);
+  const [listening, setListening] = useState(false);
+  /** The voice level while listening (0–1): the voice button breathes with it. */
+  const [level, setLevel] = useState(0);
   const onRecordedRef = useRef(onRecorded);
 
   useEffect(() => { onRecordedRef.current = onRecorded; }, [onRecorded]);
@@ -458,6 +493,12 @@ export function useVisaMicrophone(onRecorded: (audio: VisaRecordedAudio) => void
     if (limitRef.current !== null) clearTimeout(limitRef.current);
     intervalRef.current = null;
     limitRef.current = null;
+    if (listenRef.current) {
+      clearInterval(listenRef.current.timer);
+      try { listenRef.current.source.disconnect(); } catch { /* Already disconnected. */ }
+      listenRef.current = null;
+      if (mountedRef.current) { setListening(false); setLevel(0); }
+    }
   }, []);
 
   const releaseTracks = useCallback(() => {
@@ -519,7 +560,7 @@ export function useVisaMicrophone(onRecorded: (audio: VisaRecordedAudio) => void
     }
   }, [clearTimers, fail, releaseTracks]);
 
-  const start = useCallback(async (): Promise<void> => {
+  const start = useCallback(async (options: MicrophoneStart = {}): Promise<void> => {
     if (!mountedRef.current) return;
     discard();
     const generation = generationRef.current;
@@ -610,6 +651,36 @@ export function useVisaMicrophone(onRecorded: (audio: VisaRecordedAudio) => void
         setSeconds(MAX_RECORDING_SECONDS);
         stop();
       }, MAX_RECORDING_SECONDS * 1000);
+      // Hands-free: measure the voice level; after speech, a pause sends the answer; with no speech at all, nothing is sent.
+      const context = options.auto ? options.context : null;
+      if (context) {
+        if (context.state !== "running") await context.resume().catch(() => {});
+        if (isCurrent() && context.state === "running") {
+          const source = context.createMediaStreamSource(stream);
+          const analyser = context.createAnalyser();
+          analyser.fftSize = 1024;
+          source.connect(analyser);
+          const samples = new Float32Array(analyser.fftSize);
+          let floor = 0, frames = 0, speechSince = 0, spoke = false, lastVoice = performance.now();
+          const timer = setInterval(() => {
+            if (!isCurrent()) return;
+            analyser.getFloatTimeDomainData(samples);
+            let sum = 0;
+            for (let index = 0; index < samples.length; index++) sum += samples[index] * samples[index];
+            const level = Math.sqrt(sum / samples.length), now = performance.now();
+            // The first readings learn the room's noise; speech is clearly above it.
+            if (frames < 4) { floor = Math.max(floor, Math.min(level, NOISE_FLOOR_CAP)); frames++; return; }
+            const loud = level > Math.max(SPEECH_FLOOR, floor * 2.4);
+            setLevel(Math.min(1, level * 9));
+            if (loud) { speechSince ||= now; lastVoice = now; if (now - speechSince >= SPEECH_MIN_MS) spoke = true; }
+            else speechSince = 0;
+            if (spoke && now - lastVoice >= (options.silenceMs ?? SILENCE_AFTER_SPEECH_MS)) stop();
+            else if (!spoke && now - startedAt >= NO_SPEECH_MS) { discard(); if (mountedRef.current) { setStatus("idle"); setSeconds(0); } options.onNoSpeech?.(); }
+          }, 100);
+          listenRef.current = { timer, source };
+          setListening(true);
+        }
+      }
     } catch (cause) {
       if (!isCurrent()) return;
       const name = cause instanceof DOMException ? cause.name : "";
@@ -630,5 +701,5 @@ export function useVisaMicrophone(onRecorded: (audio: VisaRecordedAudio) => void
     };
   }, [discard]);
 
-  return { status, error, seconds, start, stop, cancel };
+  return { status, error, seconds, listening, level, start, stop, cancel };
 }

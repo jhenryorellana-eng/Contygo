@@ -3,6 +3,7 @@
    Los tamaños de los SVG van con .showcase delante: la página fija todos a 22 px con más especificidad. */
 .showcase{position:relative}
 .showcase button{font:inherit;cursor:pointer;text-align:left;color:inherit}
+.whole{white-space:nowrap}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
 /* ---- El escenario: empieza justo bajo las cifras y ocupa todo el ancho ---- */
@@ -89,7 +90,84 @@
   .shelfItem{grid-template-columns:34% 1fr auto;gap:12px;padding:8px 14px 8px 8px;border-radius:20px}
   .shelfCopy strong{font-size:17px}
 }
+/* ---- De temporada (28-10-2026): un boleto de papel marfil sobre el escenario, con su ventana de fechas ----
+   Marfil en los dos tonos (es papel: tu información). El ámbar marca la temporada; el verde, solo lo que se pulsa. */
+.season{position:relative;z-index:1;display:grid;gap:18px;max-width:1080px;margin:0 auto 72px}
+.seasonCard{position:relative;display:grid;grid-template-columns:minmax(150px,210px) 1fr auto;align-items:center;gap:0 28px;padding:14px 30px 14px 14px;border:0;border-radius:30px;background:#fffdf7;color:#061b3d;box-shadow:0 0 0 1px #eedcae,0 34px 70px -34px #000000b3,0 0 80px -30px #f5b54466;text-align:left;transition:transform .45s var(--unfold),box-shadow .45s}
+.showcase .seasonCard{color:#061b3d}
+.seasonCard:hover{transform:translateY(-4px);box-shadow:0 0 0 1px #e6c97f,0 44px 80px -36px #000000cc,0 0 90px -26px #f5b5448a}
+.seasonArt{position:relative;display:block;aspect-ratio:1;border-radius:22px;overflow:hidden;background:radial-gradient(80% 70% at 50% 30%,#fff7e0,#f6e7bf 70%,#efd99c)}
+.seasonArt>span{position:absolute;inset:0;animation:floaty 6s ease-in-out infinite;will-change:transform}
+.seasonArt img{object-fit:contain;padding:9%;filter:drop-shadow(0 18px 16px #7a4e0040)}
+/* The dashed edge is the perforation of a ticket, between the drawing and the words. */
+.seasonCopy{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0;padding:10px 0 10px 28px;border-left:2px dashed #e7d29d}
+.seasonEyebrow{display:inline-flex;align-items:center;gap:7px;padding:6px 13px 6px 10px;border-radius:40px;background:linear-gradient(135deg,#ffd77a,#f5b544);color:#3b2500;font-size:12px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 10px 22px -12px #c98a1b}
+.showcase .seasonEyebrow svg{width:14px;height:14px}
+.seasonCopy>strong{font:800 clamp(26px,2.6vw,36px)/1.08 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em;color:#061b3d}
+.seasonText{font-size:17px;line-height:1.5;color:#33415c}
+.seasonDates{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px;background:#fbf1d6;font-size:14px;font-weight:700;color:#7a4e00}
+.showcase .seasonDates svg{width:16px;height:16px}
+.seasonAction{display:flex;flex-direction:column;align-items:flex-end;gap:14px}
+.seasonPrice{font:800 clamp(28px,2.6vw,36px)/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em;color:#087f46}.seasonPrice small{display:block;font:600 12px var(--font-contygo-body),sans-serif;color:#4f5d73}
+.seasonGo{display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:40px;background:#25d366;color:#061b3d;font-size:15px;font-weight:800;box-shadow:0 14px 28px -14px #1fb85a;transition:transform .35s var(--unfold)}
+.showcase .seasonGo svg{width:16px;height:16px}
+.seasonCard:hover .seasonGo{transform:translateX(3px)}
+
+/* ---- El catálogo en dos grupos (28-10-2026): cada uno con sus esculturas de categoría, su línea y cuántos son ---- */
+.group+.group{margin-top:60px}
+.groupHead{display:flex;align-items:center;gap:18px;margin:0 0 22px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.groupArt{display:flex;flex:none;padding-left:12px}
+.groupArt>span{position:relative;width:60px;height:60px;margin-left:-12px;border-radius:50%;background:var(--soft);box-shadow:0 0 0 3px var(--bg),var(--paper);overflow:hidden}
+.groupArt>span:nth-child(2){z-index:1}.groupArt>span:nth-child(3){z-index:2}
+.groupArt img{object-fit:contain;padding:9px}
+.groupText{display:flex;flex-direction:column;gap:3px;min-width:0}
+.groupText h4{font:800 clamp(21px,1.9vw,26px)/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em}
+.groupText>span{font-size:15px;color:var(--muted)}
+.groupCount{margin-left:auto;flex:none;padding:7px 13px;border-radius:40px;border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
+:global([data-contygo-theme=dark]) .groupArt>span{background:#fffdf7}
+@media(max-width:900px){
+  .seasonCard{grid-template-columns:120px 1fr;gap:16px;padding:12px 16px 16px 12px}
+  .seasonAction{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:space-between;padding-top:12px;border-top:2px dashed #e7d29d}
+  .seasonCopy{padding:4px 0;border-left:0}
+}
+/* The phone (28-10-2026): the ticket reads top to bottom (drawing beside its name, then the line, the dates and the
+   action across the full width), the group heads take one line and the catalog cards are shorter, so the section
+   scrolls less. */
+@media(max-width:760px){
+  .season{margin:0 0 40px}
+  .seasonCard{grid-template-columns:88px 1fr;grid-template-rows:auto auto;gap:6px 14px;padding:14px 14px 16px;border-radius:24px}
+  .seasonArt{grid-row:1 / span 2;align-self:center;border-radius:18px}
+  .seasonCopy{display:contents}
+  .seasonEyebrow{grid-column:2;align-self:end;justify-self:start;font-size:11px;padding:5px 11px 5px 9px}
+  .seasonCopy>strong{grid-column:2;align-self:start;font-size:23px}
+  .seasonText{grid-column:1 / -1;margin-top:10px;font-size:16px;line-height:1.45}
+  .seasonDates{grid-column:1 / -1;justify-self:stretch;font-size:13.5px;line-height:1.35;padding:9px 12px}
+  .seasonAction{margin-top:8px;padding-top:14px}
+  .seasonPrice{font-size:30px}
+  .seasonGo{padding:13px 22px;font-size:16px}
+  .group+.group{margin-top:40px}
+  .groupHead{gap:12px;margin-bottom:16px;padding-bottom:14px}
+  .groupArt{padding-left:10px}
+  .groupArt>span{width:40px;height:40px;margin-left:-10px}
+  .groupArt img{padding:6px}
+  .groupText h4{font-size:21px}
+  .groupText>span{font-size:14px}
+  .groupCount{display:none}
+  .shelfItem{grid-template-columns:27% 1fr auto;padding:7px 12px 7px 7px;border-radius:18px}
+  .shelfArt{border-radius:13px}
+  .shelfCopy{gap:4px}
+  .shelfCopy strong{font-size:16.5px}
+  .shelfPrice{font-size:16px}
+}
+/* In the hand (touch screens): the card gives under the finger, a quick press before the window opens. */
+@media(hover:none){
+  .shelfItem,.seasonCard{-webkit-tap-highlight-color:transparent;transition:transform .16s ease-out,box-shadow .2s}
+  .shelfItem:active,.seasonCard:active{transform:scale(.97)}
+  .shelfItem:active .go{background:var(--green);border-color:var(--green);color:#061b3d}
+  .pedestalCard{-webkit-tap-highlight-color:transparent}
+  .pedestalCard:active .float{transform:scale(.96);transition:transform .16s ease-out}
+}
 @media(prefers-reduced-motion:reduce){
-  .float>span{animation:none}
+  .float>span,.seasonArt>span{animation:none}
   :global(main[data-thread-ready=true]) .shelfItem:not([data-lit=true]) .shelfArt img{opacity:1;transform:none}
 }

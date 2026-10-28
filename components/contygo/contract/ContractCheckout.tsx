@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
-import { normalizeAnswer, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
+import { normalizeAnswer, normalizeEmail, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
 import { missingQuestions, type ContractQuestion } from "@/lib/contygo-api/variants";
 import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, ineligibleMessage, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, HEARING_ADVISOR_MESSAGE, HEARING_TOO_CLOSE_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
 import { waLink } from "@/lib/config";
@@ -157,6 +157,8 @@ type Props = {
   /** From the journey: its conversation lives in this browser, not on the server (guía §2 bis). */
   displayName?: string;
   phone?: string;
+  /** The email the person wrote before the closing film (21-10-2026): the contact step starts with it. */
+  email?: string;
   answers?: Record<string, AnswerValue>;
   eligible?: boolean | null;
   externalRef?: string;
@@ -171,7 +173,7 @@ type Props = {
   onChangeService?: () => void;
 };
 
-export default function ContractCheckout({ service, displayName = "", phone = "", answers, eligible = null, externalRef, priority, asylum, hearing, voice: sharedVoice, onChangeService }: Props) {
+export default function ContractCheckout({ service, displayName = "", phone = "", email = "", answers, eligible = null, externalRef, priority, asylum, hearing, voice: sharedVoice, onChangeService }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
   const [data, setData] = useState<ReadyData | null>(null);
@@ -205,8 +207,8 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const reference = useRef("");
   const pending = useRef<Pending | null>(null);
   const resendKey = useRef<string | null>(null);
-  const journey = useRef({ displayName, phone, answers, eligible, externalRef, priority, asylum, hearing });
-  journey.current = { displayName, phone, answers, eligible, externalRef, priority, asylum, hearing };
+  const journey = useRef({ displayName, phone, email, answers, eligible, externalRef, priority, asylum, hearing });
+  journey.current = { displayName, phone, email, answers, eligible, externalRef, priority, asylum, hearing };
   const personKey = useRef(0);
   const root = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -297,7 +299,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
           // The reveal phone may be international; the contract needs +1. If it is not, the field starts empty with the hint.
           const prefill = from.phone && isUsPhone(from.phone) ? from.phone : "";
           if (from.phone?.trim() && !prefill) setPhoneHint(true);
-          setForm(current => ({ ...current, ...reconcileSelection(next.service.plans, current.planId || plan?.id || "", current.installmentId), firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill }));
+          setForm(current => ({ ...current, ...reconcileSelection(next.service.plans, current.planId || plan?.id || "", current.installmentId), firstName: current.firstName || name.split(" ")[0] || "", phone: current.phone || prefill, email: current.email || normalizeEmail(from.email) || "" }));
           setPersons(current => current.length ? current : next.service.partyRoles.filter(role => role.isRequired).map(role => ({ key: ++personKey.current, role: role.roleKey, firstName: "", middleName: "", lastName: "", dateOfBirth: "" })));
         }
       }

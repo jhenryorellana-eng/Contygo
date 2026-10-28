@@ -183,7 +183,7 @@ test('B1 · el chat: las preguntas llevan kind, dateMode y options al navegador;
   // Una fecha futura no vale como «pasada», pero sí como future_event; una pasada no vale como future_event.
   const past = await say({ answers: afterState.answers, field: FUTURE_Q.id, answer: ymd(-5) });
   assert.equal(past.complete, false);
-  assert.match(past.message, /elegir la fecha/);
+  assert.match(past.message, /Dímela con el día, el mes y el año/);
 });
 
 test('B1 · Gemini extrae el código de estado de texto libre y el prompt permite fechas futuras en future_event', async () => {
@@ -191,8 +191,12 @@ test('B1 · Gemini extrae el código de estado de texto libre y el prompt permit
   const b = browser(); b.newIp();
   // La entrevista propia de Visa Juvenil va ya respondida: estas pruebas son de las preguntas del catálogo.
   const say = async body => (await post(intakeRoute, b, '/api/agent/service-intake', { serviceId: 'visa-juvenil', ...body, answers: { ...visaInterview, ...body.answers } })).json();
+  // A state named in the sentence is read without Gemini (lib/agent/typed-answer.ts, 28-10-2026).
+  const named = await say({ answers: {}, field: STATE_Q.id, answer: 'vivo en Texas desde hace dos años' });
+  assert.equal(named.answers[STATE_Q.id], 'TX');
+  assert.equal(geminiCalls.length, 0);
   provider = async () => ({ text: JSON.stringify({ clear: true, value: 'TX' }) });
-  const state = await say({ answers: {}, field: STATE_Q.id, answer: 'vivo en Texas desde hace dos años' });
+  const state = await say({ answers: {}, field: STATE_Q.id, answer: 'vivo en el estado de la estrella solitaria' });
   assert.deepEqual(state.answers, { ...visaInterview, [STATE_Q.id]: 'TX' });
   assert.equal(state.source, 'gemini');
   const sent = JSON.parse(geminiCalls[0].contents[0].parts[0].text);

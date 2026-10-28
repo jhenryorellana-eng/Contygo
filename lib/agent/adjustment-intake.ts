@@ -141,10 +141,24 @@ const ymd = (year: number, month: number, day: number) => {
  * Una fecha escrita: «15 de marzo de 2024», «March 15, 2024» (así la imprime el I-797) o «15/03/2024».
  * Con números, si el día y el mes pueden intercambiarse (los dos 12 o menos) no se adivina: null.
  */
-export function parseWrittenDate(text: string): string | null {
+/**
+ * «15 de marzo de 2024», «March 15 2024» or «15/03/2024». With `infer` (21-10-2026, the voice chat), a day and month
+ * without the year take the obvious one: the most recent for something past, the next one for an event to come.
+ * Birth dates and priority dates never infer: there the year is the answer.
+ */
+export function parseWrittenDate(text: string, infer?: { dateMode?: string | null; today?: string }): string | null {
   const clean = text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,]/g, " ").replace(/\s+/g, " ").trim();
   const es = /^(?:el )?(\d{1,2}) de ([a-z]+) (?:de |del )?(\d{4})$/.exec(clean);
   if (es) { const month = MONTH_NAMES.indexOf(es[2] === "setiembre" ? "septiembre" : es[2]); return month < 0 ? null : ymd(+es[3], month + 1, +es[1]); }
+  const noYear = infer && (infer.dateMode === "past" || infer.dateMode === "future_event") ? /^(?:(?:fue|es|sera) )?(?:el )?(\d{1,2}) de ([a-z]+)$/.exec(clean) : null;
+  if (noYear) {
+    const month = MONTH_NAMES.indexOf(noYear[2] === "setiembre" ? "septiembre" : noYear[2]);
+    if (month < 0) return null;
+    const today = infer!.today ?? new Date().toISOString().slice(0, 10), year = +today.slice(0, 4);
+    const same = ymd(year, month + 1, +noYear[1]);
+    if (!same) return null;
+    return infer!.dateMode === "past" ? same <= today ? same : ymd(year - 1, month + 1, +noYear[1]) : same >= today ? same : ymd(year + 1, month + 1, +noYear[1]);
+  }
   const en = /^([a-z]+) (\d{1,2}) (\d{4})$/.exec(clean);
   if (en) { const month = EN_MONTHS.findIndex(name => name === en[1] || name.slice(0, 3) === en[1]); return month < 0 ? null : ymd(+en[3], month + 1, +en[2]); }
   const numeric = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(clean);

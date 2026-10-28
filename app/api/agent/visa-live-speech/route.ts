@@ -3,8 +3,8 @@ import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { agentEnabled, clientIp, getGenAI, rateLimit } from "@/lib/agent/server";
-import { INTAKE_VOICE_SCRIPTS, isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
-import { GUIDE_VOICE_SCRIPTS } from "@/lib/agent/guide-scripts";
+import { isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
+import { PREPARED_SCRIPTS } from "@/lib/agent/voiced-reply";
 import { liveSpeechStream } from "@/lib/agent/visa-live-audio";
 import { VISA_LIVE_MODEL, VISA_LIVE_VOICE, visaLiveSpeechIdentity } from "@/lib/agent/visa-live-config";
 
@@ -12,8 +12,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Voice-Model": VISA_LIVE_MODEL, "X-Voice-Name": VISA_LIVE_VOICE };
 const error = (code: string, status: number) => NextResponse.json({ ok:false, error:code }, { status, headers });
-/** Approved public lines recorded by scripts/prepare-visa-live-voice.cjs: the interview and the voice guide. */
-const PREPARED_SCRIPTS = new Set([...INTAKE_VOICE_SCRIPTS, ...GUIDE_VOICE_SCRIPTS]);
 
 export async function POST(req: NextRequest) {
   if (!isSameOriginIntakeRequest(req)) return error("forbidden_origin",403);

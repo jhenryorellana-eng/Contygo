@@ -3,13 +3,18 @@
    La API key nunca sale del servidor. Sin GEMINI_API_KEY, las rutas
    devuelven 503 y el widget muestra el camino a WhatsApp.
    ============================================================ */
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import type { NextRequest } from "next/server";
 import { limitKeyForIp } from "@/lib/contygo-api/ip";
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
 /** Chat escrito: último Flash estable (nivel gratuito). */
 export const CHAT_MODEL = process.env.GEMINI_CHAT_MODEL || "gemini-3.7-flash";
+/** Los turnos de la llamada (entender una respuesta, responder una duda): un modelo ligero y sin pensar responde en
+    ~1,3 s; Flash tardaba ~4 s y la llamada se sentía lenta (25-10-2026). */
+export const TURN_MODEL = process.env.GEMINI_SERVICE_INTAKE_MODEL || "gemini-3.5-flash-lite";
+/** Lite admite pensamiento mínimo; Flash, como mucho bajo. */
+export const turnThinking = (model: string) => ({ thinkingLevel: /lite/.test(model) ? ThinkingLevel.MINIMAL : ThinkingLevel.LOW });
 /** Voz en tiempo real: Live API con audio nativo (preview). */
 // gemini-3.1-flash-live-preview is a legacy preview; gemini-3.8-live is the stable default (ai.google.dev/gemini-api/docs/models, checked 28-09-2026).
 export const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-3.8-live";

@@ -49,3 +49,31 @@ export async function readLiveSpeech(response: Response, context: AudioContext, 
   }catch(error){await reader.cancel().catch(()=>undefined);throw error;}
   finally{signal.removeEventListener("abort",abort);reader.releaseLock();}
 }
+
+/** A turn of the call that brings its own voice (lib/agent/voiced-reply.ts): the first line is the turn, the rest is
+    the voice of its `speech`, handed on as a stream readLiveSpeech reads. A plain JSON reply has no voice. */
+export async function readVoicedReply<T>(response: Response): Promise<{ data: T; voice?: Response }> {
+  if (!response.headers.get("content-type")?.includes("application/x-ndjson") || !response.body) return { data: await response.json() as T };
+  const reader = response.body.getReader();
+  let buffered = new Uint8Array(0);
+  try {
+    while (true) {
+      const newline = buffered.indexOf(10);
+      if (newline >= 0) {
+        const data = JSON.parse(new TextDecoder().decode(buffered.subarray(0, newline))) as T;
+        const rest = buffered.subarray(newline + 1);
+        const voice = new ReadableStream<Uint8Array>({
+          start(controller) { if (rest.length) controller.enqueue(rest); },
+          async pull(controller) { const { done, value } = await reader.read(); if (done) controller.close(); else controller.enqueue(value); },
+          cancel(reason) { return reader.cancel(reason); },
+        });
+        return { data, voice: new Response(voice, { headers: { "Content-Type": "application/x-ndjson" } }) };
+      }
+      const { done, value } = await reader.read();
+      if (done) throw new Error("Incomplete reply");
+      const joined = new Uint8Array(buffered.length + value.length);
+      joined.set(buffered); joined.set(value, buffered.length);
+      buffered = joined;
+    }
+  } catch (error) { await reader.cancel().catch(() => undefined); throw error; }
+}

@@ -67,6 +67,22 @@ export const PREPARACION_AUDIENCIA_VIDEO_2 = {
   duration: 149.08333333333334,
 };
 
+/** The first films finished in Codex (28-10-2026): After Effects masters as 720p web versions. Their Spanish captions
+ *  come from the narration's own word timings (the voice starts 4.02 s in, the same in all ten). */
+const firstFilm = (id: string, duration: number) => ({ src: `/contygo/films/${id}-v1-720p.mp4`, poster: `/contygo/films/${id}-v1-poster.webp`, captions: `/contygo/films/${id}-v1.es.vtt`, duration });
+export const FIRST_FILMS: Readonly<Record<string, { src: string; poster: string; captions: string; duration: number }>> = {
+  asilo: firstFilm("asilo", 129.66),
+  "permiso-de-trabajo": firstFilm("permiso-de-trabajo", 119.08),
+  "evaluacion-asilo": firstFilm("evaluacion-asilo", 76.78),
+  reapertura: firstFilm("reapertura", 90.69),
+  llc: firstFilm("llc", 85.16),
+  "loteria-dv-2027": firstFilm("loteria-dv-2027", 97.75),
+  impuestos: firstFilm("impuestos", 79.49),
+  itin: firstFilm("itin", 82.2),
+  "cambio-corte": firstFilm("cambio-corte", 88.53),
+  "i-360": firstFilm("i-360", 108.29),
+};
+
 export function formatVideoDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.round(seconds) % 60).padStart(2, "0")}`;
 }

@@ -5,7 +5,8 @@ import ServicePresentation from "@/components/contygo/ServicePresentation";
 
 export const dynamicParams = false;
 export function generateStaticParams() {
-  return CONTYGO_SERVICES.map(service => ({ slug: service.slug }));
+  // A free service (the lottery) has no contract page: its guide and /guia-loteria-de-visas cover it.
+  return CONTYGO_SERVICES.filter(service => !service.free).map(service => ({ slug: service.slug }));
 }
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const service = CONTYGO_SERVICES.find(item => item.slug === params.slug);

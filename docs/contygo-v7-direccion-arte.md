@@ -522,3 +522,66 @@ El dueño eligió **Vitrina**. El código de los otros dos está en el historial
 **Afirmación.** «Más solicitado» y «Los favoritos de nuestras familias» se basan en la palabra del dueño (30-09-2026): son sus servicios más vendidos y pedidos. No se publica ninguna cifra.
 
 **Rendimiento.** Medido con `gesto.mjs`: deslizamiento táctil real a 390×844, CPU 4× más lenta, de «Servicios» al final del catálogo. p95 del hilo principal: 27,8 ms, sin cuadros de más de 50 ms. Es igual o mejor que la versión anterior en la misma prueba (35–49 ms).
+
+## 28 oct 2026 · «De temporada» y el catálogo en dos grupos
+
+**Por qué.** El dueño quiere distinguir tres niveles en los servicios: los **de temporada** (hoy, la Lotería de Visas DV-2027, que solo tiene sentido mientras la inscripción está abierta), **los más solicitados** y el resto del catálogo. El catálogo ahora va en su orden y agrupado. No vuelven los filtros por categoría del 30-09: son dos encabezados, no botones.
+
+**Cómo es** (`components/contygo/v7/ServiceShowcase.tsx`, datos en `ContygoLanding.tsx`):
+
+- **De temporada.** Un boleto de papel marfil arriba del escenario de los favoritos, igual en los dos tonos, porque es papel: tu información.
+  - La escultura del servicio flota sobre un fondo arena y un borde punteado separa el dibujo del texto, como el troquel de un boleto.
+  - Lleva la insignia ámbar «De temporada» (el ámbar marca la temporada y nunca se pulsa), el nombre, una línea y la ventana de fechas con su calendario.
+  - Precio a la derecha («Gratis») y «Empezar» en verde, lo único que se pulsa.
+  - Los datos viven en `season` del catálogo (`lib/contygo-catalog.ts`): `headline`, `dates` y `until`. Al pasar `until` desaparece sola; el navegador lee la fecha tras el primer pintado. El aviso del hero («Nuevo · Gratis») se va con ella.
+- **Todo nuestro catálogo, en dos grupos** y en el orden del dueño:
+  - **Inmigración:** Asilo Político, Cambio de Corte, Permiso de Trabajo, I-360, Reapertura y Evaluación de Asilo.
+  - **Impuestos y negocios:** ITIN, Impuestos y LLC.
+  - Cada encabezado lleva las esculturas de categoría V8 superpuestas en círculos (asilo, corte y familia; impuestos y empresa), una línea y cuántos servicios hay.
+  - Un servicio nuevo que no esté en la lista entra al final de su grupo según su categoría: nunca desaparece.
+- **Movimiento.** Solo `transform`. La escultura de temporada flota con `data-loop` y se queda quieta con «reducir movimiento».
+
+## 28 oct 2026 · Abrir un servicio: el dibujo que viaja y la espera de la marca
+
+**Por qué.** El dueño pidió un loading que hiciera sentir premium la página. No se pone una pantalla de carga fija: al tocar un servicio, la ventana ya se abría en unos 0,2 s, y una espera sin motivo la haría sentir más lenta. Se trabaja la continuidad, y la espera solo aparece cuando de verdad hay que esperar. El celular manda.
+
+- **El dibujo viaja** (`components/contygo/rebuild/flight.ts`). La escultura de la tarjeta tocada sale de su sitio, sube en arco y se posa en la cabecera de «¿Cómo quieres empezar?» mientras el círculo abre la ventana.
+  - Viaja en una capa propia del *top layer* (popover) para que el círculo no la recorte.
+  - Se mide el marco del dibujo (`data-flight-art`), no la imagen, que puede estar subiendo con el hilo.
+  - Sin popover o con «reducir movimiento» no viaja: el dibujo aparece en su sitio.
+- **La cabecera de la ventana** (`ServiceStartChooser`): el dibujo del servicio sobre el color de su familia, el mismo del catálogo, con el sello de ContyGo. Un servicio de temporada lleva el papel cálido de su tarjeta.
+- **La espera de la marca** (`BrandLoader`). El check verde se dibuja con el hilo, lo sigue la cola marina de la «y» y un aro verde gira.
+  - Nace invisible y aparece a los 300 ms: con buena conexión casi nunca se ve.
+  - Se usa al abrir la ventana si su código aún no llegó, y mientras carga o se queda sin búfer el vídeo 1 o el vídeo 2 (`useVideoWaiting`), en lugar del recuadro gris.
+- **En la mano** (pantallas táctiles): la tarjeta cede bajo el dedo (`scale(.97)`) y en Android hay un toque de vibración de 8 ms.
+- **Adelantar la carga.** Al tocar, pasar el puntero o enfocar una tarjeta empiezan a cargar el código de la ventana, el póster del vídeo y el dibujo del servicio.
+
+## 28 oct 2026 · El recorrido de cada servicio: claridad para no abandonar a mitad
+
+**Por qué.** Un recorrido completo en un iPhone mostró que el diseño ya se sentía premium. Lo que fallaba era la claridad:
+- no se sabía cuánto faltaba (unos 6 minutos en 6 etapas);
+- en las preguntas de opciones había que decir o escribir la opción exacta («no te entendí»);
+- el vídeo ocupaba un tercio de la pantalla, sin avance ni tiempo;
+- el resultado quedaba dentro de la última frase del asistente;
+- el precio no estaba junto a la decisión.
+
+El dueño aprobó las cinco mejoras; el celular manda.
+
+- **Mapa del recorrido** (`components/contygo/rebuild/JourneyMap.tsx`).
+  - Una línea fina en el borde de arriba, con un tramo por etapa: Conoce el servicio, Tu caso, Tu proceso y Tu contrato. «Conoce el servicio» solo aparece si la persona ve el vídeo.
+  - Al llegar a una etapa nueva aparece unos segundos «Paso 2 de 4 · Tu caso · Quedan unos 5 min», y vuelve al tocar la línea.
+  - No ocupa sitio. Se oculta en el contrato, que tiene sus propios pasos.
+- **Respuestas para tocar** (`VisaJuvenilExperience`), en voz y por escrito:
+  - hasta seis opciones son botones del ancho del pulgar;
+  - una lista larga (países, estados) abre el selector del teléfono;
+  - una fecha abre el calendario.
+  - Tocar corta el micrófono y responde.
+  - Bajo el reloj, «Pregunta 2 de 6» con su barra.
+  - En el celular, el círculo del asistente se achica cuando hay botones, y el texto siempre muestra su final, porque la pregunta está ahí.
+- **La felicitación** (`VisaJourneyReveal`).
+  - Una tarjeta corta: un check verde, «¡Felicidades! Respondiste las 5 preguntas con éxito», un punto verde por respuesta y el veredicto en una etiqueta («Puedes participar», «Tus respuestas encajan con este servicio», «Te acompaña un asesor por WhatsApp»).
+  - Sin el detalle de cada respuesta: el dueño lo encontró demasiado extenso (28-10-2026). `lib/agent/answer-summary.ts` sigue guardando las respuestas, por si un paso posterior las usa.
+  - Los campos explican para qué son, tienen etiquetas reales y letra de 16 px o más.
+  - En el celular, «Conocer la propuesta» queda fijo a mano del pulgar.
+- **Mandos del vídeo** (`components/contygo/rebuild/FilmControls.tsx`): avance, «Quedan 1:47», pantalla completa en el celular y «Ya lo entendí, seguir» o «Ir al final», que hacen lo mismo que el final del vídeo.
+- **El precio junto a la decisión.** Dentro de «Revisar mi contrato», el precio publicado en vivo: «Desde $700 · precio publicado», o «Gratis por tu cuenta».

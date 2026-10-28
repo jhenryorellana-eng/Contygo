@@ -161,6 +161,18 @@ export const CONTYGO_DELIVERABLES: Readonly<Record<string, ContygoDeliverables>>
       "Formulario EOIR-26A cuando corresponda.",
     ],
   },
+  "permiso-de-trabajo": {
+    // Required document types of the single phase: x-legal/supabase/seeds/02_catalogo_servicios.sql
+    // («Permiso de Trabajo — unica»); public scope: https://contygo.app/servicios/permiso-de-trabajo (2026-10-26).
+    documents: [
+      "Recibo del I-589 (asilo pendiente).",
+      "Dos fotos tipo pasaporte.",
+      "Identificación del solicitante.",
+      "I-94 o pasaporte, si los tienes.",
+    ],
+    documentNote: "La app te indica qué documentos subir para tu solicitud.",
+    outputs: catalogIncludes("permiso-de-trabajo"),
+  },
   itin: {
     // Current public scope: https://contygo.app/servicios/itin-number (2026-09-10).
     // Input lists found only in historical seeds are intentionally not promoted

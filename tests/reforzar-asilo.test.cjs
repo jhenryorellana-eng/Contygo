@@ -62,7 +62,7 @@ test('asilo: defensivo o afirmativo, personal o familiar, la fecha y el tipo de 
   assert.equal(greeting.field, asylum.TRACK_FIELD);
   assert.equal(greeting.question.kind, 'choice');
   assert.deepEqual(greeting.question.options.map(option => option.code), ['defensivo', 'afirmativo']);
-  assert.match(greeting.message, /Puedes escribir o hablar[\s\S]*¿Tu asilo es defensivo, ante un juez de inmigración, o afirmativo, ante un oficial de asilo de USCIS\?$/);
+  assert.match(greeting.message, /^¡Hola! Soy tu asistente de ContyGo[\s\S]*¿Tu asilo es defensivo, ante un juez de inmigración, o afirmativo, ante un oficial de asilo de USCIS\?$/);
   assert.equal(greeting.total, 4);
   const [scope, date, type] = await walk([asylum.TRACK_FIELD, 'defensivo'], [asylum.SCOPE_FIELD, 'personal'], [HEARING, ymd(120)]);
   assert.equal(scope.question.text, asylum.SCOPE_QUESTION);
@@ -150,7 +150,7 @@ test('asilo: se puede escribir o decir; lo claro se entiende sin Gemini y lo dud
   provider = async () => ({ text: JSON.stringify({ clear: false, value: '' }) });
   const doubt = await say(turns[2].answers, asylum.HEARING_FIELD, 'preliminar');
   assert.equal(doubt.field, asylum.HEARING_FIELD);
-  assert.match(doubt.message, /^Necesito confirmar tu respuesta\. Puedes usar los botones de abajo o escribir tu respuesta\. Gracias\. ¿Qué tipo de audiencia es/);
+  assert.match(doubt.message, /^Perdona, no te entendí bien\. Dime una de las opciones\. ¿Qué tipo de audiencia es/);
   const both = await say({}, asylum.TRACK_FIELD, 'no sé si defensivo o afirmativo');
   assert.equal(both.field, asylum.TRACK_FIELD, 'dos opciones a la vez no se adivinan');
   const badDate = await say(turns[1].answers, HEARING, '03/04/2027');
@@ -200,7 +200,7 @@ test('cierre del segundo vídeo: va de la mano con el plazo que dijo el agente',
   assert.equal(closing.closingAction('reforzar-asilo', 'asilo-asesor'), 'Hablar con un asesor', 'plazo vencido: no hay contrato que revisar');
   for (const contract of ['asilo-sinfecha', 'asilo-pronto']) assert.equal(closing.closingAction('reforzar-asilo', contract), 'Revisar mi contrato', 'el vídeo 2 termina con «Toca "Revisar mi contrato"»');
   const media = require('../lib/contygo-rebuild-media.ts');
-  assert.deepEqual([media.getRebuildPlatformFilm('reforzar-asilo').src, media.getRebuildPlatformFilm('reforzar-asilo').provisional], ['/contygo/films/reforzamiento-asilo-video2-v1-720p.mp4', undefined]);
+  assert.deepEqual([media.getRebuildPlatformFilm('reforzar-asilo').src, media.getRebuildPlatformFilm('reforzar-asilo').provisional], [require('../lib/contygo-video2.ts').TECH_PLATFORM_FILMS['reforzar-asilo'].src, undefined]); // el vídeo 2 técnico (26-10-2026)
   assert.match(closing.closingScript('', 'reforzar-asilo', 'asilo-apelacion'), /audiencia final está muy cerca.*te acompañamos en la apelación.*Toca Hablar con un asesor/);
   assert.equal(closing.closingVariant('i-485', { status: 'current', previo: false }, { kind: 'late', advisor: true, appeal: true }), 'current', 'Ajuste no cambia');
   const messages = require('../lib/contygo-api/messages.ts');

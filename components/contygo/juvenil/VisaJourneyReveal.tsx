@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import type { JourneyGuidance } from "@/lib/agent/service-intake";
-import { normalizePhone } from "@/lib/contygo-api/checkout";
+import type { SummaryItem } from "@/lib/agent/answer-summary";
+import { normalizeEmail, normalizePhone } from "@/lib/contygo-api/checkout";
 import { outcomeMessage } from "@/lib/contygo-api/messages";
 import PhoneField from "../guide/PhoneField";
 import type { Guide } from "../guide/useGuide";
@@ -15,6 +16,9 @@ type Props = {
   guidance?: JourneyGuidance;
   phone?: string;
   onPhoneChange?: (phone: string) => void;
+  /** 21-10-2026: el correo también se pide aquí, por escrito (el contrato lo trae ya puesto). */
+  email?: string;
+  onEmailChange?: (email: string) => void;
   onContinue: (button: HTMLButtonElement) => void;
   onEdit: () => void;
   departing?: boolean;
@@ -26,6 +30,10 @@ type Props = {
   unavailableOnline?: boolean;
   /** The single WhatsApp link (waLink with the WEB reference) for that notice. */
   helpHref?: string;
+  /** What the person answered (28-10-2026): the card congratulates them on it, one dot per answer, without the detail. */
+  summary?: SummaryItem[];
+  /** contygo's verdict on the answers, when there is one (true: it can be contracted online). */
+  eligible?: boolean | null;
 };
 
 const LAUNCHES = [
@@ -60,14 +68,22 @@ export function Celebration({ placement = "scene" }: { placement?: "scene" | "br
   </div>;
 }
 
-export default function VisaJourneyReveal({ guidance, onContinue, onEdit, departing = false, pending = false, fromChat = false, serviceName = "Visa Juvenil", displayName = "", onDisplayNameChange, phone = "", onPhoneChange, guide, unavailableOnline = false, helpHref }: Props) {
+export default function VisaJourneyReveal({ summary = [], eligible = null, guidance, onContinue, onEdit, departing = false, pending = false, fromChat = false, serviceName = "Visa Juvenil", displayName = "", onDisplayNameChange, phone = "", onPhoneChange, email = "", onEmailChange, guide, unavailableOnline = false, helpHref }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
   const headingId = useId();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // The card's headline: the orientation's own title when there is one; otherwise what contygo said about contracting.
+  const verdict = unavailableOnline ? { tone: "help", text: "Te acompaña un asesor por WhatsApp" }
+    : guidance?.title ? { tone: guidance.status === "potential" ? "good" : "info", text: guidance.title }
+    : eligible === true ? { tone: "good", text: "Puedes crear tu contrato en línea" } : null;
+
   const [phoneTouched, setPhoneTouched] = useState(false);
   // Con nombre y teléfono, un asesor puede ayudarte si lo necesitas (lead en contygo). Ambos son opcionales aquí.
   const phoneInvalid = phoneTouched && phone.trim().length > 0 && !normalizePhone(phone);
   const phoneHelp = useId();
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailInvalid = emailTouched && email.trim().length > 0 && !normalizeEmail(email);
+  const emailHelp = useId();
   // Once the scene has settled, the guide says out loud what to fill here. Audio only (owner, 29 Sep).
   const guided = useRef(false);
   const guideRef = useRef(guide); guideRef.current = guide;
@@ -105,11 +121,21 @@ export default function VisaJourneyReveal({ guidance, onContinue, onEdit, depart
       </h2>
       <p className={s.subtitle}>Ahora descubre cómo ContyGo<br className={s.mobileBreak} /> te acompaña.</p>
 
-      <div className={s.nextStep}>
-        <span>02</span><i aria-hidden="true" /><span>CONOCE LA SOLUCIÓN</span>
-      </div>
+      {summary.length > 0 && <section className={s.summary} aria-label="Tus respuestas">
+        <span className={s.summaryBadge} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" style={{ width: 26, height: 26 }}><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+        <div className={s.summaryText}>
+          <strong>¡Felicidades!</strong>
+          <span>Respondiste {summary.length === 1 ? "la pregunta" : `las ${summary.length} preguntas`} con éxito.</span>
+        </div>
+        <div className={s.summaryFoot}>
+          <span className={s.summaryDots} aria-hidden="true">{summary.map((item, index) => <i key={item.id} style={{ animationDelay: `${700 + index * 90}ms` }} />)}</span>
+          {verdict && <b data-tone={verdict.tone}>{verdict.text.split(":")[0]}</b>}
+        </div>
+      </section>}
+      {(onDisplayNameChange || onEmailChange || onPhoneChange) && <p className={s.why}>Para enviarte tu resultado y preparar tu contrato. Todo es opcional.</p>}
       {unavailableOnline&&helpHref&&<div className={s.unavailable} role="status"><strong>{outcomeMessage({ step: "UNAVAILABLE_ONLINE" }).title}</strong><span>{outcomeMessage({ step: "UNAVAILABLE_ONLINE" }).detail}</span><a href={helpHref} target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a></div>}
       {onDisplayNameChange&&<label className={s.namePrompt}>¿Cómo te gustaría que te llamemos?<span>Tu nombre · opcional</span><input autoComplete="given-name" maxLength={32} value={displayName} disabled={pending||departing} placeholder="Escribe tu nombre" onChange={event=>onDisplayNameChange(event.target.value.replace(new RegExp("[^\\p{L}\\p{M} '-]", "gu"),""))}/></label>}
+      {onEmailChange&&<label className={s.namePrompt} data-invalid={emailInvalid||undefined}>¿A qué correo te escribimos?<span id={emailHelp}>{emailInvalid?"Revisa tu correo":"Tu correo · opcional"}</span><input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={160} value={email} disabled={pending||departing} placeholder="nombre@correo.com" aria-invalid={emailInvalid||undefined} aria-describedby={emailHelp} onBlur={()=>setEmailTouched(true)} onChange={event=>onEmailChange(event.target.value.trim())}/></label>}
       {onPhoneChange&&<div className={s.namePrompt} data-invalid={phoneInvalid||undefined}><span className={s.promptLabel}>¿A qué teléfono te podemos escribir?</span><span id={phoneHelp}>{phoneInvalid?"Revisa el número y el país":"WhatsApp o celular · opcional"}</span><PhoneField value={phone} onChange={onPhoneChange} onBlur={()=>setPhoneTouched(true)} disabled={pending||departing} invalid={phoneInvalid} describedBy={phoneHelp}/><small className={s.contactNotice}>Al dejar tu teléfono aceptas que ContyGo te escriba por WhatsApp sobre este trámite. <a href="/privacidad" target="_blank" rel="noopener noreferrer">Ver privacidad</a>.</small></div>}
       <button className={s.primary} data-journey-continue type="button" disabled={departing || pending} onClick={event => { guide?.stop(); onContinue(event.currentTarget); }}>
         <span className={s.play} aria-hidden="true"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M6.8 4.7a.7.7 0 0 1 1.1-.6l8 5.3a.7.7 0 0 1 0 1.2l-8 5.3a.7.7 0 0 1-1.1-.6Z" /></svg></span>

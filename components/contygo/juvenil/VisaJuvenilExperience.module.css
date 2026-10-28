@@ -304,3 +304,174 @@
 /* 02-10-2026 · Turnstile invisible del lead: no ocupa lugar; si Cloudflare pide una interacción, aparece abajo. */
 .leadCaptcha{position:fixed;inset-inline:0;bottom:12px;z-index:30;display:flex;justify-content:center;pointer-events:none}
 .leadCaptcha>*{pointer-events:auto}
+/* The bot did not know a doubt (21-10-2026): WhatsApp right under its answer. */
+.doubtHelp{display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;min-height:44px;margin:10px auto 0;padding:10px 18px;border-radius:999px;background:#25D366;color:#061B3D;font-weight:800;font-size:15px;text-decoration:none;box-shadow:0 10px 24px -14px #25d366b0}
+.doubtHelp:focus-visible{outline:3px solid #087F46;outline-offset:3px}
+/* Hands-free listening (21-10-2026): the microphone button breathes while it listens by itself. */
+.voiceAnswer button[data-listening]{animation:listening 1.6s ease-in-out infinite}
+@keyframes listening{0%,100%{box-shadow:0 0 0 0 #25d36655}50%{box-shadow:0 0 0 12px #25d36600}}
+@media (prefers-reduced-motion: reduce){.voiceAnswer button[data-listening]{animation:none}}
+
+/* ============================================================
+   Chat de voz (21-10-2026): la persona habla con el asistente. Un botón grande dice qué pasa
+   (escucha, habla, piensa) y hace lo obvio al tocarlo; a los lados, escribir y silenciar.
+   Sin campos de llenado: la fecha, el sí o el no y el estado se dicen o se escriben.
+   ============================================================ */
+.voiceChat{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 6px}
+.voiceDock{display:flex;align-items:center;justify-content:center;gap:clamp(22px,7vw,40px)}
+.dockButton{display:grid;place-items:center;width:52px;height:52px;padding:0;border-radius:50%;border:1px solid #F6F8F72e;background:#F6F8F714;color:#F6F8F7;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.dockButton svg{width:22px;height:22px}
+.dockButton[aria-pressed=true]{background:#F6F8F7;color:#061B3D}
+.dockButton:focus-visible,.voiceOrb:focus-visible,.doubtsDone:focus-visible,.voiceType button:focus-visible{outline:3px solid #25D366;outline-offset:4px}
+.voiceOrb{--level:0;position:relative;display:grid;place-items:center;width:104px;height:104px;padding:0;border:0;border-radius:50%;background:#F6F8F7;color:#061B3D;cursor:pointer;box-shadow:inset 0 0 0 2px #25D366,0 18px 40px -18px #000;transition:background .3s,color .3s,box-shadow .3s,transform .2s}
+.voiceOrb svg{position:relative;z-index:1;width:36px;height:36px}
+.voiceOrb:active:not(:disabled){transform:scale(.96)}
+.voiceOrb:disabled{cursor:default}
+.orbHalo{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;transition:transform .12s linear,opacity .3s}
+.voiceOrb[data-state=listening]{background:#25D366;color:#061B3D;box-shadow:0 0 0 calc(6px + var(--level) * 22px) #25D36633,0 18px 40px -16px #087F46}
+.voiceOrb[data-state=listening] .orbHalo{opacity:1;border:2px solid #25D36666;animation:orbBreathe 2.2s ease-out infinite}
+.voiceOrb[data-state=listening] .orbHalo+.orbHalo{animation-delay:1.1s}
+.voiceOrb[data-state=speaking]{background:#061B3D;color:#F6F8F7;box-shadow:0 0 0 calc(4px + var(--level) * 18px) #061B3D22,inset 0 0 0 2px #25D36699,0 18px 40px -16px #061B3D}
+.voiceOrb[data-state=speaking] .orbHalo{opacity:1;border:2px solid #25D36655;transform:scale(calc(1.08 + var(--level) * .35))}
+.voiceOrb[data-state=thinking]{background:#F6F8F7;box-shadow:inset 0 0 0 2px #F6F8F755,0 18px 40px -18px #000}
+@keyframes orbBreathe{from{transform:scale(1);opacity:.9}to{transform:scale(1.55);opacity:0}}
+.orbDots{display:flex;gap:7px}
+.orbDots i{width:9px;height:9px;border-radius:50%;background:#061B3D;animation:orbDot 1.1s ease-in-out infinite}
+.orbDots i:nth-child(2){animation-delay:.15s}.orbDots i:nth-child(3){animation-delay:.3s}
+@keyframes orbDot{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-6px);opacity:1}}
+.voiceStatus{min-height:24px;margin:10px 0 0;font-size:16px;line-height:1.4;color:#F6F8F7c9;text-align:center}
+.voiceType{display:flex;align-items:center;gap:8px;width:min(100%,520px);margin-top:10px;padding:6px 6px 6px 18px;border-radius:30px;border:1px solid #F6F8F738;background:#061B3D66}
+.voiceType input{flex:1;min-width:0;height:44px;border:0;background:transparent;color:#F6F8F7;font:inherit;font-size:17px;outline:none}
+.voiceType input::placeholder{color:#F6F8F799}
+.voiceType button{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;border:0;border-radius:50%;background:#25D366;color:#061B3D}
+.voiceType button:disabled{opacity:.45}
+.voiceType button svg{width:19px;height:19px}
+.youSaid{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;max-width:620px;margin:0 auto 14px;font-size:17px;line-height:1.45;color:#F6F8F7b3;text-align:center}
+.youSaid span{font-weight:800;color:#25D366}
+.retryHint{margin:-4px auto 10px;max-width:520px;text-align:center;font-size:15px;font-weight:600;color:#efc44d}
+:global([data-contygo-theme=light]) .retryHint{color:#8a5a06}
+.transcript .youSaid:last-child{margin:16px auto 0}
+.doubtsDone{display:block;margin:14px auto 0;min-height:48px;padding:0 24px;border-radius:999px;border:1px solid #F6F8F755;background:transparent;color:#F6F8F7;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.doubtsDone:disabled{opacity:.5}
+.watchFilm{display:block;margin:6px auto 0;padding:4px 12px;border:0;background:none;color:#F6F8F7b3;font:inherit;font-size:15px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.watchFilm:disabled{opacity:.5}
+:global([data-contygo-theme=light]) .watchFilm{color:rgb(6 27 61 / 70%)}
+@media (prefers-reduced-motion: reduce){.voiceOrb[data-state=listening] .orbHalo,.orbDots i{animation:none}.orbHalo{transition:none}}
+/* Día (tema claro) */
+:global([data-contygo-theme=light]) .dockButton{border-color:rgb(6 27 61 / 14%);background:#fff;color:#061b3d;box-shadow:0 10px 24px -16px rgb(6 27 61 / 45%)}
+:global([data-contygo-theme=light]) .dockButton[aria-pressed=true]{background:#061b3d;color:#fff}
+:global([data-contygo-theme=light]) .voiceOrb{background:#fff;box-shadow:inset 0 0 0 2px #25d366,0 22px 44px -20px rgb(6 27 61 / 55%)}
+:global([data-contygo-theme=light]) .voiceOrb[data-state=listening]{background:#25d366;box-shadow:0 0 0 calc(6px + var(--level) * 22px) rgb(37 211 102 / 22%),0 20px 40px -18px #087f46}
+:global([data-contygo-theme=light]) .voiceOrb[data-state=speaking]{background:#061b3d;color:#fff;box-shadow:0 0 0 calc(4px + var(--level) * 18px) rgb(6 27 61 / 12%),inset 0 0 0 2px rgb(37 211 102 / 60%),0 22px 44px -20px rgb(6 27 61 / 60%)}
+:global([data-contygo-theme=light]) .voiceOrb[data-state=thinking]{background:#fff;box-shadow:inset 0 0 0 2px rgb(6 27 61 / 12%),0 22px 44px -20px rgb(6 27 61 / 40%)}
+:global([data-contygo-theme=light]) .voiceStatus{color:rgb(6 27 61 / 72%)}
+:global([data-contygo-theme=light]) .voiceType{border-color:rgb(6 27 61 / 14%);background:#fff;box-shadow:0 14px 32px -18px rgb(6 27 61 / 40%)}
+:global([data-contygo-theme=light]) .voiceType:focus-within{border-color:#087f46;box-shadow:0 0 0 4px rgb(37 211 102 / 18%)}
+:global([data-contygo-theme=light]) .voiceType input{color:#061b3d}
+:global([data-contygo-theme=light]) .voiceType input::placeholder{color:rgb(6 27 61 / 50%)}
+:global([data-contygo-theme=light]) .youSaid{color:rgb(6 27 61 / 70%)}
+:global([data-contygo-theme=light]) .youSaid span{color:#087f46}
+:global([data-contygo-theme=light]) .doubtsDone{border-color:rgb(6 27 61 / 22%);background:#fff;color:#061b3d}
+/* The assistant's words fit and never clip: centred while short, scrollable from the top when long. */
+.transcript:not([data-history=true]){justify-content:flex-start}
+.transcript:not([data-history=true])>:first-child{margin-top:auto}
+.transcript:not([data-history=true])>:last-child{margin-bottom:auto}
+.transcript:not([data-history=true]) .agentMessage p{font-size:clamp(20px,2.3vw,28px);line-height:1.42}
+
+/* ============================================================
+   Asistente de voz (21-10-2026, segunda versión): el asistente es una forma viva en el centro que
+   respira con su voz (azul) y con la tuya (verde); debajo, lo que dice; abajo, tres botones con nombre.
+   ============================================================ */
+.interview .voiceStatus{margin:14px 0 4px;font-size:17px;font-weight:700}
+.voiceBar{display:flex;justify-content:center;align-items:flex-start;gap:clamp(26px,8vw,48px);padding:18px 0 4px}
+.barButton{display:grid;justify-items:center;gap:8px;min-width:76px;padding:0;border:0;background:none;color:#F6F8F7c9;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.barButton>i{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#F6F8F714;border:1px solid #F6F8F72e;color:#F6F8F7;transition:background .2s,color .2s,transform .15s}
+.barButton>i svg{width:22px;height:22px}
+.barButton[aria-pressed=true]>i{background:#F6F8F7;color:#061B3D}
+.barButton[data-main]>i{width:76px;height:76px;border:0;background:#25D366;color:#061B3D;box-shadow:0 18px 34px -16px #087F46}
+.barButton[data-main]>i svg{width:30px;height:30px}
+.barButton[data-main][data-state=listening]>i{background:#061B3D;color:#F6F8F7;box-shadow:0 0 0 8px #25D36633}
+.barButton[data-main][data-state=speaking]>i{background:#F6F8F7;color:#061B3D}
+.barButton:active:not(:disabled)>i{transform:scale(.95)}
+.barButton:disabled{cursor:default;opacity:.7}
+.barButton:focus-visible>i{outline:3px solid #25D366;outline-offset:4px}
+.stopMark{display:block;width:22px;height:22px;border-radius:6px;background:currentColor}
+.transcript:not([data-history=true]){max-height:30dvh;min-height:96px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px,#000 calc(100% - 12px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 18px,#000 calc(100% - 12px),transparent 100%)}
+.transcript:not([data-history=true]) .agentMessage p{font-size:clamp(19px,2.1vw,25px);line-height:1.45}
+.interview .chatBrand{margin-bottom:clamp(14px,3dvh,28px)}.interview .wordmark{width:150px}
+:global([data-contygo-theme=light]) .barButton{color:rgb(6 27 61 / 72%)}
+:global([data-contygo-theme=light]) .barButton>i{background:#fff;border-color:rgb(6 27 61 / 12%);color:#061b3d;box-shadow:0 12px 26px -18px rgb(6 27 61 / 50%)}
+:global([data-contygo-theme=light]) .barButton[aria-pressed=true]>i{background:#061b3d;color:#fff}
+:global([data-contygo-theme=light]) .barButton[data-main]>i{background:#25d366;border:0;color:#061b3d;box-shadow:0 18px 34px -16px #087f46}
+:global([data-contygo-theme=light]) .barButton[data-main][data-state=listening]>i{background:#061b3d;color:#fff;box-shadow:0 0 0 8px rgb(37 211 102 / 28%)}
+:global([data-contygo-theme=light]) .barButton[data-main][data-state=speaking]>i{background:#fff;color:#061b3d;border:1px solid rgb(6 27 61 / 14%)}
+
+/* ============================================================
+   La llamada (21-10-2026, tercera versión): el asistente es el símbolo de ContyGo en un disco blanco, como la foto
+   de quien llama; a su alrededor, un anillo de barras de sonido. Azul marino cuando habla el asistente, verde cuando
+   habla la persona, una luz que gira mientras piensa y ondas mientras «llama».
+   ============================================================ */
+@property --dance{syntax:"<number>";inherits:false;initial-value:1}
+.interview .chatBrand{flex-direction:column;gap:2px;margin-bottom:clamp(6px,2dvh,18px)}
+.callTitle{margin:0;font:800 17px/1.2 var(--font-contygo-heading),sans-serif;color:#F6F8F7}
+.callClock{margin:0;font-size:14px;font-variant-numeric:tabular-nums;color:#F6F8F7a6}
+.caller{--level:0;--R:74px;position:relative;width:min(62vw,236px);aspect-ratio:1;margin:0 auto;display:grid;place-items:center;flex-shrink:0}
+.callerFace{position:relative;z-index:1;width:116px;height:116px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 22px 44px -22px #000,inset 0 0 0 1px #061B3D14;transition:box-shadow .3s,transform .3s}
+.callerFace img{width:52%;height:auto;user-select:none;-webkit-user-drag:none}
+.callerRing{position:absolute;inset:0}
+.callerRing i{--h:calc(4px + 3px * var(--dance) + var(--level) * var(--reach) * 40px * var(--dance));position:absolute;left:50%;top:50%;width:4px;height:var(--h);margin:calc(var(--h) / -2) 0 0 -2px;border-radius:4px;background:#F6F8F733;transform:rotate(calc(var(--i) * 8.1818deg)) translateY(calc(-1 * (var(--R) + var(--h) / 2)));animation:ringDance 1.3s ease-in-out infinite;animation-delay:calc(var(--i) * -71ms);transition:background .3s}
+@keyframes ringDance{0%,100%{--dance:.55}50%{--dance:1}}
+.caller[data-state=speaking] .callerRing i{background:#F6F8F7;animation-duration:.9s}
+.caller[data-state=speaking] .callerFace{box-shadow:0 0 0 4px #F6F8F755,0 22px 44px -22px #000}
+.caller[data-state=listening] .callerRing i{background:#25D366;animation-duration:.8s}
+.caller[data-state=listening] .callerFace{box-shadow:0 0 0 5px #25D36666,0 22px 44px -22px #000}
+.caller[data-state=thinking] .callerRing i{animation:ringThink 1.4s linear infinite;animation-delay:calc(var(--i) * 31.8ms)}
+@keyframes ringThink{0%{background:#25D366;--dance:1.8}25%,100%{background:#F6F8F733;--dance:.6}}
+.caller[data-state=ringing] .callerFace{animation:ringingFace 1.6s ease-in-out infinite}
+.caller[data-state=ringing]::before,.caller[data-state=ringing]::after{content:"";position:absolute;width:116px;height:116px;border-radius:50%;border:2px solid #25D366;animation:ringingWave 1.6s ease-out infinite}
+.caller[data-state=ringing]::after{animation-delay:.8s}
+.caller[data-state=ringing] .callerRing{opacity:0}
+@keyframes ringingWave{from{transform:scale(1);opacity:.8}to{transform:scale(1.9);opacity:0}}
+@keyframes ringingFace{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion: reduce){.callerRing i,.caller[data-state=ringing]::before,.caller[data-state=ringing]::after,.caller[data-state=ringing] .callerFace{animation:none}.callerRing i{--dance:1}}
+:global([data-contygo-theme=light]) .callTitle{color:#061b3d}
+:global([data-contygo-theme=light]) .callClock{color:rgb(6 27 61 / 62%)}
+:global([data-contygo-theme=light]) .callerFace{box-shadow:0 24px 46px -22px rgb(6 27 61 / 55%),inset 0 0 0 1px rgb(6 27 61 / 8%)}
+:global([data-contygo-theme=light]) .callerRing i{background:rgb(6 27 61 / 14%)}
+:global([data-contygo-theme=light]) .caller[data-state=speaking] .callerRing i{background:#061b3d}
+:global([data-contygo-theme=light]) .caller[data-state=speaking] .callerFace{box-shadow:0 0 0 4px rgb(6 27 61 / 14%),0 24px 46px -22px rgb(6 27 61 / 55%)}
+:global([data-contygo-theme=light]) .caller[data-state=listening] .callerRing i{background:#25d366}
+:global([data-contygo-theme=light]) .caller[data-state=listening] .callerFace{box-shadow:0 0 0 5px rgb(37 211 102 / 35%),0 24px 46px -22px rgb(6 27 61 / 55%)}
+:global([data-contygo-theme=light]) .caller[data-state=thinking] .callerRing i{animation-name:ringThinkDay}
+@keyframes ringThinkDay{0%{background:#25d366;--dance:1.8}25%,100%{background:rgb(6 27 61 / 14%);--dance:.6}}
+
+/* ---- Answers to tap and «Pregunta 2 de 6» (28-10-2026) ----
+   Big, thumb-sized options under the question; a long list opens the phone's own picker, a date its calendar. */
+.callStep{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 0;font-size:13px;font-weight:700;letter-spacing:.02em;color:#F6F8F7b3}
+.callStep i{display:block;width:120px;height:4px;border-radius:4px;background:#F6F8F726;overflow:hidden}
+.callStep b{display:block;height:100%;border-radius:inherit;background:#25D366;transition:width .5s cubic-bezier(.2,.9,.25,1)}
+.answers{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:min(100%,520px);margin:0 auto 10px;animation:answersIn .45s cubic-bezier(.2,.9,.25,1) both}
+.answers>button,.answerPick{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 20px;border-radius:999px;border:1.5px solid #25D36680;background:#25D3661a;color:#F6F8F7;font:inherit;font-size:16px;font-weight:750;line-height:1.2;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .14s ease-out,background-color .2s,border-color .2s}
+.answers>button{flex:1 1 auto;max-width:100%}
+.answers>button:active,.answerPick:active{transform:scale(.96)}
+.answers>button:hover{background:#25D36633;border-color:#25D366}
+.answers>button:disabled,.answerPick:has(:disabled){opacity:.5;cursor:default}
+.answerPick{flex:1 1 100%;border-style:solid;background:#F6F8F70f}
+.answerPick svg{width:18px;height:18px;transform:rotate(90deg)}
+.answerPick select,.answerPick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.answers>button:focus-visible,.answerPick:focus-within{outline:3px solid #25D366;outline-offset:3px}
+:global([data-contygo-theme=light]) .callStep{color:rgb(6 27 61 / 66%)}
+:global([data-contygo-theme=light]) .callStep i{background:rgb(6 27 61 / 10%)}
+:global([data-contygo-theme=light]) .answers>button{border-color:rgb(8 127 70 / 45%);background:#fff;color:#061b3d;box-shadow:0 10px 24px -16px rgb(6 27 61 / 45%)}
+:global([data-contygo-theme=light]) .answers>button:hover{background:#E9FBF0;border-color:#087f46}
+:global([data-contygo-theme=light]) .answerPick{border-color:rgb(6 27 61 / 20%);background:#fff;color:#061b3d;box-shadow:0 10px 24px -16px rgb(6 27 61 / 45%)}
+@keyframes answersIn{from{opacity:0;transform:translateY(8px)}}
+@media(max-width:760px){.answers{gap:7px;margin-bottom:8px}.answers>button,.answerPick{min-height:46px;padding:9px 16px;font-size:15.5px}}
+@media(prefers-reduced-motion:reduce){.answers{animation:none}}
+/* On a phone, with answers to tap the assistant's circle gives up room so the question reads whole. */
+@media(max-width:760px){
+  .conversation:has(.answers) .caller{width:min(40vw,150px);transition:width .35s cubic-bezier(.2,.9,.25,1)}
+  .conversation:has(.answers) .callerFace{width:84px;height:84px}
+  .conversation:has(.answers) .callerFace img{width:48%}
+  .conversation:has(.answers) .transcript:not([data-history=true]){max-height:38dvh}
+}

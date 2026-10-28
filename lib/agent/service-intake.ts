@@ -22,7 +22,8 @@ export type ServiceAnswers = Record<string, AnswerValue>;
  */
 export interface IntakeQuestion {
   id: string;
-  kind: QuestionKind | "choice";
+  /** "text": a free answer in the person's words (the questions of each service's script, 21-10-2026). */
+  kind: QuestionKind | "choice" | "text";
   text: string;
   dateMode?: string;
   minNotice?: Record<string, unknown>;
@@ -57,10 +58,18 @@ export const nextServiceQuestion = (questions: IntakeQuestion[], answers: Servic
 
 export const INTAKE_NO_QUESTIONS_FINISH = "¡Listo! Para este servicio no necesito hacerte preguntas previas. Ya diste el primer paso. Ahora sí, descubre cómo ContyGo te acompaña.";
 
+/** The first words of the conversation (21-10-2026): a hello, like the start of a call, then the first question. */
 export function serviceGreeting(serviceName: string, questions: IntakeQuestion[], hasVideo = true) {
-  const thanks = `¡Gracias por ${hasVideo ? "ver el vídeo" : "estar aquí"}!`;
-  if (!questions.length) return `${thanks} ${INTAKE_NO_QUESTIONS_FINISH.replace(/^¡Listo! /, "")}`;
-  return `${thanks} Te haré ${questions.length === 1 ? "una pregunta corta" : "unas preguntas cortas"} sobre ${serviceName}. Esto no es un examen; vamos paso a paso. Puedes escribir o hablar, como te resulte más cómodo. ${questions[0].text}`;
+  const hello = "¡Hola! Soy tu asistente de ContyGo.";
+  if (!questions.length) return `${hello} Para ${serviceName} no necesito hacerte preguntas previas: ya diste el primer paso.`;
+  return `${hello} Te haré ${questions.length === 1 ? "una pregunta corta" : "unas preguntas cortas"} sobre ${serviceName}; si tienes dudas, pregúntame cuando quieras. ${questions[0].text}`;
+}
+
+/** «Ya conozco mi caso» (25-10-2026): only the questions that decide whether the case qualifies, then the doubts. */
+export function quickGreeting(serviceName: string, questions: IntakeQuestion[]) {
+  const hello = "¡Hola! Soy tu asistente de ContyGo. Como ya conoces tu caso,";
+  if (!questions.length) return `${hello} no necesito hacerte preguntas sobre ${serviceName}.`;
+  return `${hello} te haré solo ${questions.length === 1 ? "una pregunta rápida" : "unas preguntas rápidas"} para confirmar que calificas para ${serviceName}, y al final resolvemos tus dudas. ${questions[0].text}`;
 }
 
 export const serviceFollowup = (question: IntakeQuestion) => `Gracias. ${question.text}`;
@@ -152,10 +161,12 @@ export function normalizeIntakeAnswer(question: IntakeQuestion, value: unknown):
   if (question.id === PRIORITY_FIELD) return normalizePriorityAnswer(value);
   const field = visaField(question.id);
   if (field) return validateIntakeAnswer(field, value);
-  // Las de opciones de contygo (single_choice): el code de una de sus options, tal cual o por su rótulo.
-  if (question.kind === "choice") return normalizeAnswer(question, value);
+  // Una respuesta libre del guion: lo que la persona contó, con sus palabras (sin vacíos ni textos enormes).
+  if (question.kind === "text") return typeof value === "string" && value.trim().length >= 2 && value.length <= 500 ? value.trim().replace(/\s+/g, " ") : null;
+  // Las de opciones de contygo (single_choice) y las del guion: el code de una de sus options, tal cual o por su rótulo.
+  if (question.kind === "choice") return normalizeAnswer({ kind: "choice", options: question.options }, value);
   // Una fecha escrita o dicha con el mes en palabras («15 de marzo de 2024») vale igual que la del calendario.
-  const written = question.kind === "date" && typeof value === "string" && value.length <= 60 && !/^\d{4}-\d{2}-\d{2}$/.test(value) ? parseWrittenDate(value) : null;
+  const written = question.kind === "date" && typeof value === "string" && value.length <= 60 && !/^\d{4}-\d{2}-\d{2}$/.test(value) ? parseWrittenDate(value, { dateMode: question.dateMode ?? "past" }) : null;
   return normalizeAnswer({ ...question, kind: question.kind }, written ?? value);
 }
 

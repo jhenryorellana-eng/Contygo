@@ -31,8 +31,8 @@ function jpegSize(file) {
   throw new Error(`${file} sin marcador SOF`);
 }
 
-test('cada uno de los trece servicios tiene su link; los del embudo antiguo conservan su dirección', () => {
-  assert.equal(new Set(links).size, 13);
+test('cada uno de los quince servicios tiene su link; los del embudo antiguo conservan su dirección', () => {
+  assert.equal(new Set(links).size, 15, 'los catorce de contygo y la Lotería de Visas (26-10-2026)');
   for (const service of CONTYGO_SERVICES) assert.equal(getServiceGuideUrl(service.id), `/${service.legacySlug ?? service.slug}`, service.id);
   // Los anuncios y los links ya enviados apuntan a estas direcciones: ninguna se pierde.
   for (const legacy of SERVICES) assert.ok(links.includes(`/${legacy.slug}`), legacy.slug);

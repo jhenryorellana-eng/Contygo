@@ -56,6 +56,9 @@ if (!process.env.MOCK_PLAIN_CATALOG) {
     { id: 'aaaaaaaa-0000-4000-8000-000000000002', kind: 'date', dateMode: 'future_event', minNotice: { days: 30 }, prompt: { es: '¿Cuándo es la próxima audiencia en la corte?', en: 'When is the next court hearing?' } },
   );
 }
+// Permiso de Trabajo (I-765) cuesta $120 en contygo desde octubre de 2026 (la copia del 29-09 dice $100); sigue sin preguntas.
+const permit = catalog.services.find(service => service.slug === 'permiso-de-trabajo');
+if (permit) permit.plans.forEach(plan => { plan.priceCents = 12000; });
 // Preparación de audiencia como en producción (14-10-2026): un paquete por audiencia, la fecha de la próxima audiencia
 // (future_event, 7 días naturales de antelación) y «¿En qué audiencia se encuentra?» (single_choice). Esa opción limita el
 // paquete (HEARING_PLANS): evaluate publica allowedPlanIds y POST /contracts rechaza otro con 422 PLAN_NOT_ALLOWED.

@@ -5,18 +5,19 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { gsap } from "gsap";
 import { serviceVariants, type ContygoService } from "@/lib/contygo-catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
-import { clearJourney, readJourney, saveJourney } from "@/lib/contygo-api/browser";
+import { clearJourney, newExternalRef, readJourney, saveJourney } from "@/lib/contygo-api/browser";
 import { getContygoServiceUrl } from "@/lib/contygo";
 import { crmWaLink, waLink } from "@/lib/config";
 import { publicRef } from "@/lib/contygo-api/checkout";
-import { whatsappAdvisorContractMessage } from "@/lib/contygo-api/messages";
+import { whatsappAdvisorContractMessage, whatsappLotteryMessage } from "@/lib/contygo-api/messages";
+import { LOTTERY_GUIDE_PATH, LOTTERY_SERVICE } from "@/lib/agent/lottery-intake";
 import { formatCents, planPriceCents, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
 import { CONTYGO_DELIVERABLES } from "@/lib/contygo-deliverables";
 import { getRebuildPlatformFilm, getRebuildServiceFilm, PROVISIONAL_PLATFORM_FILM, type RebuildFilm } from "@/lib/contygo-rebuild-media";
 import VisaJuvenilExperience, { type VisaIntakeSession } from "../juvenil/VisaJuvenilExperience";
 import ContractCheckout, { journeyNeedsAdvisor } from "../contract/ContractCheckout";
-import ContractModeChooser from "../contract/ContractModeChooser";
+import ContractModeChooser, { type ChooserCopy } from "../contract/ContractModeChooser";
 import ServiceVariantPicker from "../contract/ServiceVariantPicker";
 import ContractClosingConcept from "../juvenil/PaperPlaneClosing";
 import { useVisaVoice } from "../juvenil/useVisaVoice";
@@ -24,10 +25,16 @@ import { closingName, closingScript, closingVariant, useClosingSpeechWarmup } fr
 import type { VisaVisualTheme } from "../juvenil/BrandLiquidSurface";
 import { LiquidGlow } from "../juvenil/ThinkingOverlay";
 import JourneyBackdrop from "../juvenil/JourneyBackdrop";
+import ServiceStartChooser from "./ServiceStartChooser";
+import { flyDrawing } from "./flight";
+import JourneyMap from "./JourneyMap";
 import s from "./ServiceCinemaDialog.module.css";
 
 type Stage = "service" | "platform" | "decision";
-type Origin = { x: number; y: number; width: number; height: number };
+type Rect = { x: number; y: number; width: number; height: number };
+/** Where the window opens from: the card the person touched and, if it has one, its drawing (which flies, 28-10-2026). */
+export type ServiceOrigin = Rect & { art?: Rect & { src: string } };
+type Origin = ServiceOrigin;
 export type ServiceCinemaDialogProps = {
   service: ContygoService | null;
   origin: Origin | null;
@@ -186,6 +193,16 @@ function Film({ film, title, caption, onEnded, autoPlay = false, immersive = fal
   </figure>;
 }
 
+/** «Ya conozco mi caso»: the call opens on the doubts, without the service's film or questions. */
+/** Lotería de Visas (26-10-2026): the closing's two ways, instead of the contract's. */
+const LOTTERY_WAYS: ChooserCopy = {
+  title: "¿Cómo quieres inscribirte?",
+  lead: "Lotería de Visas DV-2027. Elige el camino que prefieras.",
+  self: { title: "Hazlo tú gratis", text: "Con nuestra guía paso a paso te inscribes tú mismo en el sitio oficial del gobierno. Solo pagas el dólar de la inscripción.", href: LOTTERY_GUIDE_PATH },
+  advisor: { title: "Que ContyGo lo haga por ti", text: "Revisamos tus fotos y tus datos, enviamos tu inscripción y te entregamos tu número de confirmación. Te atendemos por WhatsApp." },
+};
+const fastSession = (): VisaIntakeSession => ({ watched: true, externalRef: newExternalRef(), answers: {}, messages: [], complete: false, field: null, quick: true });
+
 /** A saved conversation worth resuming: the shape the guide keeps, with something already done. */
 const resumableSession = (value: unknown): value is VisaIntakeSession => {
   const session = value as VisaIntakeSession | null;
@@ -204,24 +221,33 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const closeCallback = useRef(onClose);
   closeCallback.current = onClose;
   const originRef = useRef(origin);
+  const flight = useRef<(() => void) | null>(null);
   const animation = useRef<Animation | null>(null);
   const closing = useRef(false);
   const mounted = useRef(false);
   // Closed by mistake (the X, Escape)? The same tab picks the guide up where it was: conversation, stage and variant
   // (15-10-2026). Never in the development previews.
-  const resumable = !completedPreview && !pickerPreview && !previewFilm;
+  // Development only: «?demo=chat» opens straight on the conversation, without the first film, to try the bot.
+  const [chatPreview] = useState(() => process.env.NODE_ENV !== "production" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "chat");
+  const resumable = !completedPreview && !pickerPreview && !previewFilm && !chatPreview;
   const [saved] = useState(() => {
     const journey = resumable ? readJourney<VisaIntakeSession>(service.id) : null;
     return journey && resumableSession(journey.session) ? journey : null;
   });
   const [resumed, setResumed] = useState(Boolean(saved));
+  // How the service starts (24-10-2026): «Es mi primera vez» (the full guide) or «Ya conozco mi caso» (no first film; the
+  // call asks only the evaluation questions, then the doubts, then the process film, 25-10-2026). A link from an ad that
+  // already explains the service (?ruta=rapida) skips the question.
+  const [fromAd] = useState(() => resumable && !saved && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ruta") === "rapida");
+  const [path, setPath] = useState<"full" | "fast" | null>(() => !resumable ? "full" : saved ? (saved.session.quick ? "fast" : "full") : fromAd ? "fast" : null);
   /** A new conversation («Empezar de nuevo») mounts a fresh guide. */
   const [attempt, setAttempt] = useState(0);
   const [stage, setStage] = useState<Stage>(pickerPreview ? "platform" : saved?.session.complete ? saved.stage : "service");
   const [visaSession, setVisaSession] = useState<VisaIntakeSession | null>(() => completedPreview || pickerPreview
     ? { ...DEBUG_COMPLETED_INTAKE, answers: { ...DEBUG_COMPLETED_INTAKE.answers }, messages: [...DEBUG_COMPLETED_INTAKE.messages], ...(pickerPreview ? { complete: true, field: null, displayName: "Ana" } : {}) }
-    : saved?.session ?? null);
-  const [visaPhase, setVisaPhase] = useState<"watch" | "packing" | "interview">(completedPreview || saved?.session.watched ? "interview" : "watch");
+    : chatPreview ? { watched: true, externalRef: newExternalRef(), answers: {}, messages: [], complete: false, field: null }
+    : saved?.session ?? (fromAd ? fastSession() : null));
+  const [visaPhase, setVisaPhase] = useState<"watch" | "packing" | "interview">(completedPreview || chatPreview || saved?.session.watched || fromAd ? "interview" : "watch");
   // Visa Juvenil: «Revisar mi contrato» first asks Básico or Premium; the contract is for the chosen one.
   const variants = useMemo(() => serviceVariants(service.id), [service.id]);
   const [picker, setPicker] = useState(false);
@@ -245,6 +271,14 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
   const isEvaluation = service.id === "evaluacion-asilo";
   // The local preview modes (never production) use the 6 s clip as the second film too, to reach the contract quickly.
   const platformFilm = process.env.NODE_ENV !== "production" && (previewFilm || completedPreview || pickerPreview) ? PROVISIONAL_PLATFORM_FILM : getRebuildPlatformFilm(service.id);
+  /* The journey's map (28-10-2026): its stages and roughly how long is left. The service's film is a stage only when the
+     person watches it; the questions, the data and the doubts are «Tu caso»; the second film and the invitation, «Tu
+     proceso»; the contract has its own steps, so the map stays until it begins. */
+  const firstFilm = getRebuildServiceFilm(service.id);
+  const journeySteps = [...(path === "full" && firstFilm.src ? [{ label: "Conoce el servicio", seconds: firstFilm.duration || 100 }] : []),
+    { label: "Tu caso", seconds: 120 }, { label: "Tu proceso", seconds: (platformFilm.duration || 60) + 20 }, { label: "Tu contrato", seconds: 180 }];
+  const journeyIndex = stage === "service" ? (visaPhase === "interview" ? journeySteps.length - 3 : 0) : stage === "platform" ? journeySteps.length - 2 : journeySteps.length - 1;
+  const minutesLeft = Math.ceil(journeySteps.slice(journeyIndex).reduce((sum, step) => sum + step.seconds, 0) / 60);
   const deliverables = CONTYGO_DELIVERABLES[service.id];
   // Prices are live (GET /catalog); the local list only gives the plan names. No price until the live one arrives.
   const prices = useServicePrices();
@@ -283,11 +317,15 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
         { clipPath:`circle(0% at ${focalX}% ${focalY}%)`, opacity:.7 },
         { clipPath:`circle(150% at ${focalX}% ${focalY}%)`, opacity:1 },
       ] : [{ transform, opacity: .15, borderRadius: "28px" }, { transform: "translate(0, 0) scale(1)", opacity: 1 }], { duration: immersive ? 850 : 550, easing: "cubic-bezier(.76,0,.24,1)" });
+      // The touched card's drawing flies to the head of «¿Cómo quieres empezar?» while the window opens.
+      const art = from?.art;
+      if (art) flight.current = flyDrawing(art, element, { layer: s.flightLayer, image: s.flyer });
     }
 
     return () => {
       mounted.current = false;
       animation.current?.cancel();
+      flight.current?.();
       element.querySelector("video")?.pause();
       if (element.open) element.close();
       Object.assign(body.style, original);
@@ -311,7 +349,17 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     clearJourney();
     closingVoice.stop();
     dialog.current?.querySelector("video")?.pause();
-    setResumed(false); setPicker(false); setChooser(false); setContract(null); setVisaSession(null); setVisaPhase("watch"); setStage("service"); setAttempt(count => count + 1);
+    setResumed(false); setPicker(false); setChooser(false); setContract(null); setVisaSession(null); setVisaPhase("watch"); setStage("service"); setPath(null); setAttempt(count => count + 1);
+  }
+  function choosePath(next: "full" | "fast") {
+    if (next === "fast") { setVisaSession(fastSession()); setVisaPhase("interview"); }
+    setPath(next);
+  }
+  /** «Prefiero ver el vídeo del servicio» during the quick call: the full guide from its first film, keeping the answers
+      already given (its interview goes on with the questions still missing). */
+  function watchFilm() {
+    setVisaSession(current => current ? { watched: false, externalRef: current.externalRef, answers: current.answers, messages: [], complete: false, field: null } : null);
+    setVisaPhase("watch"); setPath("full"); setAttempt(count => count + 1);
   }
 
   // The picker preview opens only once this dialog is open, so the sheet sits above it. It starts where the button
@@ -359,7 +407,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     data-visa={isVisa}
     data-visual-theme={visualTheme}
     data-immersive={immersive}
-    data-visa-phase={stage === "service" ? visaPhase : stage}
+    data-visa-phase={stage === "service" ? (path === null ? "start" : visaPhase) : stage}
     aria-labelledby={headingId}
     onPointerDown={()=>closingVoice.unlock()}
     onKeyDown={()=>closingVoice.unlock()}
@@ -376,6 +424,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       <span className={s.headerCaption}>{isVisa ? "Un paso a la vez, contigo." : "Un paso más cerca."}</span>
       <button ref={closeButton} className={s.close} type="button" aria-label="Cerrar y volver a los servicios" onClick={requestClose}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg></button>
     </header>
+    {immersive && path !== null && stage !== "decision" && <JourneyMap steps={journeySteps.map(step => step.label)} current={journeyIndex} minutesLeft={minutesLeft} />}
     {resumed && <div className={s.resumeNotice} role="status">
       <span>Seguimos donde lo dejaste.</span>
       <button type="button" onClick={startOver}>Empezar de nuevo</button>
@@ -397,13 +446,14 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
           {stage !== "service" && <p className={s.serviceContext}>{service.name}</p>}
         </div>
 
-        {stage === "service" && <VisaJuvenilExperience key={attempt} serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
+        {stage === "service" && path === null && <ServiceStartChooser serviceName={isVisa ? "Visa Juvenil" : service.name} art={`/contygo/v8/servicio-${service.id}.webp`} family={service.season ? "temporada" : service.category} hasVideo={Boolean(getRebuildServiceFilm(service.id).src)} onFull={() => choosePath("full")} onFast={() => choosePath("fast")} />}
+        {stage === "service" && path !== null && <VisaJuvenilExperience key={attempt} onWatchFilm={path === "fast" ? watchFilm : undefined} serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
-        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} skipFilm={process.env.NODE_ENV !== "production" && previewClosing} onContract={() => journeyNeedsAdvisor(visaSession) ? changeStage("decision") : setChooser(true)} /></div>}
+        {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} skipFilm={process.env.NODE_ENV !== "production" && previewClosing} onContract={() => service.id !== LOTTERY_SERVICE && journeyNeedsAdvisor(visaSession) ? changeStage("decision") : setChooser(true)} /></div>}
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
         {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}
-        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 && visaSession?.eligible !== false ? () => setPicker(true) : undefined} />}
+        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} email={visaSession?.email} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 && visaSession?.eligible !== false ? () => setPicker(true) : undefined} />}
 
         {stage === "decision" && !immersive && <>
           <div className={s.decisionGrid}>
@@ -429,9 +479,11 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
       <div className={s.footerMeta}>{stageIndex > 0 ? <button className={s.back} type="button" onClick={() => changeStage(stages[stageIndex - 1].id)}><Arrow back />Volver</button> : <span className={s.atYourPace}>A tu ritmo.</span>}<span className={s.stepCount}>{String(stageIndex + (isVisa ? 2 : 1)).padStart(2, "0")} / {isVisa ? "04" : "03"}</span></div>
       {stage === "decision" ? <div className={s.decisionActions}><a className={s.whatsapp} href={whatsappUrl} target="_blank" rel="noopener noreferrer">Hablar con un agente <Arrow /></a><a className={s.primary} href={contractUrl} target="_blank" rel="noopener noreferrer">{isEvaluation ? "Continuar con mi evaluación" : "Ir a mi contrato"}<Arrow /></a></div> : <button type="button" className={s.primary} onClick={() => changeStage(stage === "service" ? "platform" : "decision")}>{stage === "service" ? "Ver cómo funciona ContyGo" : "Ver opciones para empezar"}<Arrow /></button>}
     </footer>}
-    {chooser && <ContractModeChooser serviceName={isVisa ? "Visa Juvenil" : service.name}
-      advisorHref={crmWaLink(whatsappAdvisorContractMessage(isVisa ? "Visa Juvenil" : service.name, visaSession?.displayName, visaSession?.externalRef ? publicRef(visaSession.externalRef) : null))}
-      onSelf={() => { setChooser(false); if (variants.length > 1) setPicker(true); else changeStage("decision"); }}
+    {chooser && <ContractModeChooser serviceName={isVisa ? "Visa Juvenil" : service.name} copy={service.id === LOTTERY_SERVICE ? LOTTERY_WAYS : undefined}
+      advisorHref={crmWaLink(service.id === LOTTERY_SERVICE
+        ? whatsappLotteryMessage(visaSession?.displayName, visaSession?.externalRef ? publicRef(visaSession.externalRef) : null)
+        : whatsappAdvisorContractMessage(isVisa ? "Visa Juvenil" : service.name, visaSession?.displayName, visaSession?.externalRef ? publicRef(visaSession.externalRef) : null))}
+      onSelf={() => { setChooser(false); if (service.id === LOTTERY_SERVICE) return; if (variants.length > 1) setPicker(true); else changeStage("decision"); }}
       onAdvisor={() => setChooser(false)} onClose={() => setChooser(false)} />}
     {picker && <ServiceVariantPicker variants={variants} answers={visaSession?.answers} current={stage === "decision" ? contractService.id : undefined} onClose={() => setPicker(false)} onChoose={(chosen, answers) => { setContract({ service: chosen, answers }); setPicker(false); changeStage("decision"); }} />}
   </dialog>;

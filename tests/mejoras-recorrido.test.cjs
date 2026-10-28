@@ -77,3 +77,13 @@ test('un «no» de contygo al contratar queda en el lead: ventas sabe que lo int
   assert.equal(net.calls.some(call => call.path === '/contracts'), false, 'no se envía ningún código');
   assert.equal(catalog.services.length > 0, true);
 });
+
+// 21-10-2026: el paso del nombre pide también el correo (por escrito); va al lead si es válido.
+const leadRoute = require('../app/api/contratar/lead/route.ts');
+test('el correo del paso del nombre llega al lead; uno mal escrito no lo impide', async () => {
+  const send = async email => (await leadRoute.POST(b.request('/api/contratar/lead', { serviceId: 'visa-juvenil', externalRef: 'web-2f7c1b9e-8a41-4d7e-9f10-1c2d3e4f5a6b', displayName: 'Ana', phone: '(305) 555-0199', email, answers: { [ids.visaQ]: true } }))).status;
+  assert.equal(await send(' Ana.Perez@Gmail.com '), 200);
+  assert.equal(net.calls.filter(call => call.method === 'PUT').at(-1).json.email, 'ana.perez@gmail.com');
+  assert.equal(await send('ana@'), 200, 'sin correo válido, el lead se registra igual');
+  assert.equal('email' in net.calls.filter(call => call.method === 'PUT').at(-1).json, false);
+});

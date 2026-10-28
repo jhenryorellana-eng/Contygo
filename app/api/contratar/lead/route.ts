@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { contractService } from "@/lib/contygo-catalog";
 import { remoteServiceFor } from "@/lib/contygo-api/catalog";
-import { isExternalRef, normalizePhone, sanitizeAnswers, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
+import { isExternalRef, normalizeEmail, normalizePhone, sanitizeAnswers, toEvaluateAnswers } from "@/lib/contygo-api/checkout";
 import { contygoApi } from "@/lib/contygo-api/client";
 import { buildLeadBody, sanitizeAttribution, syncLead } from "@/lib/contygo-api/lead";
 import { LEAD_CAPTCHA_ACTION, checkLimits, clientIp, fail, guarded, json, readBrowserJson, verifyCaptcha } from "@/lib/contygo-api/server";
@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
     if (!captcha.ok) return fail(captcha.code, captcha.code === "captcha_not_configured" || captcha.code === "captcha_unavailable" ? 503 : 403);
 
     const eligible = await verdict(local.id, body.answers);
-    const result = await syncLead(body.externalRef, buildLeadBody({ fullName, phoneE164 }, { localServiceId: local.id, eligible, attribution: sanitizeAttribution(body.attribution) }));
+    // El correo (21-10-2026) va si es válido; uno mal escrito no impide registrar a la persona.
+    const email = normalizeEmail(body.email) ?? undefined;
+    const result = await syncLead(body.externalRef, buildLeadBody({ fullName, phoneE164, ...(email ? { email } : {}) }, { localServiceId: local.id, eligible, attribution: sanitizeAttribution(body.attribution) }));
     return result.ok ? json({ ok: true }) : fail("lead_not_registered", 502, { code: result.code });
   });
 }

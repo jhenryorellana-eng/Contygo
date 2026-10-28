@@ -433,3 +433,29 @@ test('Live silenciar o desmontar no permite fragmentos tardíos ni actualizacion
     if(action==='mute'){assert.equal(h.render().muted,true);assert.equal(h.render().status,'idle');h.unmount();}
   }
 });
+
+// 25-10-2026 («el agente de voz demora un poco en responder»): la respuesta de un turno trae su propia voz.
+test('la voz que trae la respuesta suena sin pedirla aparte',async()=>{
+  const live=liveResponse();const h=harness();const voice=h.render();
+  const playing=voice.speak('Entendido. ¿Tienes pruebas?',{voiced:live.response});await flush();
+  live.event(pcmEvent());await flush();
+  assert.equal(h.render().status,'speaking');assert.equal(h.contexts[0].sources.length,1);
+  live.event({type:'done'});live.close();await playing;
+  assert.equal(h.requests.length,0,'Ninguna petición a /api/agent/visa-live-speech');
+  h.unmount();
+});
+test('si la voz de la respuesta falla antes de sonar, se pide como siempre',async()=>{
+  const broken=liveResponse(),again=liveResponse();const h=harness({fetch:()=>again.response});const voice=h.render();
+  const playing=voice.speak('Entendido. ¿Tienes pruebas?',{voiced:broken.response});await flush();
+  broken.event({type:'error',code:'live_unavailable'});await flush();await flush();
+  assert.deepEqual(h.requests.map(r=>r.text),['Entendido. ¿Tienes pruebas?']);
+  again.event(pcmEvent());again.event({type:'done'});again.close();await playing;
+  assert.equal(h.contexts[0].sources.length,1);assert.equal(h.render().status,'speaking');
+  h.unmount();
+});
+test('con la voz silenciada, la voz que trae la respuesta se suelta sin leerla',async()=>{
+  const live=liveResponse();const h=harness();const voice=h.render();
+  voice.toggleMute();const muted=h.render();
+  await muted.speak('Entendido.',{voiced:live.response});await flush();
+  assert(live.cancelled);assert.equal(h.requests.length,0);h.unmount();
+});

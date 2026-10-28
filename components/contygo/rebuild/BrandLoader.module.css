@@ -1,0 +1,26 @@
+/* La espera de ContyGo: ver BrandLoader.tsx. Tinta marina, hilo verde y papel (docs/contygo-v7-direccion-arte.md). */
+.loader { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 14px; pointer-events: none; opacity: 0; animation: appear .35s ease-out .3s forwards; }
+.loader[data-overlay] { position: fixed; z-index: 2147483000; background: rgba(6, 27, 61, .9); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+:global([data-contygo-theme=light]) .loader[data-overlay] { background: rgba(255, 255, 255, .92); }
+.badge { display: grid; place-items: center; width: 84px; height: 84px; padding: 14px; border-radius: 50%; background: #fff; box-shadow: 0 22px 50px -20px rgba(0, 0, 0, .55), 0 0 0 1px rgba(6, 27, 61, .06); }
+.badge svg { width: 100%; height: 100%; overflow: visible; }
+.track { stroke: rgba(6, 27, 61, .08); stroke-width: 3; }
+.arc { stroke: #25D366; stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 64 220; transform-origin: 50% 50%; animation: spin 1.15s linear infinite; }
+.check, .tail { stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.check { stroke: #25D366; stroke-dasharray: 72; stroke-dashoffset: 72; animation: draw 1.6s cubic-bezier(.65, 0, .35, 1) infinite; }
+.tail { stroke: #061B3D; stroke-dasharray: 34; stroke-dashoffset: 34; animation: drawTail 1.6s cubic-bezier(.65, 0, .35, 1) infinite; }
+.label { font: 700 14px/1 var(--font-contygo-body), sans-serif; letter-spacing: .02em; color: rgba(246, 248, 247, .85); }
+:global([data-contygo-theme=light]) .loader[data-overlay] .label { color: rgba(6, 27, 61, .7); }
+.loader:not([data-overlay]) .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 760px) { .badge { width: 76px; height: 76px; padding: 12px; } }
+@keyframes appear { to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* The check draws, holds a beat and lets go; the tail of the «y» follows it. */
+@keyframes draw { 0% { stroke-dashoffset: 72; } 45%, 75% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes drawTail { 0%, 30% { stroke-dashoffset: 34; } 60%, 75% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes beat { 50% { transform: scale(.94); } }
+@media (prefers-reduced-motion: reduce) {
+  .arc { animation: none; }
+  .check, .tail { animation: none; stroke-dashoffset: 0; }
+  .badge { animation: beat 1.4s ease-in-out infinite; }
+}

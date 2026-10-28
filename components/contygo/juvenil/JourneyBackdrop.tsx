@@ -312,13 +312,19 @@ export default function JourneyBackdrop() {
         if (party && party !== celebration && !motion.matches && now.alpha > .5) {
           const source = party, tone = light;
           window.setTimeout(() => {
-            if (!alive || !source.isConnected) return;
+            if (!alive || !source.isConnected || source.closest("[data-departing=true]")) return;
             const anchor = logoAnchor(source, root.getBoundingClientRect());
             if (anchor) ignite(layer, anchor, tone);
           }, 650);
           ignitedAt = time;
         }
         if (party) celebration = party;
+        // Leaving for the second film (a quick tap, a filled-in form): rockets still in the air step aside, or they
+        // would burst over the top bar while the film opens.
+        if (dialog.querySelector("[data-journey-reveal][data-departing=true]")) layer.querySelectorAll<HTMLElement>(`.${s.ignition}:not([data-leaving])`).forEach(group => {
+          group.dataset.leaving = "";
+          group.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: "ease-out", fill: "forwards" });
+        });
         // While the solid logo takes over (and until the rockets are gone) the watermark steps back.
         if (time - ignitedAt < 2600) target = { ...target, symOn: 0, symX: now.symX, symY: now.symY, symSize: now.symSize };
         // Without rings the radius holds still while their presence fades out; a hidden «y» keeps its

@@ -490,7 +490,8 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     voice.stop(); microphone.cancel(); setDeparting(true);
     const overlay = departure.current, scene = root.current;
     if (!overlay || !button || !scene || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onContinue(); return; }
-    const stageColor = getComputedStyle(scene).getPropertyValue("--cg-stage").trim() || "#061B3D";
+    // The portal ends on the second film's own first frame (every one opens on this navy), so the film starts without a jump.
+    const filmColor = "#081A39";
     const from = button.getBoundingClientRect(), bounds = scene.getBoundingClientRect();
     const portrait = bounds.width <= 900 && bounds.height > bounds.width;
     const filmWidth = portrait ? bounds.width : Math.min(bounds.width, (bounds.height-Math.min(200,Math.max(128,bounds.height*.18)))*16/9);
@@ -513,7 +514,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
       .to(overlay,{left:buttonX-43,top:buttonY-43,width:86,height:86,borderRadius:43,duration:.42,ease:"power3.inOut"},.06)
       .fromTo(overlay.querySelector("[data-portal-symbol]"),{opacity:0,scale:.6},{opacity:1,scale:1,duration:.3,ease:"back.out(1.3)"},.27)
       .to(overlay,{left:bounds.width/2-43,top:filmCenterY-43,boxShadow:"0 18px 80px #25D36655",duration:.64,ease:"power3.inOut"},.43)
-      .to(overlay,{left:(bounds.width-filmWidth)/2,top:filmTop,width:filmWidth,height:filmHeight,borderRadius:0,backgroundColor:stageColor,duration:.85,ease:"power4.inOut"},.98)
+      .to(overlay,{left:(bounds.width-filmWidth)/2,top:filmTop,width:filmWidth,height:filmHeight,borderRadius:0,backgroundColor:filmColor,duration:.85,ease:"power4.inOut"},.98)
       .to(overlay.querySelector("[data-portal-symbol]"),{opacity:0,scale:.4,duration:.32},1.06)
       .to(portalVideo.current,{opacity:1,clipPath:"circle(75% at 50% 50%)",scale:1,duration:.76,ease:"power3.inOut"},1.1)
       .fromTo(overlay.querySelector("[data-portal-rim]"),{opacity:0},{opacity:1,duration:.2},1.05)

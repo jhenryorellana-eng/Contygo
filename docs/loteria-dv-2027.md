@@ -108,6 +108,14 @@ El resultado es «puedes participar» o «no puedes, por…», más la **lista p
 
 **5. Cierre con dos caminos:**
 - **«Hazlo tú gratis»:** enlace a dvprogram.state.gov, la guía y la lista de documentos.
+  - **La guía, como inscripción guiada (28-10-2026):** /guia-loteria-de-visas es un boleto que se va sellando en 5 pasos. Cada paso tiene algo que hacer:
+    1. ¿Puedo participar?: país, cónyuge y estudios, con la respuesta al momento.
+    2. Documentos: casillas para marcar.
+    3. Foto: la página la recorta a 600 × 600, la pasa a JPG y la deja en menos de 240 KB, dentro del navegador; revisa el fondo y la nitidez.
+    4. El formulario campo por campo: el nombre en inglés de cada campo y un ejemplo.
+    5. El número de confirmación: se guarda en el celular, con un recordatorio de calendario para el día de resultados.
+  - El avance y el número se guardan solo en el celular de la persona.
+  - «Avísame cuando abra» registra el contacto en el CRM como los demás leads (servicio de la Lotería): **el equipo debe escribirles por WhatsApp el 1 de noviembre.**
 - **«Que ContyGo lo haga por ti»:** el contrato en la app cuando el servicio exista en la plataforma; hasta entonces, un asesor por WhatsApp.
 
 **Siempre visible:**

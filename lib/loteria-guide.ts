@@ -3,14 +3,10 @@
    Fuentes y fechas: docs/loteria-dv-2027.md. Todo se confirma con el anuncio oficial del Departamento de Estado
    (a más tardar el 29-10-2026); la lista de países es la de la DV-2026 hasta entonces.
    ============================================================ */
-export const LOTTERY_GUIDE_UPDATED = "26 de octubre de 2026";
-
-export const LOTTERY_KEY_FACTS = [
-  { label: "Anuncio oficial", value: "a más tardar el 29 de octubre" },
-  { label: "Inscripción abierta", value: "desde el 1 de noviembre, por 30 días" },
-  { label: "Costo oficial", value: "1 dólar por inscripción" },
-  { label: "Resultados", value: "antes del 3 de diciembre" },
-];
+export const LOTTERY_GUIDE_UPDATED = "28 de octubre de 2026";
+/** The opening the court ordered (at the latest) and the results deadline, as dates (yyyy-mm-dd). */
+export const LOTTERY_OPENS = "2026-11-01";
+export const LOTTERY_RESULTS = "2026-12-03";
 
 export const LOTTERY_COUNTRIES = {
   yes: ["Perú", "Argentina", "Bolivia", "Chile", "Ecuador", "Guatemala", "Nicaragua", "Costa Rica", "Panamá", "Paraguay", "Uruguay", "Belice"],
@@ -35,21 +31,23 @@ export const LOTTERY_PHOTO_RULES = [
   "La cabeza ocupa entre la mitad y dos tercios de la foto.",
 ];
 
-/** The official form (E-DV), in its order (DV-2026 instructions + the passport, required since 2026). */
-export const LOTTERY_FORM_STEPS = [
-  { title: "Tu nombre completo", text: "Apellidos, nombre y segundo nombre, exactamente como en tu pasaporte." },
-  { title: "Sexo y fecha de nacimiento", text: "Día, mes y año." },
-  { title: "Ciudad y país de nacimiento", text: "El país con su nombre actual." },
-  { title: "País de elegibilidad", text: "Casi siempre es tu país de nacimiento. Si no participa, puedes usar el de tu cónyuge (o el de uno de tus padres, en casos especiales)." },
-  { title: "Tu foto", text: "Súbela y revisa que el sitio la acepte. Usa el validador de fotos del sitio oficial." },
-  { title: "Tu pasaporte", text: "Número, fechas y la copia escaneada de la página con tu foto y tu firma." },
-  { title: "Dirección postal y país donde vives hoy", text: "Puede ser en Estados Unidos o en otro país." },
-  { title: "Teléfono y correo", text: "El teléfono es opcional; el correo, no." },
-  { title: "Tu nivel de estudios", text: "El más alto que terminaste: secundaria, técnica, universidad…" },
-  { title: "Tu estado civil", text: "Si estás casado o casada, incluye a tu cónyuge con su foto, aunque no vaya a viajar." },
-  { title: "Tus hijos", text: "Todos los solteros menores de 21: naturales, adoptados e hijastros, cada uno con su foto, aunque no vivan contigo." },
-  { title: "Revisa y envía", text: "Revisa cada dato antes de enviar. Solo se permite una inscripción por persona." },
-  { title: "Guarda tu número de confirmación", text: "Aparece al final. Haz captura o imprímelo: sin él no puedes ver tu resultado." },
+/** The official form (E-DV), in its order (DV-2026 instructions + the passport, required since 2026). `official` is the
+ *  field's name on the form, which is in English; `example` shows how it is filled in. */
+export type LotteryFormStep = { title: string; text: string; official?: string; example?: string };
+export const LOTTERY_FORM_STEPS: LotteryFormStep[] = [
+  { title: "Tu nombre completo", text: "Apellidos, nombre y segundo nombre, exactamente como en tu pasaporte.", official: "Entrant Name", example: "PÉREZ GÓMEZ · ANA · LUCÍA" },
+  { title: "Sexo y fecha de nacimiento", text: "Día, mes y año.", official: "Gender · Birth Date", example: "Female · 14 / 03 / 1994" },
+  { title: "Ciudad y país de nacimiento", text: "El país con su nombre actual.", official: "City / Country Where You Were Born", example: "Arequipa · Peru" },
+  { title: "País de elegibilidad", text: "Casi siempre es tu país de nacimiento. Si no participa, puedes usar el de tu cónyuge (o el de uno de tus padres, en casos especiales).", official: "Country of Eligibility", example: "Peru" },
+  { title: "Tu foto", text: "Súbela y revisa que el sitio la acepte. Usa el validador de fotos del sitio oficial.", official: "Entrant Photograph", example: "foto-600x600.jpg" },
+  { title: "Tu pasaporte", text: "Número, fechas y la copia escaneada de la página con tu foto y tu firma.", official: "Passport", example: "Número y vencimiento" },
+  { title: "Dirección postal y país donde vives hoy", text: "Puede ser en Estados Unidos o en otro país.", official: "Mailing Address · Country Where You Live Today", example: "Av. Ejército 123, Arequipa" },
+  { title: "Teléfono y correo", text: "El teléfono es opcional; el correo, no.", official: "Phone Number · E-mail Address", example: "ana.perez@gmail.com" },
+  { title: "Tu nivel de estudios", text: "El más alto que terminaste: secundaria, técnica, universidad…", official: "Highest Level of Education", example: "High School Diploma" },
+  { title: "Tu estado civil", text: "Si estás casado o casada, incluye a tu cónyuge con su foto, aunque no vaya a viajar.", official: "Current Marital Status", example: "Married" },
+  { title: "Tus hijos", text: "Todos los solteros menores de 21: naturales, adoptados e hijastros, cada uno con su foto, aunque no vivan contigo.", official: "Number of Children", example: "2" },
+  { title: "Revisa y envía", text: "Revisa cada dato antes de enviar. Solo se permite una inscripción por persona.", official: "Submit", example: "Revisa · Envía" },
+  { title: "Guarda tu número de confirmación", text: "Aparece al final. Haz captura o imprímelo: sin él no puedes ver tu resultado.", official: "Confirmation Number", example: "2027AB1C2D3E4F5G" },
 ];
 
 export const LOTTERY_AFTER = [

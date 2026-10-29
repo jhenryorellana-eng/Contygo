@@ -90,6 +90,8 @@ function ClosingScene({autoPlay=false,displayName="",preparedVoice,voice,service
   function finish(){
     if(flying.current||!scene.current||!frame.current||!plane.current||!symbol.current||!brand.current||!cta.current)return;
     flying.current=true;setPhase("flying");
+    // «Ir al final» (or the film's own end): the film stops, so its voice never runs under the invitation's (29-10-2026).
+    video.current?.pause();
     // A quick preview may skip the debounce/video; start preparing immediately.
     void voiceRef.current.prefetch(scriptRef.current);
     const bounds=scene.current.getBoundingClientRect(),film=frame.current.getBoundingClientRect(),mark=brand.current.getBoundingClientRect(),button=cta.current.getBoundingClientRect();

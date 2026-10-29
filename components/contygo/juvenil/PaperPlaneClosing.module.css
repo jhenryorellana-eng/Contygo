@@ -192,3 +192,9 @@
 /* The contract art belongs to the invitation: never over the film. */
 .page[data-phase=watch] .contractArt{visibility:hidden}
 @media(min-width:701px){.contractArt{height:clamp(100px,17svh,180px);margin-top:clamp(10px,2svh,22px)}}
+/* Inside the service window a general rule zeroes every paragraph's margin (ServiceCinemaDialog: .dialog :is(p…)):
+   the caption keeps its own, so it stays centred under the title (29-10-2026). */
+.invitation .voiceCaption{margin:25px auto 0}
+@media(max-width:700px){.invitation .voiceCaption{margin-top:21px}}
+/* On a laptop-height window the contract drawing would sit behind the button: it only shows when there is room. */
+@media(min-width:701px) and (max-height:940px){.contractArt{display:none}}

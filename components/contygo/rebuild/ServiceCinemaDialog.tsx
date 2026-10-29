@@ -25,7 +25,7 @@ import { closingName, closingScript, closingVariant, useClosingSpeechWarmup } fr
 import type { VisaVisualTheme } from "../juvenil/BrandLiquidSurface";
 import { LiquidGlow } from "../juvenil/ThinkingOverlay";
 import JourneyBackdrop from "../juvenil/JourneyBackdrop";
-import ServiceStartChooser from "./ServiceStartChooser";
+import ServiceRoute from "./ServiceRoute";
 import { flyDrawing } from "./flight";
 import JourneyMap from "./JourneyMap";
 import s from "./ServiceCinemaDialog.module.css";
@@ -235,9 +235,9 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     return journey && resumableSession(journey.session) ? journey : null;
   });
   const [resumed, setResumed] = useState(Boolean(saved));
-  // How the service starts (24-10-2026): «Es mi primera vez» (the full guide) or «Ya conozco mi caso» (no first film; the
-  // call asks only the evaluation questions, then the doubts, then the process film, 25-10-2026). A link from an ad that
-  // already explains the service (?ruta=rapida) skips the question.
+  // How the service starts: one route card (ServiceRoute, 29-10-2026) opens the full guide. The quick call (no first film;
+  // only the evaluation questions, then the doubts, then the process film, 25-10-2026) is reached by a link from an ad
+  // that already explains the service (?ruta=rapida), which skips the card.
   const [fromAd] = useState(() => resumable && !saved && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ruta") === "rapida");
   const [path, setPath] = useState<"full" | "fast" | null>(() => !resumable ? "full" : saved ? (saved.session.quick ? "fast" : "full") : fromAd ? "fast" : null);
   /** A new conversation («Empezar de nuevo») mounts a fresh guide. */
@@ -446,7 +446,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
           {stage !== "service" && <p className={s.serviceContext}>{service.name}</p>}
         </div>
 
-        {stage === "service" && path === null && <ServiceStartChooser serviceName={isVisa ? "Visa Juvenil" : service.name} art={`/contygo/v8/servicio-${service.id}.webp`} family={service.season ? "temporada" : service.category} hasVideo={Boolean(getRebuildServiceFilm(service.id).src)} onFull={() => choosePath("full")} onFast={() => choosePath("fast")} />}
+        {stage === "service" && path === null && <ServiceRoute serviceName={isVisa ? "Visa Juvenil" : service.name} art={`/contygo/v8/servicio-${service.id}.webp`} family={service.season ? "temporada" : service.category} filmSeconds={firstFilm.src ? firstFilm.duration || 100 : 0} filmCaptions={Boolean(firstFilm.captions)} processSeconds={(platformFilm.duration || 60) + 20} lottery={service.id === LOTTERY_SERVICE} onStart={() => choosePath("full")} />}
         {stage === "service" && path !== null && <VisaJuvenilExperience key={attempt} onWatchFilm={path === "fast" ? watchFilm : undefined} serviceId={service.id} serviceName={isVisa ? "Visa Juvenil" : service.name} visualTheme={visualTheme} film={process.env.NODE_ENV !== "production" && previewFilm ? previewFilm : getRebuildServiceFilm(service.id)} nextFilm={platformFilm} initialSession={visaSession} onSessionChange={setVisaSession} onPhaseChange={setVisaPhase} onContinue={() => changeStage("platform")} replayCompletion={completedPreview} />}
 
         {stage === "platform" && <div className={s.closingConcept}><ContractClosingConcept key={service.id} autoPlay service={service} film={platformFilm} displayName={visaSession?.displayName} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} eligible={visaSession?.eligible} preparedVoice={closingVoice} skipFilm={process.env.NODE_ENV !== "production" && previewClosing} onContract={() => service.id !== LOTTERY_SERVICE && journeyNeedsAdvisor(visaSession) ? changeStage("decision") : setChooser(true)} /></div>}

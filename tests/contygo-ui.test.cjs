@@ -5,7 +5,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
-const { outcomeMessage, readResend, waitText, whatsappHelpMessage } = require('../lib/contygo-api/messages.ts');
+const { outcomeMessage, readResend, waitText, whatsappHelpMessage, whatsappSwitchToAdvisorMessage } = require('../lib/contygo-api/messages.ts');
 const prices = require('../lib/contygo-api/prices-client.ts');
 const { default: PhoneField } = require('../components/contygo/guide/PhoneField.tsx');
 const { waLink } = require('../lib/config.ts');
@@ -61,6 +61,13 @@ test('el mensaje de WhatsApp lleva el servicio y la referencia, sin datos person
   assert.equal(message, 'Hola, estaba contratando Visa Juvenil en la web de ContyGo y necesito ayuda (ref. WEB-AB12CD).');
   assert.equal(whatsappHelpMessage('Visa Juvenil'), 'Hola, estaba contratando Visa Juvenil en la web de ContyGo y necesito ayuda.');
   assert.ok(waLink(message).startsWith('https://wa.me/13853927656?text='));
+});
+
+test('«Terminar con un asesor»: el chat lleva el nombre, el paso y la referencia, nunca correo ni teléfono', () => {
+  const message = whatsappSwitchToAdvisorMessage('Número ITIN', { name: 'Ana López', step: 'Tu dirección (paso 3 de 5)', ref: 'WEB-AB12CD' });
+  assert.equal(message, 'Hola, empecé mi contrato de Número ITIN en la web de ContyGo y quiero terminarlo con un asesor. Me llamo Ana López. Voy en: Tu dirección (paso 3 de 5). (ref. WEB-AB12CD)');
+  assert.equal(whatsappSwitchToAdvisorMessage('Número ITIN', {}), 'Hola, empecé mi contrato de Número ITIN en la web de ContyGo y quiero terminarlo con un asesor.');
+  assert.doesNotMatch(message, /@|\d{7,}/);
 });
 
 test('/reenviar: cada respuesta tiene su texto y decide si se repite la misma clave', () => {

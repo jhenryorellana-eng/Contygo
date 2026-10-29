@@ -108,6 +108,14 @@ export const HEARING_ADVISOR_MESSAGE = { title: "Escríbele a Henry antes de res
 /** «Crea tu contrato con un asesor» (20-10-2026): el chat del CRM, con el servicio, el nombre si lo dio y la referencia. */
 export const whatsappAdvisorContractMessage = (serviceName: string, name?: string | null, ref?: string | null) =>
   `Hola, quiero crear mi contrato de ${serviceName} con un asesor.${name?.trim() ? ` Me llamo ${name.trim()}.` : ""} Vi la guía en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
+/** «Terminar con un asesor» (29-10-2026): quien empezó el contrato por su cuenta pasa al chat del CRM sin empezar de cero:
+ *  su nombre (como en «con un asesor»), el paso donde va y la referencia, con la que el equipo encuentra sus datos en el CRM.
+ *  Ni correo ni teléfono en el enlace (como los demás mensajes de WhatsApp). */
+export const whatsappSwitchToAdvisorMessage = (serviceName: string, progress: { name?: string; step?: string; ref?: string | null }) =>
+  [`Hola, empecé mi contrato de ${serviceName} en la web de ContyGo y quiero terminarlo con un asesor.`,
+    progress.name?.trim() && `Me llamo ${progress.name.trim()}.`,
+    progress.step && `Voy en: ${progress.step}.`,
+    progress.ref && `(ref. ${progress.ref})`].filter(Boolean).join(" ");
 /** Lotería de Visas (26-10-2026): «Que ContyGo lo haga por ti», mientras ese camino no se contrata en línea. */
 export const whatsappLotteryMessage = (name?: string | null, ref?: string | null) =>
   `Hola, quiero que ContyGo haga mi inscripción en la Lotería de Visas DV-2027.${name?.trim() ? ` Me llamo ${name.trim()}.` : ""} Vi la guía en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;

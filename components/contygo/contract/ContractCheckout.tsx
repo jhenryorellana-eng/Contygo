@@ -15,8 +15,8 @@ import type { ContygoService } from "@/lib/contygo-catalog";
 import { US_STATES } from "@/lib/agent/visa-intake";
 import { normalizeAnswer, normalizeEmail, publicRef, text, validateContractForm, PHONE_US_MESSAGE, type FieldErrors } from "@/lib/contygo-api/checkout";
 import { missingQuestions, type ContractQuestion } from "@/lib/contygo-api/variants";
-import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, ineligibleMessage, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, HEARING_ADVISOR_MESSAGE, HEARING_TOO_CLOSE_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
-import { waLink } from "@/lib/config";
+import { ACCOUNT_LOGIN_URL, asylumMessage, fixContactMessages, ineligibleMessage, outcomeMessage, previoMessage, readResend, serviceAlreadyLiveMessage, whatsappAsylumMessage, whatsappHearingMessage, whatsappHelpMessage, whatsappPrevioMessage, whatsappSwitchToAdvisorMessage, HEARING_ADVISOR_MESSAGE, HEARING_TOO_CLOSE_MESSAGE, RECOGNIZED_MESSAGE, type ScreenOutcome } from "@/lib/contygo-api/messages";
+import { crmWaLink, waLink } from "@/lib/config";
 import type { PublicServiceView } from "@/lib/contygo-api/catalog";
 import type { AnswerValue } from "@/lib/contygo-api/types";
 import type { PriorityOutcome } from "@/lib/agent/adjustment-intake";
@@ -38,6 +38,7 @@ import type { ClosingVoice } from "../juvenil/closingSpeech";
 import { useGuide } from "../guide/useGuide";
 import GuideCaption from "../guide/GuideCaption";
 import PhoneField, { COUNTRIES, splitPhone } from "../guide/PhoneField";
+import AdvisorSwitch from "./AdvisorSwitch";
 import s from "./ContractCheckout.module.css";
 
 type Terms = { version: string; es: string; en: string };
@@ -180,6 +181,10 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const [phoneHint, setPhoneHint] = useState(false);
   /** The short reference of the web attempt the server named (WEB-XXXXXX), for the WhatsApp message. */
   const [helpRef, setHelpRef] = useState<string | null>(null);
+  // «Terminar con un asesor» (29-10-2026): always at hand; it grows into an invitation when the person seems stuck.
+  const [stuck, setStuck] = useState(false);
+  const [toAdvisor, setToAdvisor] = useState(false);
+  const errorRounds = useRef(0), backs = useRef(0), inviteNext = useRef(false);
   /** The blocked screen offers «Reintentar» when what failed may pass (a cut, a hiccup). */
   const [retryable, setRetryable] = useState(false);
   const [stage, setStage] = useState<Stage>("loading");
@@ -508,7 +513,12 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     finally { setBusy(false); }
     if (following) goTo(following);
   }
-  function back() { setNotice(null); const previous = steps[stepIndex - 1]; if (previous) goTo(previous); }
+  function back() {
+    setNotice(null);
+    // Going back and forth is a sign of being lost: the next screen offers the advisor.
+    backs.current += 1; if (backs.current >= 2) { inviteNext.current = true; backs.current = 0; }
+    const previous = steps[stepIndex - 1]; if (previous) goTo(previous);
+  }
 
   async function start() {
     if (!data || busy) return;
@@ -609,6 +619,25 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const refused = eligible === false || verdict === false;
   const advisor = previo || Boolean(asylum?.advisor) || Boolean(hearing?.advisor) || refused;
   const whatsapp = waLink((previo ? whatsappPrevioMessage : asylum?.advisor || refused ? whatsappAsylumMessage : hearing?.advisor ? whatsappHearingMessage : whatsappHelpMessage)(service.name, helpRef ?? (reference.current ? publicRef(reference.current) : advisor && externalRef ? publicRef(externalRef) : null)));
+  // «Terminar con un asesor»: a minute and a half on one screen, two rounds of fields in red or going back and forth, and
+  // the switch invites. Each new screen starts calm (unless the person just went back twice).
+  useEffect(() => {
+    if (stage !== "form" && stage !== "code") return;
+    errorRounds.current = 0; setStuck(inviteNext.current); inviteNext.current = false;
+    const timer = window.setTimeout(() => setStuck(true), stage === "code" ? 120_000 : 90_000);
+    return () => window.clearTimeout(timer);
+  }, [stage, step]);
+  useEffect(() => {
+    if (notice?.tone !== "error") return;
+    errorRounds.current += 1;
+    if (errorRounds.current >= 2) setStuck(true);
+  }, [notice]);
+  const advisorHref = crmWaLink(whatsappSwitchToAdvisorMessage(service.name, {
+    name: [form.firstName, form.lastName].filter(Boolean).join(" ") || journey.current.displayName,
+    step: stage === "code" ? "el código de confirmación" : `${STEPS[step].label} (paso ${stepIndex + 1} de ${steps.length})`,
+    ref: helpRef ?? (reference.current ? publicRef(reference.current) : externalRef ? publicRef(externalRef) : null),
+  }));
+  const switchToAdvisor = <AdvisorSwitch href={advisorHref} invite={stuck} opened={toAdvisor} onOpen={() => { setToAdvisor(true); setStuck(false); guide.stop(); }} onDismiss={() => setStuck(false)} />;
   const appealUrl = asylum?.appeal ? getServiceGuideUrl("apelacion") : null;
   /** «Reintentar» from the blocked screen: back to the code (if one was sent) or to the last step of the form. */
   function retryFromBlocked() {
@@ -810,6 +839,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         </div>
 
         <nav className={s.stepNav} aria-label="Pasos del contrato">
+          {switchToAdvisor}
           {stepIndex > 0 ? <button type="button" className={s.back} onClick={back}><Arrow back />Atrás</button> : <span />}
           {step === "review"
             ? <button type="submit" className={s.primary} disabled={busy} data-guided={guide.target === "submit" || undefined}><span>{busy ? "Enviando…" : "Enviar mi código"}</span><i aria-hidden="true"><Arrow /></i></button>
@@ -827,6 +857,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
           <div ref={captcha.container} className={s.captchaBox} />
         </div>
         <nav className={s.stepNav}>
+          {switchToAdvisor}
           <button type="button" className={s.back} disabled={busy} onClick={() => { setSent(null); pending.current = null; setStage("form"); setCode(""); goTo("review"); setNotice({ tone: "info", title: "Corrige lo que necesites y toca «Enviar mi código»: te mandamos uno nuevo." }); }}><Arrow back />Corregir</button>
           <button type="submit" className={s.primary} disabled={busy || pendingRestart || code.length !== 6}><span>{busy ? "Confirmando…" : "Confirmar"}</span><i aria-hidden="true"><Arrow /></i></button>
         </nav>
@@ -854,7 +885,6 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
         {appealUrl && <a className={s.secondary} href={appealUrl}>Conocer la Apelación</a>}
         {retryable && <button type="button" className={s.secondary} onClick={retryFromBlocked}>Reintentar</button>}
       </div>}
-      {(stage === "form" || stage === "code") && <a className={s.help} href={whatsapp} target="_blank" rel="noopener noreferrer">¿Necesitas ayuda? Escríbenos por WhatsApp</a>}
     </div>
   </div>;
 }

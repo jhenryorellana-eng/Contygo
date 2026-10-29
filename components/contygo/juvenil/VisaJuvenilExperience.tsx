@@ -650,9 +650,11 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
     {/* Kept for the packing timeline; the journey backdrop (JourneyBackdrop) draws the atmosphere. */}
     {phase !== "interview" && <div className={s.filmAtmosphere} aria-hidden="true"/>}
     <div ref={veil} className={s.revealVeil} aria-hidden="true">{phase!=="watch"&&<LiquidGlow className={s.chatLiquid} level={voice.muted ? 0 : voice.level} intensity={.85}/>}</div>
+    {/* No poster (29-10-2026): every first film opens on the brand's navy, which the shell already shows, so the route
+        card folds into it and the film starts without a photo flashing in between. */}
     {phase !== "interview" && <div className={s.watch}>
       <div ref={videoShell} className={s.videoShell}>
-        {film.src && <video ref={videoRef} src={film.src} poster={film.poster} autoPlay playsInline preload="auto" controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} aria-label={`Video introductorio de ${serviceName}`} onEnded={finishVideo} onError={()=>setVideoFailed(true)} onPlay={()=>setAutoplayBlocked(false)} onPause={event=>{if(phase==="watch"&&!packPending.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setAutoplayBlocked(true);}} onContextMenu={event=>event.preventDefault()}>
+        {film.src && <video ref={videoRef} src={film.src} autoPlay playsInline preload="auto" controls={false} controlsList="nodownload nofullscreen noremoteplayback" disablePictureInPicture disableRemotePlayback tabIndex={-1} aria-label={`Video introductorio de ${serviceName}`} onEnded={finishVideo} onError={()=>setVideoFailed(true)} onPlay={()=>setAutoplayBlocked(false)} onPause={event=>{if(phase==="watch"&&!packPending.current&&!event.currentTarget.ended&&!event.currentTarget.closest("dialog")?.hasAttribute("data-closing"))setAutoplayBlocked(true);}} onContextMenu={event=>event.preventDefault()}>
           {film.captions&&<track data-external-captions default ref={element=>{if(element)element.track.mode="hidden";}} kind="captions" src={film.captions} srcLang="es" label="Español"/>}
         </video>}
         {filmWaiting&&!videoFailed&&<BrandLoader label="Cargando el vídeo"/>}

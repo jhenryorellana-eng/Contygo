@@ -549,7 +549,7 @@ El dueño eligió **Vitrina**. El código de los otros dos está en el historial
   - Viaja en una capa propia del *top layer* (popover) para que el círculo no la recorte.
   - Se mide el marco del dibujo (`data-flight-art`), no la imagen, que puede estar subiendo con el hilo.
   - Sin popover o con «reducir movimiento» no viaja: el dibujo aparece en su sitio.
-- **La cabecera de la ventana** (`ServiceStartChooser`): el dibujo del servicio sobre el color de su familia, el mismo del catálogo, con el sello de ContyGo. Un servicio de temporada lleva el papel cálido de su tarjeta.
+- **La cabecera de la ventana** (`ServiceRoute` desde el 29-10-2026; antes `ServiceStartChooser`): el dibujo del servicio sobre el color de su familia, el mismo del catálogo, con el sello de ContyGo. Un servicio de temporada lleva el papel cálido de su tarjeta.
 - **La espera de la marca** (`BrandLoader`). El check verde se dibuja con el hilo, lo sigue la cola marina de la «y» y un aro verde gira.
   - Nace invisible y aparece a los 300 ms: con buena conexión casi nunca se ve.
   - Se usa al abrir la ventana si su código aún no llegó, y mientras carga o se queda sin búfer el vídeo 1 o el vídeo 2 (`useVideoWaiting`), en lugar del recuadro gris.
@@ -585,3 +585,28 @@ El dueño aprobó las cinco mejoras; el celular manda.
   - En el celular, «Conocer la propuesta» queda fijo a mano del pulgar.
 - **Mandos del vídeo** (`components/contygo/rebuild/FilmControls.tsx`): avance, «Quedan 1:47», pantalla completa en el celular y «Ya lo entendí, seguir» o «Ir al final», que hacen lo mismo que el final del vídeo.
 - **El precio junto a la decisión.** Dentro de «Revisar mi contrato», el precio publicado en vivo: «Desde $700 · precio publicado», o «Gratis por tu cuenta».
+
+## 29 oct 2026 · La ruta del servicio: una sola tarjeta al empezar y el pliegue en el vídeo
+
+**Por qué.** El dueño pidió quitar la elección «Es mi primera vez» / «Ya conozco mi caso». La ventana empieza con un solo cuadro que explica todo el proceso, con palabras profesionales del sector, y una transición creativa que lo conecte con el vídeo.
+
+- **Una tarjeta** (`components/contygo/rebuild/ServiceRoute.tsx`):
+  - el dibujo del servicio asoma arriba;
+  - el título es «Así funciona tu proceso», con «Cuatro etapas, unos 8 minutos. Sin compromiso: firmas solo si estás de acuerdo.»;
+  - las etapas van unidas por una línea, cada una con su duración real (sale de la duración de los vídeos):
+    - Orientación del servicio;
+    - Evaluación de elegibilidad;
+    - Propuesta de servicio;
+    - Contrato y firma electrónica;
+  - la Lotería usa sus propias etapas;
+  - un solo botón: «Comenzar mi evaluación».
+- **Saltar el vídeo.** Quien ya conoce el servicio lo salta con «Ya lo entendí, seguir». Los enlaces con `?ruta=rapida` siguen saltando la tarjeta.
+- **La transición:**
+  1. la línea se carga de verde y las palabras se retiran;
+  2. la tarjeta se pliega (blanco, verde de marca, marino) en el marco del vídeo 1;
+  3. las etapas suben y se vuelven la línea de avance de arriba (`JourneyMap`);
+  4. el dibujo se funde en el centro, donde el vídeo escribe «contygo».
+- **El vídeo arranca dentro del toque.** El iPhone solo reproduce con sonido muy cerca del toque, así que el vídeo empieza a los 0,34 s debajo de una capa que sobrevive a la tarjeta (`flushSync`). La capa se va cuando el vídeo ya está en su sitio.
+- **Vídeo 1 sin póster.** Todos los vídeos 1 empiezan en el marino de la marca y su marco ya es marino mientras carga. Así no aparece una foto entre el pliegue y el vídeo.
+- **En el celular**, el botón queda fijo abajo mientras la ruta se desplaza.
+

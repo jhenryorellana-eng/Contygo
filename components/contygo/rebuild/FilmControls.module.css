@@ -1,5 +1,6 @@
 /* Los mandos de un vídeo del recorrido: ver FilmControls.tsx. Abajo, a mano del pulgar, sin tapar el vídeo. */
 .controls { position: absolute; z-index: 6; left: 50%; bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px)); width: min(calc(100% - 32px), 520px); transform: translateX(-50%); display: grid; gap: 12px; pointer-events: auto; animation: rise .6s cubic-bezier(.2, .9, .25, 1) 1.2s both; }
+.notice { margin: 0; padding: 9px 13px; border-radius: 14px; background: #FFF6E2; color: #6b3f00; font: 700 13.5px/1.35 var(--font-contygo-body), sans-serif; box-shadow: inset 0 0 0 1px #EEDCAE; }
 .track { height: 4px; border-radius: 4px; background: rgba(6, 27, 61, .12); overflow: hidden; }
 .track i { display: block; height: 100%; border-radius: inherit; background: #25D366; transform-origin: 0 50%; transition: transform .25s linear; }
 .row { display: flex; align-items: center; gap: 10px; }

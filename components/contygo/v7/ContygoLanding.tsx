@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { waLink } from "@/lib/config";
-import { CONTYGO_SERVICES, seasonOpen, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
+import { CONTYGO_SERVICES, VISIBLE_SERVICES, seasonOpen, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
 import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
@@ -48,7 +48,7 @@ const featured: Star[] = [
   { id: "preparacion-audiencia", name: "Preparación de Audiencia", label: "Llega a tu audiencia con calma", copy: "Una sesión de 45 minutos con Henry, en español, para repasar ese día y practicar tus respuestas." },
 ];
 /** Seasonal services (the lottery, 28-10-2026): their own card above the stars while the window is open. */
-const seasonal = CONTYGO_SERVICES.filter(item => item.season);
+const seasonal = VISIBLE_SERVICES.filter(item => item.season);
 /** The rest of the catalog in the owner's order (28-10-2026): immigration first, then taxes and business. A service
  *  not listed here joins its group at the end, so a new one never goes missing. */
 const CATALOG_ORDER: { title: string; note: string; art: string[]; ids: string[]; categories: ContygoCategory[] }[] = [
@@ -57,7 +57,7 @@ const CATALOG_ORDER: { title: string; note: string; art: string[]; ids: string[]
   { title: "Impuestos y negocios", note: "Tu ITIN, tus impuestos y tu empresa", art: ["impuestos", "empresa"],
     ids: ["itin", "impuestos", "llc"], categories: ["fiscal", "empresa"] },
 ];
-const rest = CONTYGO_SERVICES.filter(item => !item.season && !featured.some(star => star.id === item.id));
+const rest = VISIBLE_SERVICES.filter(item => !item.season && !featured.some(star => star.id === item.id));
 const catalogGroups = CATALOG_ORDER.map(group => ({
   title: group.title, note: group.note, art: group.art,
   items: [...group.ids.map(id => rest.find(item => item.id === id)).filter((item): item is ContygoService => Boolean(item)),
@@ -263,7 +263,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <h1>Tu historia sigue.<br />El siguiente paso,<br /><em>ContyGo.</em></h1>
           <p className={s.lead}>Tu trámite, más claro. Preparamos tus documentos contigo y te acompañamos paso a paso, desde una sola plataforma.</p>
           <a ref={heroCta} className={s.primary} href="#servicios">Encontrar mi servicio <span><Icon /></span></a>
-          {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>Nuevo · Gratis</b><span>Lotería de Visas 2027: inscríbete tú mismo</span><Icon /></button>}
+          {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
           <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>
         </div>
         <div className={s.heroArt} data-anim data-thread="start" data-exit={HERO_ART[theme].exit} data-exit-dir="down">

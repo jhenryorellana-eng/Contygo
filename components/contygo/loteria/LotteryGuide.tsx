@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { DV_INSTRUCTIONS_URL, DV_OFFICIAL_URL } from "@/lib/agent/lottery-intake";
-import { LOTTERY_AFTER, LOTTERY_COUNTRIES, LOTTERY_FORM_STEPS, LOTTERY_GUIDE_UPDATED, LOTTERY_NEEDS, LOTTERY_OPENS, LOTTERY_PHOTO_RULES, LOTTERY_RESULTS, LOTTERY_SCAMS } from "@/lib/loteria-guide";
+import { LOTTERY_AFTER, LOTTERY_COUNTRIES, LOTTERY_FORM_STEPS, LOTTERY_GUIDE_UPDATED, LOTTERY_NEEDS, LOTTERY_OPENS, LOTTERY_PAUSED, LOTTERY_PAUSE_NOTE, LOTTERY_PHOTO_RULES, LOTTERY_RESULTS, LOTTERY_SCAMS } from "@/lib/loteria-guide";
 import PhotoStudio from "./PhotoStudio";
 import NotifyDialog from "./NotifyDialog";
 import s from "./LotteryGuide.module.css";
@@ -21,13 +21,15 @@ const KEY = "contygo.guia-loteria.v1";
 const EMPTY: Saved = { docs: LOTTERY_NEEDS.map(() => false) };
 const OTHER = "otro";
 const COUNTRIES = [...LOTTERY_COUNTRIES.yes, ...LOTTERY_COUNTRIES.no].sort((a, b) => a.localeCompare(b, "es"));
-const STEPS = [
+const ALL_STEPS = [
   { id: "pais", title: "¿Puedo participar?", short: "País", art: "paso-pais" },
   { id: "documentos", title: "Lo que necesitas", short: "Documentos", art: "paso-documentos" },
   { id: "foto", title: "Deja tu foto lista", short: "Foto", art: "paso-foto" },
   { id: "formulario", title: "El formulario, campo por campo", short: "Formulario", art: "paso-formulario" },
   { id: "confirmacion", title: "Envía y guarda tu número", short: "Confirmación", art: "paso-confirmacion" },
 ] as const;
+// While registration is suspended there is nothing to send: the guide is four steps of preparation.
+const STEPS = LOTTERY_PAUSED ? ALL_STEPS.slice(0, 4) : ALL_STEPS;
 
 const dayNumber = (iso: string) => { const [y, m, d] = iso.split("-").map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
 /** An all-day calendar date (yyyymmdd), some days after an ISO date. */
@@ -103,7 +105,7 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
 
   const opens = dayNumber(LOTTERY_OPENS), results = dayNumber(LOTTERY_RESULTS);
   const daysLeft = today === null ? null : opens - today;
-  const opened = daysLeft !== null && daysLeft <= 0;
+  const opened = !LOTTERY_PAUSED && daysLeft !== null && daysLeft <= 0;
   const after = today !== null && today > results;
 
   function scrollDeck(direction: number) {
@@ -141,12 +143,14 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
     try { await navigator.clipboard.writeText(saved.confirmation ?? ""); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ }
   }
 
-  const countdown = today === null
-    ? { big: "1", unit: "de noviembre", label: "abre la inscripción" }
+  const countdown = LOTTERY_PAUSED
+    ? { big: "II", unit: "En pausa", label: "sin fecha de apertura" }
+    : today === null
+    ? { big: "1", unit: "de noviembre", label: "apertura prevista" }
     : after ? { big: "✓", unit: "resultados", label: "consulta el tuyo en el sitio oficial" }
     : opened ? { big: "¡Ya!", unit: "abierta", label: "tienes 30 días desde el 1 de noviembre" }
-    : daysLeft === 1 ? { big: "1", unit: "día", label: "abre mañana" }
-    : { big: String(daysLeft), unit: "días", label: "para que abra" };
+    : daysLeft === 1 ? { big: "1", unit: "día", label: "para la apertura prevista" }
+    : { big: String(daysLeft), unit: "días", label: "para la apertura prevista" };
 
   const stepHead = (index: number, text: string) => {
     const step = STEPS[index];
@@ -174,18 +178,18 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
       <div className={s.heroGlow} aria-hidden="true" />
       <div className={s.sparkles} aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <i key={i} />)}</div>
       <div className={s.heroCopy}>
-        <span className={s.season}><Star />Temporada DV-2027 · Gratis</span>
-        <h1>Inscríbete tú mismo en la <span className={s.highlight}>Lotería de Visas</span> 2027</h1>
-        <p className={s.lead}>Paso a paso, en español y sin intermediarios. Revisa si puedes participar, deja tu foto lista y llena el formulario oficial sin errores.</p>
+        <span className={s.season}><Star />{LOTTERY_PAUSED ? "DV-2027 · Inscripción en pausa" : "Temporada DV-2027 · Gratis"}</span>
+        <h1>{LOTTERY_PAUSED ? "Prepárate para la" : "Inscríbete tú mismo en la"} <span className={s.highlight}>Lotería de Visas</span> 2027</h1>
+        <p className={s.lead}>{LOTTERY_PAUSED ? "Hoy no se aceptan inscripciones y no hay fecha. Mientras tanto, revisa gratis si podrías participar y deja tus documentos listos, por si abre." : "Paso a paso, en español y sin intermediarios. Revisa si puedes participar, deja tu foto lista y llena el formulario oficial sin errores."}</p>
         <div className={s.heroActions}>
-          <a className={s.primary} href="#pais">{doneCount ? "Seguir con mi inscripción" : "Empezar mi inscripción guiada"}<Arrow /></a>
-          {saved.notified ? <span className={s.notified}><Check />Te avisamos por WhatsApp</span>
-            : <button type="button" className={s.ghostLight} onClick={() => setNotify(true)}>{opened ? "Quiero ayuda por WhatsApp" : "Avísame cuando abra"}</button>}
+          <a className={s.primary} href="#pais">{LOTTERY_PAUSED ? (doneCount ? "Seguir preparándome" : "Prepararme gratis") : doneCount ? "Seguir con mi inscripción" : "Empezar mi inscripción guiada"}<Arrow /></a>
+          {saved.notified ? <span className={s.notified}><Check />{LOTTERY_PAUSED ? "Te avisamos si abre" : "Te avisamos por WhatsApp"}</span>
+            : <button type="button" className={s.ghostLight} onClick={() => setNotify(true)}>{opened ? "Quiero ayuda por WhatsApp" : LOTTERY_PAUSED ? "Avísame si abre" : "Avísame cuando abra"}</button>}
         </div>
       </div>
 
       <div className={s.ticketWrap}>
-        <div className={s.ticketShadow}><div className={s.ticket} role="group" aria-label={`Lotería de Visas DV-2027: ${countdown.big} ${countdown.unit}, ${countdown.label}. Tu avance: ${doneCount} de ${STEPS.length} pasos.`}>
+        <div className={s.ticketShadow}><div className={s.ticket} role="group" aria-label={`Lotería de Visas DV-2027: ${LOTTERY_PAUSED ? "" : `${countdown.big} `}${countdown.unit}, ${countdown.label}. Tu avance: ${doneCount} de ${STEPS.length} pasos.`}>
           <div className={s.ticketMain}>
             <div className={s.ticketTop}>
               <span className={s.ticketKicker}>Boleto · DV-2027</span>
@@ -195,10 +199,10 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
               <span><strong>{countdown.unit}</strong>{countdown.label}</span>
             </div>
             <dl className={s.ticketFacts}>
-              <div><dt>Abre</dt><dd>1 nov</dd></div>
-              <div><dt>Dura</dt><dd>30 días</dd></div>
+              <div><dt>Abre</dt><dd>{LOTTERY_PAUSED ? "Sin fecha" : "1 nov"}</dd></div>
+              <div><dt>Dura</dt><dd>{LOTTERY_PAUSED ? "Por confirmar" : "30 días"}</dd></div>
               <div><dt>Cuesta</dt><dd>US$1</dd></div>
-              <div><dt>Resultados</dt><dd>antes del 3 dic</dd></div>
+              <div><dt>Resultados</dt><dd>{LOTTERY_PAUSED ? "Sin fecha" : "antes del 3 dic"}</dd></div>
             </dl>
             <img className={s.ticketArt} src="/contygo/v8/servicio-loteria-dv-2027.webp" width={512} height={512} alt="" draggable={false} />
           </div>
@@ -208,10 +212,10 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
             <span className={s.stubCount}>{doneCount}/{STEPS.length}</span>
           </div>
         </div></div>
-        <p className={s.ticketNote}>Fechas según una orden judicial del 14 de octubre de 2026; pueden cambiar. El Departamento de Estado las confirma.</p>
+        <p className={s.ticketNote}>{LOTTERY_PAUSE_NOTE}</p>
       </div>
       <ul className={s.trust}>
-        <li><Check />Cuesta 1 dólar en el sitio oficial</li>
+        <li><Check />{LOTTERY_PAUSED ? "Hoy nadie puede inscribirte: desconfía" : "Cuesta 1 dólar en el sitio oficial"}</li>
         <li><Check />Tu foto lista en 1 minuto</li>
         <li><Check />Tu avance se guarda en tu celular</li>
       </ul>
@@ -241,7 +245,7 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
               </select>
             </label>
             <div aria-live="polite" className={s.flow}>
-              {elig.country === "yes" && <p className={s.chip} data-tone="good"><Check />{saved.country} participó en la edición anterior. La lista de la DV-2027 sale a más tardar el 29 de octubre.</p>}
+              {elig.country === "yes" && <p className={s.chip} data-tone="good"><Check />{saved.country} participó en la edición anterior. La lista oficial de la DV-2027 aún no se publica.</p>}
               {elig.country === "other" && <p className={s.chip} data-tone="info">Revisa si tu país está en la <a href={DV_INSTRUCTIONS_URL} target="_blank" rel="noopener noreferrer">lista oficial</a>. Si participa, sigue con estas preguntas.</p>}
               {elig.country === "no" && <div className={s.question}>
                 <p className={s.chip} data-tone="warn">{saved.country} no participó en la edición anterior. Pero puedes usar el país de tu cónyuge.</p>
@@ -258,7 +262,7 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
               </div>}
               {elig.verdict === "ok" && <div className={s.verdict} data-tone="good">
                 <span className={s.verdictSeal} aria-hidden="true"><Check /></span>
-                <div><strong>¡Puedes participar!</strong><span>{saved.spouse === "yes" ? "Con el país de tu cónyuge. Inclúyelo en tu inscripción con su foto." : "Sigue con tus documentos: te toma unos minutos."}</span></div>
+                <div><strong>{LOTTERY_PAUSED ? "Podrías participar" : "¡Puedes participar!"}</strong><span>{saved.spouse === "yes" ? "Con el país de tu cónyuge. Inclúyelo en tu inscripción con su foto." : LOTTERY_PAUSED ? "Si la inscripción abre. Sigue con tus documentos: te toma unos minutos." : "Sigue con tus documentos: te toma unos minutos."}</span></div>
                 <a href="#documentos" className={s.verdictGo}>Siguiente<Arrow /></a>
               </div>}
               {elig.verdict === "country" && <div className={s.verdict} data-tone="bad">
@@ -285,7 +289,7 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
         </section>
 
         <section id="foto" className={s.step} data-done={done.foto}>
-          {stepHead(2, "Es la razón número uno de descalificación. Súbela aquí y la dejamos como la pide el sitio oficial.")}
+          {stepHead(2, LOTTERY_PAUSED ? "Es la razón número uno de descalificación. Practica aquí: al inscribirte, debe ser de los últimos 6 meses." : "Es la razón número uno de descalificación. Súbela aquí y la dejamos como la pide el sitio oficial.")}
           <div className={s.stepBody}>
             <PhotoStudio onReady={() => update({ photo: true })} />
             <details className={s.rules}>
@@ -320,12 +324,12 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
             </ol>
             <div className={s.deckFoot}>
               <a className={s.primary} href={DV_OFFICIAL_URL} target="_blank" rel="noopener noreferrer">{opened ? "Ir al sitio oficial" : "Ver el sitio oficial"}<Arrow /></a>
-              <span className={s.deckNote}>Solo en <b>dvprogram.state.gov</b>. Ten esta guía abierta en otra pestaña mientras llenas.</span>
+              <span className={s.deckNote}>{LOTTERY_PAUSED ? <>Hoy <b>dvprogram.state.gov</b> no acepta inscripciones. Si abre, es el único sitio válido.</> : <>Solo en <b>dvprogram.state.gov</b>. Ten esta guía abierta en otra pestaña mientras llenas.</>}</span>
             </div>
           </div>
         </section>
 
-        <section id="confirmacion" className={s.step} data-done={done.confirmacion}>
+        {!LOTTERY_PAUSED && <section id="confirmacion" className={s.step} data-done={done.confirmacion}>
           {stepHead(4, "Al enviar, el sitio te da un número de confirmación. Sin él no puedes ver tu resultado: el gobierno no avisa por correo.")}
           <div className={s.stepBody}>
             <div className={s.confirmGrid}>
@@ -352,11 +356,11 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
               </div>
             </div>
           </div>
-        </section>
+        </section>}
 
         <section className={s.after}>
           <div className={s.afterCol}>
-            <h2>Después de enviar</h2>
+            <h2>{LOTTERY_PAUSED ? "Si abre: después de enviar" : "Después de enviar"}</h2>
             <ol className={s.timeline}>{LOTTERY_AFTER.map(item => <li key={item}>{item}</li>)}</ol>
           </div>
           <div className={s.scams}>
@@ -370,7 +374,7 @@ export default function LotteryGuide({ helpHref }: { helpHref: string }) {
           <div className={s.helpCopy}>
             <span className={s.season}><Star />Si prefieres</span>
             <h2>¿Quieres que ContyGo lo haga por ti?</h2>
-            <p>Revisamos tus fotos y tus datos, enviamos tu inscripción y te entregamos tu número de confirmación. Por WhatsApp y en español.</p>
+            <p>{LOTTERY_PAUSED ? "Si la inscripción abre, revisamos" : "Revisamos"} tus fotos y tus datos, enviamos tu inscripción y te entregamos tu número de confirmación. Por WhatsApp y en español.</p>
             <div className={s.helpActions}>
               <a className={s.whatsapp} href={helpHref} target="_blank" rel="noopener noreferrer"><Whatsapp />Que ContyGo lo haga por mí</a>
               <Link className={s.ghostLight} href="/loteria-de-visas">Ver la guía en vídeo</Link>

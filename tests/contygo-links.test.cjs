@@ -45,7 +45,10 @@ test('ningún link queda tapado por un redirect o una ruta fija, y el slug de co
   const { default: config } = await import(pathToFileURL(path.join(root, 'next.config.mjs')).href);
   const redirects = new Map((await config.redirects()).map(item => [item.source, item.destination]));
   const routes = fs.readdirSync(path.join(root, 'app'), { withFileTypes: true }).filter(entry => entry.isDirectory() && !entry.name.startsWith('[')).map(entry => `/${entry.name}`);
-  for (const link of links) {
+  // Un servicio oculto (la Lotería, 30-10-2026) es lo único que sí redirige: a la portada.
+  const hiddenLinks = CONTYGO_SERVICES.filter(service => service.hidden).map(service => getServiceGuideUrl(service.id));
+  for (const link of hiddenLinks) assert.equal(redirects.get(link), '/', link);
+  for (const link of links.filter(item => !hiddenLinks.includes(item))) {
     assert.ok(!redirects.has(link), `${link} redirige a otro sitio`);
     assert.ok(!routes.includes(link), `${link} choca con una ruta fija`);
   }

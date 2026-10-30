@@ -60,14 +60,14 @@ export const SERVICE_FACTS: Readonly<Record<string, readonly string[]>> = {
     "Se puede presentar cuando la solicitud de asilo lleva al menos 150 días, contando desde la fecha del recibo; USCIS no lo aprueba antes de los 180 días. Los retrasos que causa la persona detienen esa cuenta.",
     "Desde el 30 de octubre de 2025 la renovación ya no alarga el permiso automáticamente: conviene renovar unos 180 días antes del vencimiento.",
   ],
-  // 26-10-2026 (docs/loteria-dv-2027.md: orden judicial, instrucciones DV-2026 y cambios de 2026).
+  // 26-10-2026, al día el 30-10-2026 (docs/loteria-dv-2027.md: orden judicial, apelación, instrucciones DV-2026 y cambios de 2026).
   "loteria-dv-2027": [
     "La Lotería de Visas (Programa de Visas de Diversidad DV-2027) es del Departamento de Estado de Estados Unidos. La inscripción oficial solo se hace en dvprogram.state.gov.",
     "Cuenta el país de nacimiento, no la nacionalidad ni dónde vives. En la edición anterior pudieron participar, entre otros, Perú, Argentina, Bolivia, Chile, Ecuador, Guatemala, Nicaragua, Costa Rica, Panamá, Paraguay, Uruguay y Belice; no pudieron México, Colombia, Venezuela, El Salvador, Honduras, Cuba, República Dominicana, Brasil ni Haití. La lista oficial de la DV-2027 la publica el Departamento de Estado.",
     "Se puede usar el país de nacimiento del cónyuge, o el de uno de los padres si ninguno era nativo ni residente del país donde naciste.",
     "Requisito de estudios o de trabajo: secundaria completa (12 años de estudios), o dos años de experiencia, en los últimos cinco, en un oficio que requiera al menos dos años de formación.",
     "Desde abril de 2026 se piden los datos de un pasaporte vigente y una copia escaneada de la página con la foto y la firma.",
-    "Una orden judicial obliga al Departamento de Estado a anunciar la inscripción a más tardar el 29 de octubre de 2026 y a abrirla a más tardar el 1 de noviembre, durante 30 días; los seleccionados se avisan antes del 3 de diciembre. Las fechas pueden cambiar.",
+    "La inscripción de la DV-2027 está en pausa y no tiene fecha: el 29 de octubre de 2026 la Corte de Apelaciones del Noveno Circuito suspendió la orden judicial que obligaba a abrirla el 1 de noviembre, mientras se resuelve la apelación. Hoy no se aceptan inscripciones. Si abre, se confirmará en dvprogram.state.gov.",
     "Hay que incluir al cónyuge y a todos los hijos solteros menores de 21 años, aunque no vayan a viajar; omitir a alguien descalifica. Una sola inscripción por persona.",
     "Al final de la guía se elige: inscribirse uno mismo, gratis, en el sitio oficial, con la guía y el vídeo paso a paso; o que ContyGo revise las fotos y los datos y envíe la inscripción.",
   ],

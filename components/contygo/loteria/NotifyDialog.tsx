@@ -59,12 +59,12 @@ export default function NotifyDialog({ open, opened, onClose, onDone }: Props) {
       {state === "done" ? <div className={s.sheetDone} role="status">
         <span className={s.sheetSeal} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5.5 12.5 4 4 9-9" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
         <h2 id={titleId}>¡Listo, {name.trim().split(/\s+/)[0]}!</h2>
-        <p>{opened ? "Te escribimos por WhatsApp para ayudarte con tu inscripción." : "Te escribimos por WhatsApp cuando abra la inscripción, el 1 de noviembre."} Mientras tanto, deja tu foto lista: es lo que más descalifica.</p>
+        <p>{opened ? "Te escribimos por WhatsApp para ayudarte con tu inscripción." : "Si la inscripción abre, te escribimos por WhatsApp."} Mientras tanto, ten tus documentos a mano.</p>
         <button type="button" className={s.primary} onClick={onClose}>Seguir con mi guía</button>
       </div> : <form onSubmit={submit} noValidate>
-        <span className={s.sheetKicker}>{opened ? "Te ayudamos" : "Recordatorio gratis"}</span>
-        <h2 id={titleId}>{opened ? "Te escribimos por WhatsApp" : "Te avisamos cuando abra"}</h2>
-        <p className={s.sheetLead}>{opened ? "Déjanos tu WhatsApp y te ayudamos a terminar tu inscripción." : "La inscripción abre el 1 de noviembre y dura 30 días. Te mandamos un WhatsApp ese día para que no se te pase."}</p>
+        <span className={s.sheetKicker}>{opened ? "Te ayudamos" : "Aviso gratis"}</span>
+        <h2 id={titleId}>{opened ? "Te escribimos por WhatsApp" : "Te avisamos si abre"}</h2>
+        <p className={s.sheetLead}>{opened ? "Déjanos tu WhatsApp y te ayudamos a terminar tu inscripción." : "Hoy la inscripción está en pausa y no tiene fecha. Si abre, te mandamos un WhatsApp para que no se te pase."}</p>
         <label className={s.field}>Tu nombre<input autoComplete="given-name" maxLength={60} value={name} onChange={event => setName(event.target.value)} aria-invalid={Boolean(error.name)} placeholder="Escribe tu nombre" />{error.name && <span className={s.fieldError}>{error.name}</span>}</label>
         <div className={s.field}><span>Tu WhatsApp</span><PhoneField value={phone} onChange={setPhone} invalid={Boolean(error.phone)} describedBy={phoneHelp} />{error.phone && <span id={phoneHelp} className={s.fieldError}>{error.phone}</span>}</div>
         <label className={s.field}>Tu correo <small>opcional</small><input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={160} value={email} onChange={event => setEmail(event.target.value)} aria-invalid={Boolean(error.email)} placeholder="tucorreo@gmail.com" />{error.email && <span className={s.fieldError}>{error.email}</span>}</label>

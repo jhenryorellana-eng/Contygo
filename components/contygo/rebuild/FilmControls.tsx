@@ -6,11 +6,11 @@
 import { useEffect, useState, type RefObject } from "react";
 import s from "./FilmControls.module.css";
 
-type Props = { video: RefObject<HTMLVideoElement | null>; onSkip: () => void; skipLabel?: string };
+type Props = { video: RefObject<HTMLVideoElement | null>; onSkip: () => void; skipLabel?: string; notice?: string };
 
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
-export default function FilmControls({ video, onSkip, skipLabel = "Ya lo entendí, seguir" }: Props) {
+export default function FilmControls({ video, onSkip, skipLabel = "Ya lo entendí, seguir", notice }: Props) {
   const [time, setTime] = useState({ current: 0, duration: 0 });
   useEffect(() => {
     const element = video.current;
@@ -30,6 +30,7 @@ export default function FilmControls({ video, onSkip, skipLabel = "Ya lo entend�
   const progress = time.duration ? Math.min(1, time.current / time.duration) : 0;
   const left = Math.max(0, time.duration - time.current);
   return <div className={s.controls}>
+    {notice && <p className={s.notice} role="status">{notice}</p>}
     <div className={s.track} aria-hidden="true"><i style={{ transform: `scaleX(${progress})` }} /></div>
     <div className={s.row}>
       <span className={s.time} aria-label={time.duration ? `Quedan ${clock(left)}` : undefined}>{time.duration ? `Quedan ${clock(left)}` : ""}</span>

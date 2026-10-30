@@ -22,6 +22,8 @@ export type ContygoService = {
   variant?: { label: string; stages: string[]; summary: string };
   /** A free service for the community (Lotería de Visas, 26-10-2026): the person can do it alone; ContyGo's help is optional. */
   free?: true;
+  /** Kept in the code but off the site: no card, no sitemap entry, and its links go to the home page (next.config.mjs). */
+  hidden?: true;
   /** A seasonal service (28-10-2026): it leads the services on its own card while its window is open, and leaves on `until`. */
   season?: { headline: string; dates: string; until: string };
 };
@@ -238,21 +240,27 @@ export const CONTYGO_SERVICES: readonly ContygoService[] = [
     legacySlug: "loteria-de-visas",
     name: "Lotería de Visas DV-2027",
     category: "familia",
-    description: "Inscríbete gratis en la Lotería de Visas DV-2027 del Departamento de Estado con nuestra guía paso a paso, o deja que ContyGo lo haga por ti.",
+    description: "La inscripción de la Lotería de Visas DV-2027 está en pausa y sin fecha. Revisa gratis si podrías participar y deja tus documentos listos por si abre.",
     audience: "Personas nacidas en un país que participa, como Perú, Argentina o Chile, con secundaria completa o dos años de experiencia en un oficio.",
     includes: [
-      "Guía gratuita para inscribirte tú mismo en el sitio oficial, paso a paso.",
+      "Guía gratuita para prepararte e inscribirte tú mismo en el sitio oficial, si abre.",
       "Un asistente que te dice si puedes participar y qué fotos y datos preparar.",
-      "La opción de que ContyGo revise tus fotos y datos y envíe tu inscripción por ti.",
+      "La opción de que, si abre, ContyGo revise tus fotos y datos y envíe tu inscripción por ti.",
     ],
     exclusions: ["ContyGo no es el gobierno ni está afiliado a él.", "Nadie puede garantizar que salgas seleccionado.", "Salir seleccionado no es tener la visa: después viene el trámite consular."],
     price: 0,
     plans: [],
     free: true,
-    // The court order's window (docs/loteria-dv-2027.md): announced by 29-10, open by 1-11 for 30 days. Confirm with the announcement.
-    season: { headline: "Inscríbete tú mismo, gratis, con nuestra guía paso a paso.", dates: "Inscripción oficial desde el 1 de noviembre, por 30 días", until: "2026-12-03" },
+    // Off the site by the owner's decision (30-10-2026), while registration is suspended. To bring it back, remove this and
+    // the redirects in next.config.mjs.
+    hidden: true,
+    // Registration suspended on 29-10-2026 by the Ninth Circuit, with no new date (docs/loteria-dv-2027.md). `until` is the old window's end.
+    season: { headline: "Revisa si podrías participar y prepárate, gratis, por si abre.", dates: "Inscripción en pausa por una corte · sin fecha", until: "2026-12-03" },
   },
 ];
+
+/** The services people can see on the site. */
+export const VISIBLE_SERVICES: readonly ContygoService[] = CONTYGO_SERVICES.filter(service => !service.hidden);
 
 /**
  * Variants sold inside another service's guide: never their own card, link or sitemap entry.

@@ -8,6 +8,8 @@ El objetivo es atraer tráfico a la landing; parte de esas personas contratará 
 
 > **Todo lo de aquí se confirma con el anuncio oficial del Departamento de Estado** (a más tardar el 29-10-2026). La lista de países y los requisitos de abajo son los de la DV-2026 más los cambios ya publicados en 2026.
 
+> **Fuera del sitio desde el 30-10-2026** (decisión del dueño, con la inscripción suspendida). No hay tarjeta ni aviso en la portada, no está en el sitemap, y `/loteria-de-visas` y `/guia-loteria-de-visas` redirigen a la portada. El código, los vídeos y la guía se conservan. Para volver: quitar `hidden` en `lib/contygo-catalog.ts` y los redirects en `next.config.mjs`, y actualizar lo que indica la sección 1.
+
 ## 1. Calendario (orden judicial, no anuncio oficial)
 
 - **Antecedente:** la DV-2027 debía abrirse en octubre de 2025. El Departamento de Estado anunció cambios en noviembre de 2025 y la **pausó en diciembre de 2025**, junto con el trámite de visas DV-2026.
@@ -17,7 +19,16 @@ El objetivo es atraer tráfico a la landing; parte de esas personas contratará 
   - **1-11-2026:** abrir la inscripción **por 30 días**.
   - **3-12-2026:** notificar a los seleccionados (por Entrant Status Check).
   - Tramitar las visas hasta agotar el cupo o hasta el fin del año fiscal 2027; una fuente da el 20-09-2027 y otras el 30-09-2027.
-- **Riesgo:** se informa de una apelación del gobierno. Las fechas pueden cambiar sin aviso.
+- **Riesgo:** el gobierno apeló. Las fechas pueden cambiar sin aviso.
+- **Estado al 30-10-2026** (prensa y fuentes secundarias; no se pudo leer la orden ni el portal oficial, que rechazan descargas automáticas):
+  - **19-10:** el gobierno apela.
+  - **21-10:** la jueza niega suspender su orden, porque suspenderla «cancelaría en la práctica» la DV-2027.
+  - **23-10:** el gobierno pide una suspensión de emergencia a la Corte de Apelaciones del Noveno Circuito.
+  - **29-10:** el Noveno Circuito **suspende el requerimiento** mientras dura la apelación. Dice que Red Eagle no mostró probabilidad de ganar, porque queda fuera de la zona de intereses de la ley, y que no respalda que el Departamento no abriera la inscripción. La apelación sigue.
+  - **Resultado:** la inscripción **no abre el 1-11**, las fechas del 1-11 y del 3-12 quedan sin efecto y no hay fechas nuevas.
+  - **Anuncio oficial:** el Departamento de Estado no lo había publicado . Tampoco aparecía en el Federal Register.
+  - **En la página y en el asistente** la inscripción figura «en pausa, sin fecha» (`LOTTERY_PAUSED` en `lib/loteria-guide.ts`).
+  - **Vídeos 1 y 2:** se grabaron antes y mencionan el plazo o las fechas; llevan un aviso encima (`LOTTERY_FILM_NOTICE`).
 
 ## 2. Requisitos (DV-2026 + cambios de 2026)
 
@@ -115,7 +126,7 @@ El resultado es «puedes participar» o «no puedes, por…», más la **lista p
     4. El formulario campo por campo: el nombre en inglés de cada campo y un ejemplo.
     5. El número de confirmación: se guarda en el celular, con un recordatorio de calendario para el día de resultados.
   - El avance y el número se guardan solo en el celular de la persona.
-  - «Avísame cuando abra» registra el contacto en el CRM como los demás leads (servicio de la Lotería): **el equipo debe escribirles por WhatsApp el 1 de noviembre.**
+  - «Avísame cuando abra» registra el contacto en el CRM como los demás leads (servicio de la Lotería): **si la inscripción abre, el equipo debe escribirles por WhatsApp.** No el 1 de noviembre: esa apertura quedó suspendida.
 - **«Que ContyGo lo haga por ti»:** el contrato en la app cuando el servicio exista en la plataforma; hasta entonces, un asesor por WhatsApp.
 
 **Siempre visible:**

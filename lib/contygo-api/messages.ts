@@ -118,7 +118,7 @@ export const whatsappSwitchToAdvisorMessage = (serviceName: string, progress: { 
     progress.ref && `(ref. ${progress.ref})`].filter(Boolean).join(" ");
 /** Lotería de Visas (26-10-2026): «Que ContyGo lo haga por ti», mientras ese camino no se contrata en línea. */
 export const whatsappLotteryMessage = (name?: string | null, ref?: string | null) =>
-  `Hola, quiero que ContyGo haga mi inscripción en la Lotería de Visas DV-2027.${name?.trim() ? ` Me llamo ${name.trim()}.` : ""} Vi la guía en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
+  `Hola, quiero que ContyGo haga mi inscripción en la Lotería de Visas DV-2027 si abre.${name?.trim() ? ` Me llamo ${name.trim()}.` : ""} Vi la guía en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
 export const whatsappHearingMessage = (serviceName: string, ref?: string | null) =>
   `Hola Henry, quiero orientación sobre ${serviceName}, que vi en la web de ContyGo${ref ? ` (ref. ${ref})` : ""}.`;
 export const whatsappAsylumMessage = (serviceName: string, ref?: string | null) =>

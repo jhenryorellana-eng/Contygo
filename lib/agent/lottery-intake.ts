@@ -20,7 +20,7 @@ export const DV_OFFICIAL_URL = "https://dvprogram.state.gov/";
 export const DV_INSTRUCTIONS_URL = "https://travel.state.gov/content/travel/en/us-visas/immigrate/diversity-visa-program-entry.html";
 export const LOTTERY_GUIDE_PATH = "/guia-loteria-de-visas";
 /** Its answer to a question about costs (the rest of the services send it to the second film and the contract). */
-export const LOTTERY_COST_REPLY = "Inscribirte en el sitio oficial cuesta solo un dólar, que se paga al gobierno, y con nuestra guía lo haces tú mismo, gratis. Si prefieres que ContyGo lo haga por ti, al final te mostramos esa opción.";
+export const LOTTERY_COST_REPLY = "Cuando abra, inscribirte en el sitio oficial cuesta solo un dólar, que se paga al gobierno, y con nuestra guía lo haces tú mismo, gratis. Si prefieres que ContyGo lo haga por ti, al final te mostramos esa opción.";
 
 export const COUNTRY_FIELD = "dv.pais";
 export const SPOUSE_FIELD = "dv.conyuge_pais";
@@ -107,7 +107,8 @@ export function lotteryFlow(input: unknown): { questions: IntakeQuestion[]; answ
     people: 1 + (married ? 1 : 0) + count, status: country === "otro" ? "check" : "yes" } };
 }
 
-const NEXT_VIDEO = "En el siguiente vídeo te mostramos, paso a paso, cómo inscribirte en el sitio oficial.";
+const PAUSE = "Eso sí: hoy la inscripción está en pausa por una decisión de una corte y no tiene fecha.";
+const NEXT_VIDEO = "En el siguiente vídeo te mostramos, paso a paso, cómo se hace en el sitio oficial, por si abre.";
 const people = (outcome: LotteryOutcome) => {
   const who = ["tú", outcome.spouse ? "tu cónyuge" : null, outcome.children ? (outcome.children === 1 ? "tu hijo" : "tus hijos") : null].filter(Boolean) as string[];
   const list = who.length > 1 ? `${who.slice(0, -1).join(", ")} y ${who.at(-1)}` : who[0];
@@ -117,17 +118,17 @@ const people = (outcome: LotteryOutcome) => {
 
 /** The agent's last line before the second film. */
 export function lotteryFinish(outcome: LotteryOutcome) {
-  if (outcome.status === "no-country") return `Con tu país de nacimiento no se ha podido participar en las últimas ediciones. Revisa la lista oficial de este año: si tu país aparece, podrás inscribirte. ${NEXT_VIDEO}`;
-  if (outcome.status === "no-studies") return "Para participar se necesita la secundaria completa, o dos años de experiencia en un oficio que requiera formación. Si más adelante cumples uno de los dos, podrás inscribirte. En el siguiente vídeo te mostramos cómo funciona la inscripción.";
+  if (outcome.status === "no-country") return `Con tu país de nacimiento no se ha podido participar en las últimas ediciones. Revisa la lista oficial de este año: si tu país aparece, podrás inscribirte. ${PAUSE} ${NEXT_VIDEO}`;
+  if (outcome.status === "no-studies") return "Para participar se necesita la secundaria completa, o dos años de experiencia en un oficio que requiera formación. Si más adelante cumples uno de los dos, podrás inscribirte. Hoy la inscripción está en pausa por una decisión de una corte y no tiene fecha. En el siguiente vídeo te mostramos cómo funciona.";
   const { list, photos } = people(outcome);
   const passport = outcome.passport === false ? " Antes de inscribirte, saca tu pasaporte: sin pasaporte vigente no se puede." : "";
   const lead = outcome.status === "check" ? "Revisa que tu país esté en la lista oficial de este año. Si aparece, puedes participar." : "¡Puedes participar en la Lotería de Visas 2027!";
-  return `${lead} Prepara ${photos} (${list}), y tu pasaporte vigente.${passport} ${NEXT_VIDEO}`;
+  return `${lead} Prepara ${photos} (${list}), y tu pasaporte vigente.${passport} ${PAUSE} ${NEXT_VIDEO}`;
 }
 
 const SOURCES = [{ title: "Departamento de Estado · Programa de Visas de Diversidad (instrucciones oficiales)", url: DV_INSTRUCTIONS_URL }, { title: "Sitio oficial de inscripción y de resultados (Entrant Status Check)", url: DV_OFFICIAL_URL }];
 const PHOTO_RULES = "Cada foto: a color, cuadrada de 600 por 600 píxeles, de máximo 240 KB, tomada en los últimos seis meses, de frente, con fondo blanco y sin lentes.";
-const ALWAYS = "Solo cuenta la inscripción en dvprogram.state.gov; una sola por persona. Al terminar, guarda tu número de confirmación: con él consultas el resultado. Nadie puede garantizarte que salgas seleccionado. ContyGo no es el gobierno.";
+const ALWAYS = "Hoy la inscripción está en pausa y no tiene fecha: una corte de apelaciones suspendió el 29 de octubre de 2026 la orden que obligaba a abrirla. Si abre, solo cuenta la inscripción en dvprogram.state.gov; una sola por persona. Al terminar, guarda tu número de confirmación: con él consultas el resultado. Nadie puede garantizarte que salgas seleccionado. ContyGo no es el gobierno.";
 
 /** The orientation at the end («Ver mi orientación inicial»): whether the person can take part, and the checklist. */
 export function lotteryGuidance(outcome: LotteryOutcome): JourneyGuidance {

@@ -197,9 +197,9 @@ function Film({ film, title, caption, onEnded, autoPlay = false, immersive = fal
 /** Lotería de Visas (26-10-2026): the closing's two ways, instead of the contract's. */
 const LOTTERY_WAYS: ChooserCopy = {
   title: "¿Cómo quieres inscribirte?",
-  lead: "Lotería de Visas DV-2027. Elige el camino que prefieras.",
-  self: { title: "Hazlo tú gratis", text: "Con nuestra guía paso a paso te inscribes tú mismo en el sitio oficial del gobierno. Solo pagas el dólar de la inscripción.", href: LOTTERY_GUIDE_PATH },
-  advisor: { title: "Que ContyGo lo haga por ti", text: "Revisamos tus fotos y tus datos, enviamos tu inscripción y te entregamos tu número de confirmación. Te atendemos por WhatsApp." },
+  lead: "Lotería de Visas DV-2027. Hoy la inscripción está en pausa y sin fecha. Elige cómo prepararte.",
+  self: { title: "Hazlo tú gratis", text: "Con nuestra guía dejas todo listo y, si abre, te inscribes tú mismo en el sitio oficial. Solo pagarías el dólar de la inscripción.", href: LOTTERY_GUIDE_PATH },
+  advisor: { title: "Que ContyGo lo haga por ti", text: "Escríbenos por WhatsApp. Si la inscripción abre, revisamos tus fotos y tus datos, la enviamos y te entregamos tu número de confirmación." },
 };
 const fastSession = (): VisaIntakeSession => ({ watched: true, externalRef: newExternalRef(), answers: {}, messages: [], complete: false, field: null, quick: true });
 

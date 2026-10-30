@@ -53,13 +53,18 @@ const nextConfig = {
       terminos: ["terminos-y-condiciones", "terminos-condiciones"],
       privacidad: ["politica-de-privacidad", "privacidad-politica"],
     };
-    return Object.entries(map).flatMap(([canonical, aliases]) =>
-      aliases.map((alias) => ({
-        source: `/${alias}`,
-        destination: `/${canonical}`,
-        permanent: true,
-      })),
-    );
+    // La Lotería de Visas, fuera del sitio por ahora (30-10-2026): sus links van a la portada. Temporal, para poder volver.
+    const hidden = ["/loteria-de-visas", "/guia-loteria-de-visas"].map((source) => ({ source, destination: "/", permanent: false }));
+    return [
+      ...hidden,
+      ...Object.entries(map).flatMap(([canonical, aliases]) =>
+        aliases.map((alias) => ({
+          source: `/${alias}`,
+          destination: `/${canonical}`,
+          permanent: true,
+        })),
+      ),
+    ];
   },
 };
 

@@ -6,7 +6,7 @@
    la página siempre termina en el flujo de un servicio, nunca en un botón que solo sube.
    Fotogramas sacados de las propias guías (public/contygo/films, ffmpeg). */
 import Image from "next/image";
-import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { CONTYGO_SERVICES, VISIBLE_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import { formatVideoDuration } from "@/lib/contygo-presentation";
@@ -53,7 +53,7 @@ export default function Finale({ onOpen }: { onOpen: (service: ContygoService, e
           </button>
         </li>;
       })}</ul>
-      <a className={f.all} href="#servicios">Ver los {CONTYGO_SERVICES.length} servicios con precio publicado <Arrow /></a>
+      <a className={f.all} href="#servicios">Ver los {VISIBLE_SERVICES.length} servicios con precio publicado <Arrow /></a>
     </div>
   </section>;
 }

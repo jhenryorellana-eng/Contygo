@@ -1,9 +1,15 @@
 /* ============================================================
    Guía gratuita de la Lotería de Visas DV-2027 (26-10-2026): el contenido de /guia-loteria-de-visas.
-   Fuentes y fechas: docs/loteria-dv-2027.md. Todo se confirma con el anuncio oficial del Departamento de Estado
-   (a más tardar el 29-10-2026); la lista de países es la de la DV-2026 hasta entonces.
+   Fuentes y fechas: docs/loteria-dv-2027.md. Todo se confirma con el anuncio oficial del Departamento de Estado, que
+   el 30-10-2026 aún no salía (la orden que lo exigía está suspendida); la lista de países es la de la DV-2026 hasta entonces.
    ============================================================ */
-export const LOTTERY_GUIDE_UPDATED = "28 de octubre de 2026";
+export const LOTTERY_GUIDE_UPDATED = "30 de octubre de 2026";
+/** 29-10-2026: la Corte de Apelaciones del Noveno Circuito suspendió la orden que obligaba a abrir la inscripción el 1 de
+ *  noviembre (docs/loteria-dv-2027.md). Mientras sea true la página no promete fechas ni cuenta atrás. */
+export const LOTTERY_PAUSED = true;
+export const LOTTERY_PAUSE_NOTE = "El 29 de octubre de 2026 una corte de apelaciones suspendió la orden que obligaba a abrir la inscripción el 1 de noviembre. Hoy no se aceptan inscripciones y no hay fecha nueva.";
+/** Over the lottery's films, which were recorded before the suspension and still mention the dates. */
+export const LOTTERY_FILM_NOTICE = "Aviso: la inscripción está en pausa y no tiene fecha. Las fechas que se mencionan en este vídeo ya no aplican.";
 /** The opening the court ordered (at the latest) and the results deadline, as dates (yyyy-mm-dd). */
 export const LOTTERY_OPENS = "2026-11-01";
 export const LOTTERY_RESULTS = "2026-12-03";
@@ -57,6 +63,7 @@ export const LOTTERY_AFTER = [
 ];
 
 export const LOTTERY_SCAMS = [
+  "Hoy nadie puede inscribirte: la inscripción está en pausa. Si te cobran por hacerlo ahora, desconfía.",
   "La inscripción oficial solo se hace en dvprogram.state.gov y cuesta 1 dólar.",
   "Nadie puede garantizarte que salgas seleccionado ni «aumentar tus posibilidades».",
   "Desconfía de correos o mensajes que digan «ganaste»: el gobierno no avisa así.",

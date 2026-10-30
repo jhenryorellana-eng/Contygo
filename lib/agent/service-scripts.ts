@@ -277,6 +277,7 @@ const SCRIPTS: Readonly<Record<string, ServiceScript>> = {
     questions: [],
     topics: ["quién puede participar", "qué foto se necesita", "cómo saber si salió seleccionado"],
     doubts: [
+      { question: "¿Cuándo abre la inscripción?", answer: "Por ahora no tiene fecha. El 29 de octubre una corte de apelaciones suspendió la orden que obligaba a abrirla el 1 de noviembre, así que hoy no se aceptan inscripciones. Puedes dejar tus documentos listos y, si abre, se confirmará en dvprogram.state.gov." },
       { question: "¿Puedo participar si nací en Perú?", answer: "Sí: Perú pudo participar en la edición anterior. Cuenta el país donde naciste, y la lista oficial de la DV-2027 la confirma el Departamento de Estado." },
       { question: "¿Qué foto necesito?", answer: "Una foto reciente de cada persona: a color, cuadrada de 600 por 600 píxeles, de máximo 240 KB, de los últimos seis meses, de frente, con fondo blanco y sin lentes." },
       { question: "¿Tengo que incluir a mis hijos aunque no vayan a viajar?", answer: "Sí. Hay que incluir a tu cónyuge y a todos tus hijos solteros menores de 21, también adoptados e hijastros, aunque no vayan a viajar. Omitir a alguien descalifica." },

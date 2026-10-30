@@ -58,7 +58,7 @@ const CLOSING_LINES:Record<Exclude<ClosingVariant,null>,string[]>={
 };
 export const closingLines=(serviceId:string,variant:ClosingVariant=null)=>
   variant?CLOSING_LINES[variant]
-  :serviceId==="loteria-dv-2027"?["Tu inscripción puede empezar hoy:","hazla tú mismo, gratis,","o deja que ContyGo","la haga por ti.","Tu historia sigue. ContyGo."]
+  :serviceId==="loteria-dv-2027"?["Hoy la inscripción está en pausa.","Si abre, hazla tú mismo, gratis,","o deja que ContyGo","la haga por ti.","Tu historia sigue. ContyGo."]
   :[serviceId==="evaluacion-asilo"?"Conoce tu evaluación,":"Revisa tu contrato,","conoce nuestro compromiso","y, cuando estés listo,","avancemos juntos.","Tu historia sigue. ContyGo."];
 export const closingScript = (name:string,serviceId="visa-juvenil",variant:ClosingVariant=null) => `${name ? `${name}, tu` : "Tu"} próximo paso merece claridad y compañía. ${closingLines(serviceId,variant).join(" ")} Toca ${closingAction(serviceId,variant)} y descubre cómo vamos a acompañarte. Tu siguiente paso empieza aquí.`;
 export type ClosingVoice = ReturnType<typeof useVisaVoice>;

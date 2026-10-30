@@ -105,6 +105,29 @@ test('lo que sabe el bot no habla de contrato ni de dinero; una duda de costos t
   assert.ok(modelCalls[0].config.systemInstruction.includes(`reply es exactamente «${lottery.LOTTERY_COST_REPLY}»`), 'la regla de costos de la lotería, no la del contrato');
 });
 
+test('fuera del sitio: oculta del catálogo visible, y sus links van a la portada sin redirección permanente', async () => {
+  const { VISIBLE_SERVICES } = require('../lib/contygo-catalog.ts');
+  assert.ok(!VISIBLE_SERVICES.some(item => item.id === lottery.LOTTERY_SERVICE));
+  assert.equal(VISIBLE_SERVICES.length, 14);
+  const { default: config } = await import(require('node:url').pathToFileURL(require('node:path').join(__dirname, '..', 'next.config.mjs')).href);
+  const redirects = await config.redirects();
+  for (const source of ['/loteria-de-visas', '/guia-loteria-de-visas']) {
+    const rule = redirects.find(item => item.source === source);
+    assert.equal(rule.destination, '/');
+    assert.equal(rule.permanent, false, 'temporal: un navegador no debe recordarla si el servicio vuelve');
+  }
+});
+
+// 29-10-2026: el Noveno Circuito suspendió la orden; nada puede prometer la apertura ni una fecha.
+test('con la inscripción en pausa, el cierre y el catálogo no prometen apertura ni fechas', () => {
+  const closing = closingLines('loteria-dv-2027').join(' ');
+  assert.match(closing, /en pausa/);
+  assert.doesNotMatch(closing, /puede empezar hoy/);
+  const service = CONTYGO_SERVICES.find(item => item.id === lottery.LOTTERY_SERVICE);
+  assert.match(service.season.dates, /en pausa/);
+  assert.doesNotMatch(`${service.season.dates} ${service.season.headline}`, /noviembre|diciembre/);
+});
+
 test('el cierre abre los dos caminos: «Elegir cómo inscribirme», gratis o con ContyGo', () => {
   assert.equal(closingVariant('loteria-dv-2027', null, null, null, null), null);
   assert.equal(closingAction('loteria-dv-2027'), 'Elegir cómo inscribirme');

@@ -21,6 +21,7 @@ import type { HearingOutcome } from "@/lib/agent/hearing-intake";
 import { newExternalRef, pageAttribution } from "@/lib/contygo-api/browser";
 import { CALL_FILLERS, closingSpeech, doubtSpeech } from "@/lib/agent/call-time";
 import { useLeadCaptcha } from "./useLeadCaptcha";
+import { LOTTERY_FILM_NOTICE, LOTTERY_PAUSED } from "@/lib/loteria-guide";
 import { SKIPPED, withAnswer, type SummaryItem } from "@/lib/agent/answer-summary";
 import shared from "../rebuild/ServiceIntroFilm.module.css";
 import BrandLoader from "../rebuild/BrandLoader";
@@ -660,7 +661,7 @@ export default function VisaJuvenilExperience({ film, nextFilm, initialSession, 
         {filmWaiting&&!videoFailed&&<BrandLoader label="Cargando el vídeo"/>}
       </div>
       {film.captions&&<div className={s.filmCaptions} data-film-captions><ExternalVideoCaptions videoRef={videoRef} src={film.captions}/></div>}
-      {film.src&&phase==="watch"&&!videoFailed&&<FilmControls video={videoRef} onSkip={()=>{voice.unlock();finishVideo();}}/>}
+      {film.src&&phase==="watch"&&!videoFailed&&<FilmControls video={videoRef} onSkip={()=>{voice.unlock();finishVideo();}} notice={LOTTERY_PAUSED&&serviceId==="loteria-dv-2027"?LOTTERY_FILM_NOTICE:undefined}/>}
       {autoplayBlocked&&!videoFailed&&phase==="watch"&&<button className={s.startVideo} type="button" onClick={()=>{voice.unlock();void videoRef.current?.play().catch(()=>setAutoplayBlocked(true));}}><Icon name="play"/>{(videoRef.current?.currentTime??0)>0?"Continuar vídeo":"Comenzar"}</button>}
       {videoFailed&&phase==="watch"&&<div className={s.videoError}><p>No se pudo cargar el vídeo.</p><button type="button" onClick={()=>{setVideoFailed(false);videoRef.current?.load();void videoRef.current?.play().catch(()=>setAutoplayBlocked(true));}}>Reintentar</button><button type="button" onClick={()=>{voice.unlock();finishVideo();}}>Continuar a las preguntas</button></div>}
       {!film.src&&phase==="watch"&&<div className={shared.notice}><img src="/contygo/brand/logo-dark.png" alt="ContyGo"/><h3>{serviceName}</h3><p>La presentación en vídeo estará disponible próximamente. Puedes comenzar con unas preguntas breves sobre tu servicio.</p><button type="button" onClick={finishVideo}>Comenzar <span aria-hidden="true">→</span></button></div>}

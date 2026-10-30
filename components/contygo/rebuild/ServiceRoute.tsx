@@ -159,7 +159,7 @@ export default function ServiceRoute({ serviceName, art, family, filmSeconds, fi
       </span> : <img className={s.mark} src="/contygo/brand/symbol-dark.png" alt="" draggable={false} />}
       <p className={s.service}>{serviceName}</p>
       <h2 id={titleId} ref={titleRef} tabIndex={-1} className={s.title}>Tu proceso en {stages.length} pasos</h2>
-      <p className={s.lead}>Unos {total} minutos. {lottery ? "Gratis y sin compromiso." : "Firmas solo si estás de acuerdo."}</p>
+      <p className={s.lead}>Unos {total} minutos. {lottery ? "Gratis. Hoy la inscripción está en pausa y sin fecha." : "Firmas solo si estás de acuerdo."}</p>
 
       <div className={s.trip} style={{ "--count": stages.length } as CSSProperties}>
         <svg className={s.road} viewBox="0 0 400 48" preserveAspectRatio="none" aria-hidden="true">

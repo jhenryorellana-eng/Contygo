@@ -5,9 +5,10 @@
    pedestal de papel y laureles de «favorito». Encima, los de temporada (28-10-2026) en su propia tarjeta cálida,
    con sus fechas; debajo, el resto del catálogo en dos grupos: Inmigración, e Impuestos y negocios.
    Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla.
-   En el celular los favoritos avanzan solos y llevan flechas (StarCarousel). */
+   En el celular los favoritos se eligen por su nombre y la tarjeta de delante sigue al dedo (StarCarousel); en
+   escritorio, la que tiene el puntero se enciende, su escultura lo mira y las demás se apagan un poco (30-10-2026). */
 import Image from "next/image";
-import { useRef } from "react";
+import { useRef, type PointerEvent } from "react";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
@@ -16,7 +17,7 @@ import ThreadRail from "./ThreadRail";
 import StarCarousel from "./StarCarousel";
 import s from "./ServiceShowcase.module.css";
 
-export type Star = { id: string; name: string; label: string; copy: string };
+export type Star = { id: string; name: string; short: string; label: string; copy: string };
 /** A group of the catalog: its name, a short line and the category sculptures that head it (public/contygo/v8). */
 export type CatalogGroup = { title: string; note: string; art: string[]; items: ContygoService[] };
 /** `warm`: the person reaches for a card (touch, hover, focus) and its window starts loading before the tap ends. */
@@ -53,6 +54,15 @@ export default function ServiceShowcase({ seasonal, stars, groups, open, warm }:
   const reach = (item: ContygoService) => ({ onPointerEnter: () => warm(item), onPointerDown: () => warm(item), onFocus: () => warm(item) });
   const label = (item: ContygoService, star = false) => { const from = fromPriceLabel(prices, item.slug); return `Conocer ${item.name}${star ? ", uno de los más solicitados" : ""}${item.free ? ", gratis" : from ? `, desde ${from}` : ""}`; };
 
+  // The mouse only: the sculpture turns a little toward the pointer (--tilt-x and --tilt-y, from -1 to 1).
+  const lean = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    const box = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty("--tilt-x", (((event.clientX - box.left) / box.width) * 2 - 1).toFixed(3));
+    event.currentTarget.style.setProperty("--tilt-y", (((event.clientY - box.top) / box.height) * 2 - 1).toFixed(3));
+  };
+  const rest = (event: PointerEvent<HTMLElement>) => { event.currentTarget.style.removeProperty("--tilt-x"); event.currentTarget.style.removeProperty("--tilt-y"); };
+
   return <div className={s.showcase}>
     <div className={s.stage} data-anim>
       {seasonal.length > 0 && <div className={s.season} data-reveal>{seasonal.map(item => <button key={item.id} type="button" className={s.seasonCard} data-service={item.id} data-react="card" onClick={e => open(item, e.currentTarget)} {...reach(item)} aria-label={`${label(item)}. De temporada: ${item.season?.dates ?? ""}`}>
@@ -73,9 +83,10 @@ export default function ServiceShowcase({ seasonal, stars, groups, open, warm }:
         <h2>Los favoritos<br /><em>de nuestras familias.</em></h2>
         <p>{COUNT[stars.length] ?? "Los servicios"} que más nos piden. Cada uno con su guía y su precio a la vista.</p>
       </div>
+      <StarCarousel track={row} labels={stars.map(star => star.short)} onFront={index => warm(find(stars[index].id))} />
       <div ref={row} className={s.stageRow} data-count={stars.length}>{stars.map(star => {
         const item = find(star.id);
-        return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} {...reach(item)} aria-label={label(item, true)}>
+        return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} onPointerMove={lean} onPointerLeave={rest} {...reach(item)} aria-label={label(item, true)}>
           <span className={s.spot} aria-hidden="true" />
           <span className={s.float} data-flight-art><span data-loop><Image src={art(star.id)} alt="" fill sizes="(max-width:760px) 70vw, 26vw" /></span></span>
           <span className={s.pedestal} aria-hidden="true" />
@@ -88,7 +99,6 @@ export default function ServiceShowcase({ seasonal, stars, groups, open, warm }:
         </button>;
       })}</div>
       <ThreadRail track={row} labels={stars.map(star => star.name)} />
-      <StarCarousel track={row} count={stars.length} />
     </div>
     <div className={s.listHead} data-reveal><h3>Todo nuestro <em>catálogo.</em></h3><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
     {groups.map(group => <section key={group.title} className={s.group} aria-label={group.title}>

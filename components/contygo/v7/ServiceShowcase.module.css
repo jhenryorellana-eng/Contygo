@@ -83,8 +83,25 @@
   .stageRow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-inline:-22px;padding:6px 22px 16px 36px;scroll-padding-left:36px}
   .stageRow::-webkit-scrollbar{display:none}
   .pedestalCard,.stageRow[data-count="5"]>:nth-child(5){flex:0 0 80%;width:auto;scroll-snap-align:start}
-  .spot{height:360px;top:-50px}
-  .float{width:80%}
+  /* A whole card fits a phone screen under the names: smaller stage, name and price together, one clear button. */
+  .stageHead{margin-bottom:18px}
+  .stageHead p{display:none}
+  .stageRow{padding-top:0}
+  .pedestalCard{padding-top:8px;transform:scale(calc(.86 + .14*var(--focus,1)));opacity:calc(.38 + .62*var(--focus,1));transform-origin:50% 40%}
+  .spot{height:250px;top:-20px;opacity:var(--focus,1)}
+  .float{width:58%;margin-bottom:-10%;transform:translateY(calc((1 - var(--focus,1))*20px))}
+  .pedestalCard[data-front=false] .float>span{animation-play-state:paused}
+  .pedestal{width:50%;height:46px}
+  .pedestal:before{height:24px}
+  .pedestal:after{top:12px}
+  .rosette{display:none}
+  .stageCopy{width:100%;margin-top:12px;gap:4px}
+  .stageCopy>strong{font-size:26px}
+  .stageLabel{font-size:15.5px}
+  .stageFoot{width:100%;flex-wrap:nowrap;justify-content:space-between;gap:12px;padding-top:12px}
+  .stagePrice{flex:none;text-align:left}
+  .stagePlay{flex:1;justify-content:center;min-height:50px;padding:0 12px;border-color:#25d366;background:#25d366;color:#061b3d;font-size:15px;white-space:nowrap}
+  .showcase .stagePlay svg{color:#061b3d}
   .listHead{display:block;margin:64px 0 22px}.listHead h3{margin-bottom:6px}
   .shelf{grid-template-columns:1fr;gap:12px}
   .shelfItem{grid-template-columns:34% 1fr auto;gap:12px;padding:8px 14px 8px 8px;border-radius:20px}
@@ -167,7 +184,21 @@
   .pedestalCard{-webkit-tap-highlight-color:transparent}
   .pedestalCard:active .float{transform:scale(.96);transition:transform .16s ease-out}
 }
+/* With a mouse: the card under the pointer lights up, its sculpture rises and turns toward it, and the rest step back. */
+.pedestalCard:focus-visible{outline:3px solid #25d366;outline-offset:6px;border-radius:24px}
+@media(hover:hover) and (pointer:fine) and (min-width:761px){
+  .pedestalCard{transition:opacity .35s}
+  .stageRow:hover .pedestalCard:not(:hover){opacity:.72}
+  .spot{opacity:.65;transition:opacity .35s}
+  .pedestalCard:hover .spot{opacity:1}
+  .float{transition:transform .5s var(--unfold);transform:perspective(800px) rotateX(calc(var(--tilt-y,0)*-6deg)) rotateY(calc(var(--tilt-x,0)*9deg))}
+  .pedestalCard:hover .float{transform:perspective(800px) translateY(-14px) rotateX(calc(var(--tilt-y,0)*-6deg)) rotateY(calc(var(--tilt-x,0)*9deg))}
+  .pedestal:before{transition:box-shadow .35s}
+  .pedestalCard:hover .pedestal:before{box-shadow:0 0 0 2px #25d366,0 0 54px 2px #25d366b3}
+}
 @media(prefers-reduced-motion:reduce){
+  .pedestalCard{transform:none!important;opacity:1!important}
+  .float{transform:none!important}
   .float>span,.seasonArt>span{animation:none}
   :global(main[data-thread-ready=true]) .shelfItem:not([data-lit=true]) .shelfArt img{opacity:1;transform:none}
 }

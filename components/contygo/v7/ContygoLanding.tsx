@@ -41,11 +41,11 @@ const art = (name: string) => `/contygo/v8/${name}.webp`;
 // on their own stage («Vitrina», chosen by the owner among three concepts). Above them, the seasonal services
 // (28-10-2026); below, the rest of the catalog in two groups.
 const featured: Star[] = [
-  { id: "visa-juvenil", name: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
-  { id: "apelacion", name: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
-  { id: "reforzar-asilo", name: "Reforzamiento de Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
-  { id: "i-485", name: "Ajuste de Estatus", label: "Después del I-360, la residencia", copy: "Preparamos la solicitud de residencia del menor con I-360 aprobado, atentos a su fecha de prioridad." },
-  { id: "preparacion-audiencia", name: "Preparación de Audiencia", label: "Llega a tu audiencia con calma", copy: "Una sesión de 45 minutos con Henry, en español, para repasar ese día y practicar tus respuestas." },
+  { id: "visa-juvenil", name: "Visa Juvenil", short: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
+  { id: "apelacion", name: "Apelación", short: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
+  { id: "reforzar-asilo", name: "Reforzamiento de Asilo", short: "Reforzar Asilo", label: "Tu historia, con más respaldo", copy: "Revisamos y fortalecemos el respaldo documental de tu caso, para que llegue completo y bien organizado." },
+  { id: "i-485", name: "Ajuste de Estatus", short: "Ajuste de Estatus", label: "Después del I-360, la residencia", copy: "Preparamos la solicitud de residencia del menor con I-360 aprobado, atentos a su fecha de prioridad." },
+  { id: "preparacion-audiencia", name: "Preparación de Audiencia", short: "Audiencia", label: "Llega a tu audiencia con calma", copy: "Una sesión de 45 minutos con Henry, en español, para repasar ese día y practicar tus respuestas." },
 ];
 /** Seasonal services (the lottery, 28-10-2026): their own card above the stars while the window is open. */
 const seasonal = VISIBLE_SERVICES.filter(item => item.season);

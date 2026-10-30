@@ -1,11 +1,14 @@
-/* Flechas de los favoritos (solo celular). Ver StarCarousel.tsx. Botones de 52 px: fáciles de tocar. */
-.controls{display:none}
+/* Los nombres de los favoritos (solo celular). Ver StarCarousel.tsx. Botones de 44 px: fáciles de tocar. */
+.chips{display:none}
 @media(max-width:760px){
-  .controls{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:10px}
-  .arrow{display:grid;place-items:center;width:52px;height:52px;padding:0;border-radius:50%;border:1.5px solid #ffffff4d;background:#ffffff0f;color:#fff;transition:background .25s,border-color .25s,color .25s,opacity .25s}
-  .arrow svg{width:24px!important;height:24px!important}
-  .arrow:not(:disabled):active{background:#25d366;border-color:#25d366;color:#061b3d}
-  .arrow:disabled{opacity:.3;cursor:default}
-  .arrow:focus-visible{outline:3px solid #25d366;outline-offset:3px}
-  .count{min-width:64px;text-align:center;font-size:17px;font-weight:750;color:#e4ebf5;font-variant-numeric:tabular-nums}
+  .chips{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:0 0 14px}
+  .chips .chip{position:relative;overflow:hidden;min-height:44px;padding:0 13px;border:0;border-radius:40px;background:#ffffff14;color:#e4ebf5;font:750 14px/1 var(--font-contygo-body),sans-serif;box-shadow:inset 0 0 0 1.5px #ffffff33;transition:background-color .25s,color .25s,transform .16s ease-out;-webkit-tap-highlight-color:transparent}
+  .chip span{position:relative;z-index:1}
+  .chips .chip:active{transform:scale(.95)}
+  .chips .chip[data-current=true]{background:#25d366;color:#061b3d;box-shadow:none}
+  /* While it moves on its own: white, filling with green until the next one. */
+  .chips .chip[data-auto=true]{background:#fff}
+  .chip i{position:absolute;inset:0;background:#25d366;transform-origin:0 50%;animation:fill linear both}
+  .chips .chip:focus-visible{outline:3px solid #25d366;outline-offset:3px}
 }
+@keyframes fill{from{transform:scaleX(0)}to{transform:none}}

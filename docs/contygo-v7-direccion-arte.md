@@ -610,3 +610,17 @@ El dueño aprobó las cinco mejoras; el celular manda.
 - **Vídeo 1 sin póster.** Todos los vídeos 1 empiezan en el marino de la marca y su marco ya es marino mientras carga. Así no aparece una foto entre el pliegue y el vídeo.
 - **En el celular**, el botón queda fijo abajo mientras la ruta se desplaza.
 
+## 30 oct 2026 · Los favoritos responden a la mano
+
+**Por qué.** El dueño pidió mejorar la sensación de uso de los más solicitados. En el celular la tarjeta era tan alta que el nombre quedaba fuera de la pantalla, «1 de 5» no decía qué más había, y tocar una tarjeta de lado la abría sin querer.
+
+- **Celular** (`StarCarousel`):
+  - los cinco por su nombre, arriba, en lugar de flechas y «1 de 5»;
+  - el nombre se llena de verde durante los 5 s que le quedan a la tarjeta cuando avanzan solas;
+  - la tarjeta de delante sigue al dedo: crece y se enciende, y las demás se apagan (`--focus`, solo `transform` y opacidad);
+  - tocar una de atrás la trae delante; solo la de delante abre el servicio;
+  - la tarjeta entera cabe en una pantalla, con el precio y un botón verde;
+  - la que llega delante empieza a cargar su ventana.
+- **Escritorio:** la tarjeta bajo el puntero se enciende, su escultura sube y gira hacia él, y las demás se apagan un poco.
+- Con «reducir movimiento» no hay avance solo, ni escala, ni giro.
+

@@ -1,0 +1,40 @@
+/* El paso a ContyGo Club: ver ClubDoorway.tsx. Vive en <body> (portal), fuera de los estilos de la página.
+   Los tiempos van en milisegundos desde el toque; la silla se ocupa a los 1000 y se amanece a los 1450. */
+.doorway{--navy:#061b3d;--green:#25d366;--ivory:#f6f3ea;--size:min(70vw,44vh,340px);--seat:calc(var(--size)*.17);position:fixed;inset:0;z-index:2147483000;overflow:hidden;font-family:var(--font-contygo-body),system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+.doorway *{box-sizing:border-box}
+.wave,.night,.dawn{position:absolute;inset:0;display:block}
+.wave{background:var(--green);animation:open .62s cubic-bezier(.6,0,.25,1) both}
+.night{background:radial-gradient(70% 55% at 50% 42%,#123468,var(--navy) 72%);animation:open .62s cubic-bezier(.6,0,.25,1) .11s both}
+.stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(18px,4vh,34px);padding:24px}
+.table{--r:calc(var(--size)/2 - var(--seat)/2);position:relative;flex:none;width:var(--size);height:var(--size)}
+/* The round table and, on it, the brand. */
+.top{position:absolute;inset:23%;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fffdf7,#efe6d2);box-shadow:0 26px 50px -22px #000000b3,inset 0 -6px 14px -8px #8a6d3b66;animation:rise .46s cubic-bezier(.2,1.25,.4,1) .4s both}
+.top img{width:52%;height:auto;animation:rise .4s cubic-bezier(.2,1.4,.4,1) .55s both}
+.thread{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform:rotate(90deg);filter:drop-shadow(0 0 5px #25d36699)}
+.thread circle{fill:none;stroke:var(--green);stroke-width:.9;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw .62s cubic-bezier(.45,0,.3,1) .44s both}
+.seat{position:absolute;left:50%;top:50%;width:var(--seat);height:var(--seat);margin:calc(var(--seat)/-2) 0 0 calc(var(--seat)/-2);transform:rotate(var(--a)) translateY(calc(var(--r)*-1)) rotate(calc(var(--a)*-1))}
+.person{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;overflow:hidden;background:#fffdf7;color:var(--navy);box-shadow:0 0 0 3px var(--navy),0 10px 18px -8px #000000b3;animation:sit .42s cubic-bezier(.2,1.5,.4,1) calc(.46s + var(--i)*50ms) both}
+.person[data-tint=mint]{background:#c9f4da}
+.person svg{display:block;width:74%;height:74%;margin-top:18%}
+.free{display:block;width:100%;height:100%;border-radius:50%;border:2px dashed #25d366b3;background:var(--navy);animation:fade .3s ease-out .5s both}
+/* The «+» from the button: it lands on the free seat and becomes a check. */
+.flyer{position:absolute;display:grid;place-items:center;border-radius:50%;background:var(--green);color:var(--navy);box-shadow:0 0 0 3px var(--navy),0 12px 24px -8px #25d366cc;will-change:transform}
+.plus{grid-area:1/1;font:800 calc(var(--seat)*.6)/1 var(--font-contygo-heading),sans-serif;animation:plusOut .16s ease-in .96s both}
+.check{grid-area:1/1;width:66%;height:66%;overflow:visible}
+.check path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .26s ease-out 1s both}
+.ripple{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2px var(--green);opacity:0;animation:ripple .7s ease-out 1s both}
+.words{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0;text-align:center;color:#fff;animation:rise2 .5s ease-out .62s both}
+.words strong{font:800 clamp(26px,6.6vw,38px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em}
+.words span{font-size:clamp(15px,3.8vw,17px);font-weight:600;color:#ffffffc7}
+/* Dawn: the Club's own ivory, so its page appears on the same colour. */
+.dawn{display:grid;place-items:center;background:var(--ivory);animation:dawn .42s cubic-bezier(.6,0,.3,1) 1.45s both}
+.arrival{opacity:0;color:var(--navy);animation:fade .3s ease-out 2.3s both}
+@keyframes open{from{clip-path:circle(0 at var(--x) var(--y))}to{clip-path:circle(var(--far,150vmax) at var(--x) var(--y))}}
+@keyframes dawn{from{clip-path:circle(0 at var(--dawn-x,50%) var(--dawn-y,50%))}to{clip-path:circle(var(--dawn-far,150vmax) at var(--dawn-x,50%) var(--dawn-y,50%))}}
+@keyframes rise{from{opacity:0;transform:scale(.55)}}
+@keyframes rise2{from{opacity:0;transform:translateY(12px)}}
+@keyframes sit{from{opacity:0;transform:scale(.2) translateY(14px)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes plusOut{to{opacity:0;transform:scale(.4) rotate(90deg)}}
+@keyframes ripple{0%{opacity:.9;transform:none}100%{opacity:0;transform:scale(2.3)}}

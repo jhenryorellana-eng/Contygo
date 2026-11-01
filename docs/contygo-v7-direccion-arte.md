@@ -624,3 +624,18 @@ El dueño aprobó las cinco mejoras; el celular manda.
 - **Escritorio:** la tarjeta bajo el puntero se enciende, su escultura sube y gira hacia él, y las demás se apagan un poco.
 - Con «reducir movimiento» no hay avance solo, ni escala, ni giro.
 
+## 31 oct 2026 · Los botones del hero y la puerta a ContyGo Club
+
+**Por qué.** El dueño pidió un botón a la nueva comunidad y mejores nombres.
+
+- **«Elige tu trámite»** sustituye a «Encontrar mi servicio» (hero y barra inferior del celular) y «Elegir trámite» a «Mi servicio» (cabecera). «Trámite» es la palabra de la portada y la que usa el cliente.
+- **«Únete a ContyGo Club»** (`CommunityButton`): dos personas y un asiento libre con un «+» que late, y una luz que recorre el borde. Sin caras ni cifras de miembros.
+- **El link** va en `COMMUNITY_URL` (`lib/config.ts`): hoy `contygo-club.vercel.app`; cuando funcione `club.contygo.app`, se cambia ahí.
+- **El paso al Club: tu lugar en la mesa** (`ClubDoorway`).
+  1. Desde el asiento libre del botón se abre una ola verde y, detrás, la noche.
+  2. Aparece una mesa redonda con la marca, las personas llegan a sus sillas y el hilo verde las une.
+  3. El «+» vuela a la silla libre y se vuelve un visto (1 s).
+  4. Amanece en el marfil del Club (`#f6f3ea`, su fondo) y el navegador ya está yendo allí (1,45 s), para que el cambio de sitio no se note. Si tarda, aparece `BrandLoader`.
+  - Sigue siendo un enlace: abrir en otra pestaña, sin JavaScript o con «reducir movimiento» va directo.
+  - Al volver con «Atrás» la transición desaparece (`pageshow`).
+

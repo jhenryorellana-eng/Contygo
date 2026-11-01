@@ -18,6 +18,7 @@ import RegistryStage from "./RegistryStage";
 import BrandLoader from "../rebuild/BrandLoader";
 import type { ServiceOrigin } from "../rebuild/ServiceCinemaDialog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
+import CommunityButton from "./CommunityButton";
 import ServiceShowcase, { type Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
@@ -252,7 +253,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         <div className={s.headerActions}>
           <button className={s.themeToggle} type="button" onPointerEnter={preloadOtherTheme} onTouchStart={preloadOtherTheme} onFocus={preloadOtherTheme} onClick={event => { const next: Theme = theme === "light" ? "dark" : "light"; void dropTheme(event.currentTarget, next, () => flushSync(() => setTheme(next))); }} aria-label={`Activar modo ${theme === "light" ? "oscuro" : "claro"}`} aria-pressed={theme === "dark"}><span key={theme} className={s.toggleIcon}><Icon kind={theme === "light" ? "moon" : "sun"} /></span></button>
           <a className={s.login} href="https://contygo.app/entrar">Mi cuenta <Icon /></a>
-          <a className={s.headerCta} href="#servicios" tabIndex={headerCta ? 0 : -1} aria-hidden={!headerCta}>Mi servicio <Icon /></a>
+          <a className={s.headerCta} href="#servicios" tabIndex={headerCta ? 0 : -1} aria-hidden={!headerCta}>Elegir trámite <Icon /></a>
         </div>
       </div>
     </header>
@@ -262,7 +263,10 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <span className={s.eyebrow}><i /> Personas + tecnología. Contigo.</span>
           <h1>Tu historia sigue.<br />El siguiente paso,<br /><em>ContyGo.</em></h1>
           <p className={s.lead}>Tu trámite, más claro. Preparamos tus documentos contigo y te acompañamos paso a paso, desde una sola plataforma.</p>
-          <a ref={heroCta} className={s.primary} href="#servicios">Encontrar mi servicio <span><Icon /></span></a>
+          <div className={s.heroActions}>
+            <a ref={heroCta} className={s.primary} href="#servicios">Elige tu trámite <span><Icon /></span></a>
+            <CommunityButton />
+          </div>
           {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
           <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>
         </div>
@@ -348,7 +352,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     <footer className={s.footer}><div><a href="#inicio" className={s.logo}><Image src={logo} width={3000} height={849} alt="ContyGo" sizes="150px" /></a><span>Siempre contigo. Paso a paso.</span></div><p>El consultor no es abogado y no presta servicios legales. ContyGo ofrece asistencia administrativa y tecnológica. No garantiza decisiones ni tiempos de las autoridades.</p><div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a><a href="https://contygo.app/entrar">Mi cuenta <span aria-hidden="true">↗</span></a></div></footer>
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
-      <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Encontrar mi servicio</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
+      <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
     </div>
     {linked && <div className={s.linkVeil} data-open={Boolean(service)} aria-hidden="true" onTransitionEnd={event => { if (event.target === event.currentTarget && !service) setLinked(false); }}>
       <span><Image src="/contygo/brand/symbol-dark.png" alt="" width={1024} height={1024} sizes="72px" priority /></span>

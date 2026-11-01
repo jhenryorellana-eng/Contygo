@@ -60,6 +60,14 @@ test('ningún link queda tapado por un redirect o una ruta fija, y el slug de co
   }
 });
 
+test('el botón de ContyGo Club lleva al Club por https, y se distingue de otros orígenes', () => {
+  const { COMMUNITY_URL } = require('../lib/config.ts');
+  const url = new URL(COMMUNITY_URL);
+  assert.equal(url.protocol, 'https:');
+  assert.equal(url.searchParams.get('utm_source'), 'landing');
+  assert.equal(url.searchParams.get('utm_medium'), 'hero');
+});
+
 test('el link abre la landing con su servicio: ese y no otro', () => {
   for (const service of CONTYGO_SERVICES) {
     const element = page.default({ params: { slug: getServiceGuideUrl(service.id).slice(1) } });

@@ -21,6 +21,12 @@ export const WHATSAPP_DIGITS = RAW_WHATSAPP.replace(/[^0-9]/g, "");
 export const CRM_WHATSAPP_DISPLAY = RAW_CRM_WHATSAPP;
 export const CRM_WHATSAPP_DIGITS = RAW_CRM_WHATSAPP.replace(/[^0-9]/g, "");
 
+/**
+ * La comunidad, ContyGo Club (31-10-2026): otro proyecto, enlazado desde el hero. Se abre en la misma pestaña, para que se
+ * sienta un solo recorrido. Cuando club.contygo.app funcione, se cambia aquí. utm_medium=hero lo distingue de las tarjetas.
+ */
+export const COMMUNITY_URL = "https://contygo-club.vercel.app/?utm_source=landing&utm_medium=hero";
+
 /** Video de fallback general (cuando un servicio no define el suyo). */
 export const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
 

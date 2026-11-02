@@ -62,6 +62,7 @@ test('ningún link queda tapado por un redirect o una ruta fija, y el slug de co
 
 test('el botón de ContyGo Club lleva al Club por https, y se distingue de otros orígenes', () => {
   const { COMMUNITY_URL } = require('../lib/config.ts');
+  if (COMMUNITY_URL === null) return; // Oculto por ahora (02-11-2026).
   const url = new URL(COMMUNITY_URL);
   assert.equal(url.protocol, 'https:');
   assert.equal(url.searchParams.get('utm_source'), 'landing');

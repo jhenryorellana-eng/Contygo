@@ -25,8 +25,8 @@ export default function CommunityButton() {
   const seat = useRef<HTMLElement>(null);
 
   // The Club opens sooner: the connection from the start, its page as the hand reaches for the button.
-  useEffect(() => { hint("preconnect", new URL(COMMUNITY_URL).origin); }, []);
-  const warm = () => hint("prefetch", COMMUNITY_URL);
+  useEffect(() => { if (COMMUNITY_URL) hint("preconnect", new URL(COMMUNITY_URL).origin); }, []);
+  const warm = () => { if (COMMUNITY_URL) hint("prefetch", COMMUNITY_URL); };
   // Coming back with «Atrás» restores this page as it was left: the transition must not still be on screen.
   useEffect(() => {
     const restored = (event: PageTransitionEvent) => { if (event.persisted) setOrigin(null); };
@@ -45,6 +45,8 @@ export default function CommunityButton() {
     setOrigin({ x: box.left + box.width / 2, y: box.top + box.height / 2, size: box.width });
   }
 
+  // Without a link (hidden for now, lib/config.ts) there is no button.
+  if (!COMMUNITY_URL) return null;
   return <>
     <a className={s.community} href={COMMUNITY_URL} onClick={enter} onPointerEnter={warm} onPointerDown={warm} onFocus={warm}>
       <span className={s.ring} data-loop aria-hidden="true" />

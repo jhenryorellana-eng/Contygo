@@ -630,7 +630,7 @@ El dueño aprobó las cinco mejoras; el celular manda.
 
 - **«Elige tu trámite»** sustituye a «Encontrar mi servicio» (hero y barra inferior del celular) y «Elegir trámite» a «Mi servicio» (cabecera). «Trámite» es la palabra de la portada y la que usa el cliente.
 - **«Únete a ContyGo Club»** (`CommunityButton`): dos personas y un asiento libre con un «+» que late, y una luz que recorre el borde. Sin caras ni cifras de miembros.
-- **El link** va en `COMMUNITY_URL` (`lib/config.ts`): hoy `contygo-club.vercel.app`; cuando funcione `club.contygo.app`, se cambia ahí.
+- **El link** va en `COMMUNITY_URL` (`lib/config.ts`). **Oculto desde el 02-11-2026** por decisión del dueño: con `null` el botón no aparece; el link anterior está en el comentario.
 - **El paso al Club: tu lugar en la mesa** (`ClubDoorway`).
   1. Desde el asiento libre del botón se abre una ola verde y, detrás, la noche.
   2. Aparece una mesa redonda con la marca, las personas llegan a sus sillas y el hilo verde las une.

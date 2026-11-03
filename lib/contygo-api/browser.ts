@@ -42,6 +42,8 @@ export type SavedJourney<Session = unknown> = {
   v: 1;
   serviceId: string;
   savedAt: number;
+  /** «chat»: the corner chat asked the questions and opens the contract with them (03-11-2026). */
+  origin?: "chat";
   stage: "service" | "platform" | "decision";
   session: Session;
   /** Visa Juvenil: la variante elegida para el contrato (Básico o Premium) y sus respuestas. */
@@ -103,6 +105,8 @@ export function newIdempotencyKey(): string {
 
 /** El externalRef de la conversación: la UI lo genera al empezar (guía §2 bis). */
 export const newExternalRef = () => `web-${newIdempotencyKey()}`;
+/** Referencia corta y pública del intento web (sin PII): «WEB-» + los últimos 6 del externalRef. */
+export const publicRef = (externalRef: string) => `WEB-${externalRef.slice(-6).toUpperCase()}`;
 
 /** Para la atribución del lead: la página sin query ni fragmento, y solo las claves utm_*. */
 export function pageAttribution(): { sourceUrl: string; utm: Record<string, string> } | undefined {

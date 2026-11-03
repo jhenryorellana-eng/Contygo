@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { waLink } from "@/lib/config";
+import { LANDING_FROM_CENTS, landingFaqs as faqs } from "@/lib/contygo-landing-faq";
 import { CONTYGO_SERVICES, VISIBLE_SERVICES, seasonOpen, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
 import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
@@ -29,6 +30,8 @@ import s from "./ContygoLanding.module.css";
 const loadCinema = () => import("../rebuild/ServiceCinemaDialog");
 // With a slow connection the window's code may still be on its way: the brand's wait covers it (only after 300 ms).
 const ServiceCinemaDialog = dynamic(loadCinema, { ssr: false, loading: () => <BrandLoader overlay label="Abriendo el servicio" /> });
+// The corner chat is not part of the first paint either: its code comes on its own, after the page.
+const LandingChat = dynamic(() => import("./LandingChat"), { ssr: false });
 
 // V7 · «El hilo verde». Direction and reasons: docs/contygo-v7-direccion-arte.md.
 // Copy is kept from V6 unless the direction document says otherwise.
@@ -89,19 +92,6 @@ const proof = [
   { icon: "shield", text: "Consultor de inmigración registrado en Utah", href: "#registro" },
   { icon: "app", text: "En español, desde tu celular" },
   { icon: "file", text: "Revisas tu contrato antes de decidir" },
-];
-/** The landing-wide «desde» (hero figures, bottom button, FAQ) is the owner's figure (12-10-2026), not the cheapest
- *  live price: the $50 asylum evaluation and the $100 tax return are not what the page offers families. */
-const LANDING_FROM_CENTS = 25000;
-// Prices are live (GET /catalog through /api/contratar/precios): with no price loaded, the text just does not quote one.
-const faqs = (from: string | null, visaFrom: string | null) => [
-  ["¿Qué hace ContyGo por mí?", "Te acompaña en la preparación de los documentos y formularios incluidos en tu servicio. La plataforma organiza la información que aportas y te permite conocer tus siguientes pasos. Revisa el alcance específico antes de contratar."],
-  ["¿Cuánto cuesta?", `Cada servicio publica sus honorarios antes de empezar${from ? `: desde ${from}${visaFrom ? `; Visa Juvenil Premium, ${visaFrom}` : ""}` : ""}. Las tasas del gobierno, cuando aplican, van aparte y se indican en tu contrato.`],
-  ["¿Puedo hacerlo desde mi celular?", "Sí. Puedes conocer el servicio, aportar información y documentos y consultar tus siguientes pasos desde tu cuenta. Si tu proceso requiere originales o actuaciones externas, recibirás las indicaciones correspondientes."],
-  ["¿Hay una persona que me acompañe?", "Sí. Puedes comunicarte con el equipo a través de Soporte en tu cuenta. Antes de contratar, también puedes resolver tus dudas por WhatsApp."],
-  ["¿Cuándo empieza mi servicio?", "Después de crear tu cuenta, revisar y firmar tu contrato y confirmar el pago inicial correspondiente. Antes de hacerlo podrás consultar el alcance, el precio y las condiciones."],
-  ["¿Qué es un consultor de inmigración registrado?", "Una persona registrada ante el Estado de Utah para dar asistencia no legal en trámites migratorios, como completar formularios oficiales y organizar documentos. No es abogado: no da asesoría legal ni representa ante una corte o USCIS."],
-  ["¿ContyGo garantiza la aprobación de mi trámite?", "No. ContyGo ofrece preparación documental y acompañamiento. Las decisiones y los tiempos de las autoridades no dependen de nosotros. Las condiciones del servicio y de reembolso se explican en tu contrato."],
 ];
 const help = waLink("Hola, quiero conocer el alcance de un servicio de ContyGo.");
 
@@ -354,6 +344,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
       <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
     </div>
+    <LandingChat hidden={Boolean(service)} raised={!heroVisible && dock && !service} onService={open} />
     {linked && <div className={s.linkVeil} data-open={Boolean(service)} aria-hidden="true" onTransitionEnd={event => { if (event.target === event.currentTarget && !service) setLinked(false); }}>
       <span><Image src="/contygo/brand/symbol-dark.png" alt="" width={1024} height={1024} sizes="72px" priority /></span>
       {/* Without JavaScript the guide never opens: the landing stays readable. */}

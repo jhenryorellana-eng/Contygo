@@ -426,7 +426,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
     </header>
     {immersive && path !== null && stage !== "decision" && <JourneyMap steps={journeySteps.map(step => step.label)} current={journeyIndex} minutesLeft={minutesLeft} />}
     {resumed && <div className={s.resumeNotice} role="status">
-      <span>Seguimos donde lo dejaste.</span>
+      <span>{saved?.origin === "chat" ? "Tus respuestas del chat ya están aquí." : "Seguimos donde lo dejaste."}</span>
       <button type="button" onClick={startOver}>Empezar de nuevo</button>
       <button type="button" className={s.resumeDismiss} aria-label="Cerrar este aviso" onClick={() => setResumed(false)}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></button>
     </div>}

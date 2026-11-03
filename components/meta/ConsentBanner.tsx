@@ -58,6 +58,7 @@ export function ConsentBanner() {
 
   return (
     <div
+      data-consent-banner
       role="dialog"
       aria-label="Aviso de cookies"
       style={{

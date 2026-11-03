@@ -437,8 +437,8 @@ function readFixContact(details: Record<string, unknown>): FixContact | null {
  */
 export type RetryReason = "destination" | "verification" | "general" | "busy" | "conflict" | "fresh_key";
 
-/** Referencia corta y pública del intento web (sin PII): «WEB-» + los últimos 6 del externalRef. */
-export const publicRef = (externalRef: string) => `WEB-${externalRef.slice(-6).toUpperCase()}`;
+/** Referencia corta y pública del intento web: vive en ./browser, que el navegador también usa (el chat de la portada). */
+export { publicRef } from "./browser";
 
 /** Interruptor de apagado: CONTYGO_CHECKOUT_ENABLED=0 deriva a WhatsApp sin tocar contygo. */
 export const checkoutEnabled = () => process.env.CONTYGO_CHECKOUT_ENABLED !== "0";

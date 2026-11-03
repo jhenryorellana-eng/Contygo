@@ -76,7 +76,7 @@ export { NO_ANSWER };
    reply, and a question that is clearly one of the service's own doubts (lib/agent/service-scripts.ts) gets its answer. */
 const MONEY = /\b(cu[aá]nto (cuesta|cobran?|vale|sale)|precios?|costos?|cuesta|cobr\w*|pag[oa]\w*|tarifas?|cuotas?|honorarios?|d[oó]lar\w*)\b/i;
 const IGNORED = new Set(["como", "cual", "cuales", "cuando", "donde", "puedo", "tengo", "para", "esta", "este", "esto", "eso", "pero", "porque", "sobre", "tiene", "tienen", "hacer", "debo", "necesito", "quiero", "saber"]);
-const contentWords = (text: string) => new Set(text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ñ\s-]/g, " ").split(/\s+/).filter(word => word.length >= 4 && !IGNORED.has(word)));
+export const contentWords = (text: string) => new Set(text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ñ\s-]/g, " ").split(/\s+/).filter(word => word.length >= 4 && !IGNORED.has(word)));
 
 export function localDoubt(input: { serviceId: string; question: string; costReply?: string }): DoubtReply | null {
   const question = input.question.trim();

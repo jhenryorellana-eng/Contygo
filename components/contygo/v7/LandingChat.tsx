@@ -113,7 +113,7 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
   const [flow, setFlow] = useState<Flow | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  // First visit of the tab: the button calls once (rings, the symbol drawn again, the typed line).
+  // First visit of the tab: the button calls once (the symbol drawn again, the typed line). Its float and beat are CSS.
   const [calling, setCalling] = useState(false);
   // How much of the screen the cookie notice takes from the bottom (0 when it is not there).
   const [banner, setBanner] = useState(0);

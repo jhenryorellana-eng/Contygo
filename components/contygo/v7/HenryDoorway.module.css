@@ -1,0 +1,45 @@
+/* El paso a la agenda de Henry: ver HenryDoorway.tsx. Vive en <body> (portal), fuera de los estilos de la página.
+   Los tiempos van en milisegundos desde el toque; las agujas llegan a su hora a los 1250 y se amanece a los 1600. */
+.doorway{--navy:#061b3d;--green:#25d366;--ivory:#fffdf7;--size:min(60vw,36vh,270px);position:fixed;inset:0;z-index:2147483000;overflow:hidden;font-family:var(--font-contygo-body),system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+.doorway *{box-sizing:border-box}
+.wave,.night,.dawn{position:absolute;inset:0;display:block}
+.wave{background:var(--green);animation:open .62s cubic-bezier(.6,0,.25,1) both}
+.night{background:radial-gradient(70% 55% at 50% 42%,#123468,var(--navy) 72%);animation:open .62s cubic-bezier(.6,0,.25,1) .11s both}
+.stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(22px,4.5vh,38px);padding:24px}
+/* The button's calendar, grown: a green band with its two rings, and the clock on the page. */
+.card{position:relative;display:flex;flex-direction:column;flex:none;width:var(--size);height:calc(var(--size)*1.08);border-radius:calc(var(--size)*.22);background:var(--ivory);overflow:hidden;box-shadow:0 40px 70px -30px #000000cc,0 0 0 1px #ffffff1a;will-change:transform}
+.band{position:relative;flex:none;height:24%;background:linear-gradient(180deg,#2fe074,#1fbf5c)}
+.band i{position:absolute;top:50%;width:9%;aspect-ratio:1;margin-top:-4.5%;border-radius:50%;background:var(--ivory);box-shadow:inset 0 2px 3px #061b3d66}
+.band i:first-child{left:27%}
+.band i:last-child{right:27%}
+.face{position:relative;display:grid;flex:1;place-items:center}
+.face>*{grid-area:1/1}
+.card .dial{display:block;width:74%;height:auto;overflow:visible}
+.dial [data-part=ring]{fill:none;stroke:var(--green);stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;transform:rotate(-90deg);transform-box:view-box;transform-origin:20px 20px;animation:draw .6s cubic-bezier(.45,0,.3,1) .5s both}
+.dial [data-part=tick]{fill:#061b3d4d;animation:fade .3s ease-out .65s both}
+.dial [data-hand]{fill:none;stroke:var(--navy);stroke-linecap:round;transform-box:view-box;transform-origin:20px 20px}
+/* The hands look for your hour and stop at ten past ten: the check, turning green. */
+.dial [data-hand=hour]{stroke-width:3.2;animation:hour .8s cubic-bezier(.3,.6,.15,1) .45s both,set .3s ease-out 1.25s both}
+.dial [data-hand=minute]{stroke-width:2.6;animation:minute .8s cubic-bezier(.3,.6,.15,1) .45s both,set .3s ease-out 1.25s both}
+.dial [data-part=pin]{fill:var(--navy);animation:pin .3s ease-out 1.25s both}
+.ripple{place-self:center;width:30%;aspect-ratio:1;border-radius:50%;box-shadow:0 0 0 3px var(--green);opacity:0;animation:ripple .75s ease-out 1.25s both}
+.words{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0;text-align:center;color:#fff;animation:rise .5s ease-out .65s both}
+.words strong{font:800 clamp(26px,6.6vw,38px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em}
+.words span{font-size:clamp(15px,3.8vw,17px);font-weight:600;color:#ffffffc7}
+/* Dawn in the colour the agenda opens on (citas.contygo.app, its theme-color): light, or night with a dark phone. */
+.dawn{display:grid;place-items:center;background:#f6f8f7;animation:dawn .42s cubic-bezier(.6,0,.3,1) 1.6s both}
+.arrival{opacity:0;color:var(--navy);animation:fade .3s ease-out 2.5s both}
+@media(prefers-color-scheme:dark){
+  .dawn{background:#04122b}
+  .arrival{color:#fff}
+}
+@keyframes open{from{clip-path:circle(0 at var(--x) var(--y))}to{clip-path:circle(var(--far,150vmax) at var(--x) var(--y))}}
+@keyframes dawn{from{clip-path:circle(0 at var(--dawn-x,50%) var(--dawn-y,50%))}to{clip-path:circle(var(--dawn-far,150vmax) at var(--dawn-x,50%) var(--dawn-y,50%))}}
+@keyframes hour{from{transform:rotate(-406deg)}to{transform:rotate(-46deg)}}
+@keyframes minute{from{transform:rotate(-681deg)}to{transform:rotate(39deg)}}
+@keyframes set{to{stroke:var(--green);stroke-width:3.6}}
+@keyframes pin{to{fill:var(--green)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes ripple{0%{opacity:0;transform:none}1%{opacity:.9}100%{opacity:0;transform:scale(3.2)}}

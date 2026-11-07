@@ -69,6 +69,12 @@ test('el botón de ContyGo Club lleva al Club por https, y se distingue de otros
   assert.equal(url.searchParams.get('utm_medium'), 'hero');
 });
 
+test('«Citas con Henry» lleva a su agenda por https', () => {
+  const { APPOINTMENT_URL } = require('../lib/config.ts');
+  if (APPOINTMENT_URL === null) return; // Sin link, el botón no aparece.
+  assert.equal(new URL(APPOINTMENT_URL).protocol, 'https:');
+});
+
 test('el link abre la landing con su servicio: ese y no otro', () => {
   for (const service of CONTYGO_SERVICES) {
     const element = page.default({ params: { slug: getServiceGuideUrl(service.id).slice(1) } });

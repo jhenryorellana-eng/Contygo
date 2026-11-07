@@ -20,6 +20,7 @@ import BrandLoader from "../rebuild/BrandLoader";
 import type { ServiceOrigin } from "../rebuild/ServiceCinemaDialog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import CommunityButton from "./CommunityButton";
+import AppointmentButton from "./AppointmentButton";
 import ServiceShowcase, { type Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
@@ -256,6 +257,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <div className={s.heroActions}>
             <a ref={heroCta} className={s.primary} href="#servicios">Elige tu trámite <span><Icon /></span></a>
             <CommunityButton />
+            <AppointmentButton />
           </div>
           {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
           <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>

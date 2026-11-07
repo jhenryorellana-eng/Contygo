@@ -28,6 +28,12 @@ export const CRM_WHATSAPP_DIGITS = RAW_CRM_WHATSAPP.replace(/[^0-9]/g, "");
  */
 export const COMMUNITY_URL: string | null = "https://club.contygo.app/?utm_source=landing&utm_medium=hero";
 
+/**
+ * Las citas 1 a 1 con Henry (07-11-2026): otro producto, ni el Club ni un trámite, enlazado desde el hero. Se abre en la
+ * misma pestaña, como el Club. Con null el botón no aparece. En su dominio propio, citas.contygo.app.
+ */
+export const APPOINTMENT_URL: string | null = "https://citas.contygo.app/?utm_source=landing&utm_medium=hero";
+
 /** Video de fallback general (cuando un servicio no define el suyo). */
 export const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
 

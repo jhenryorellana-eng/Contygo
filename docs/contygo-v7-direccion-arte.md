@@ -660,3 +660,16 @@ El dueño aprobó las cinco mejoras; el celular manda.
 - **Lo que sabe** (`lib/agent/landing-chat.ts`, `app/api/agent/landing-chat`): las preguntas frecuentes aprobadas de la portada (`lib/contygo-landing-faq.ts`), los hechos de `service-faq` y cada servicio visible con su «desde» en vivo. Lo que va al navegador vive aparte, en `lib/agent/landing-chat-ui.ts`: `landing-chat.ts` usa `doubts.ts`, que trae el cliente de Gemini (solo servidor), y meterlo en la portada la rompía («Element type is invalid»).
 - **Reglas:** sin asesoría legal, sin decir si alguien califica (eso lo dice la evaluación del servicio) y sin inventar precios ni plazos. Lo que no sabe, a un asesor. Sin la IA responde lo que coincide con claridad con esas preguntas o con un servicio.
 - **Privacidad:** no guarda la conversación. Solo registra que una respuesta no se pudo dar, sin el texto. Límite de 20 preguntas libres por persona cada 10 minutos.
+
+## 07 nov 2026 · «Citas con Henry» en el hero
+
+**Por qué.** El dueño pidió un tercer botón para las citas 1 a 1 con Henry, con una transición tan buena como la del Club.
+
+- **El botón** (`AppointmentButton`): una hoja clara con borde, debajo de «Únete a ContyGo Club» (el verde sigue siendo «Elige tu trámite»). Un calendario marfil con banda verde y un reloj que marca las diez y diez, que es también el check de ContyGo; las agujas solo giran al pasar el mouse. «Citas con Henry» y debajo «Reserva tu espacio 1 a 1». En el celular, ancho completo.
+- **El link** va en `APPOINTMENT_URL` (`lib/config.ts`): `citas.contygo.app`, con `utm_medium=hero`; con `null` no aparece.
+- **El paso a la agenda: tu hora con Henry** (`HenryDoorway`).
+  1. Desde el calendario del botón se abre una ola verde y, detrás, la noche; el calendario vuela al centro y crece.
+  2. Se dibuja el reloj y las agujas giran como buscando la hora hasta frenar en las diez y diez, que se pone verde: el check (1,25 s), con una onda y una vibración.
+  3. «Tu hora con Henry · Abriendo su agenda…».
+  4. Amanece en el fondo de la agenda (`#f6f8f7`, o `#04122b` con el teléfono en modo oscuro) y el navegador ya está yendo allí (1,65 s). Si tarda, aparece `BrandLoader`.
+  - Sigue siendo un enlace: otra pestaña, sin JavaScript o con «reducir movimiento» va directo. Al volver con «Atrás» la transición desaparece.

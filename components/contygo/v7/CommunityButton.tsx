@@ -13,7 +13,7 @@ import ClubDoorway, { Person, type DoorwayOrigin } from "./ClubDoorway";
 import s from "./CommunityButton.module.css";
 
 /** Ask the browser to have a page ready, once. */
-function hint(rel: "preconnect" | "prefetch", href: string) {
+export function hint(rel: "preconnect" | "prefetch", href: string) {
   if (document.head.querySelector(`link[rel="${rel}"][href="${href}"]`)) return;
   const link = document.createElement("link");
   link.rel = rel; link.href = href;

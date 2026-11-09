@@ -41,13 +41,15 @@ const sourceSerif = localFont({
   display: "swap",
 });
 
-const SITE_NAME = "USA Latino Prime";
-const SITE_TITLE = "UsaLatinoPrime — Evaluación migratoria gratuita";
+// What WhatsApp shows when the link is sent (09-11-2026): ContyGo, no longer UsaLatinoPrime. The picture is the owner's,
+// cut to 1200×630; a new file name, so WhatsApp does not keep the old one.
+const SITE_NAME = "ContyGo";
+const SITE_TITLE = "ContyGo · Tu trámite migratorio, acompañado paso a paso";
 const SITE_DESCRIPTION =
-  "Lleva tu propio trámite migratorio desde el celular, paso a paso, con validación automática y nuestro equipo a tu lado. Descubre si calificas en minutos.";
+  "Tu historia sigue; el siguiente paso, ContyGo. Preparamos tus documentos contigo y te acompañamos paso a paso desde una sola plataforma: elige tu trámite, mira el precio y crea tu contrato.";
 const SHARE_DESCRIPTION =
-  "Descubre si calificas para tu trámite migratorio en minutos, desde tu celular.";
-const SHARE_IMAGE = "/og-image.jpg";
+  "Preparamos tus documentos contigo, desde el celular y en español. Elige tu trámite y crea tu contrato con el precio a la vista.";
+const SHARE_IMAGE = "/og-contygo.jpg";
 
 import { SITE_URL } from "@/lib/site";
 
@@ -67,9 +69,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: SHARE_IMAGE,
-        width: 1600,
-        height: 902,
-        alt: SITE_NAME,
+        width: 1200,
+        height: 630,
+        alt: "ContyGo en el celular: tu trámite migratorio paso a paso",
       },
     ],
   },

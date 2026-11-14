@@ -208,10 +208,10 @@
   .seasonAction{margin-top:8px;padding-top:14px}
   .seasonPrice{font-size:30px}
   .seasonGo{padding:13px 22px;font-size:16px}
-  /* The folders: a thin frame of colour around the same cards (the folder steps 6 px into the page margin, so the
-     cards keep their width), the tab with its count and the other folder's short name beside it. */
+  /* The folders: a thin frame of colour around the same cards, the tab with its count and the other folder's short
+     name beside it. They stay inside the page margin: the line of the step's box runs there (14-11-2026). */
   .folders{gap:34px}
-  .folder{margin-inline:-6px;--corner:18px;--ear:12px}
+  .folder{--corner:18px;--ear:12px}
   .tabs{gap:5px}
   .tab{gap:6px;padding:11px 12px 9px;border-radius:14px 14px 0 0}
   .tab h5{font-size:clamp(14px,4.1vw,16px)}

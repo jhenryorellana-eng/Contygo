@@ -1,6 +1,9 @@
 /* «Tu ruta, paso a paso»: ver RouteSteps.tsx. El hilo verde es la ruta; cada paso, una estación con su medallón.
    Verde relleno = ya se puede empezar. Punteado = está por llegar (como la ruta que falta, que el hilo dibuja punteada).
    Las hojas de los pasos solo llevan relleno; dentro, las tarjetas siguen siendo el papel.
+   Cada paso es un recuadro que cuelga del hilo: su línea la dibuja GreenThread (de carril a carril: el hilo a la
+   izquierda y su espejo a la derecha), así que aquí solo va el aire entre esa línea y el contenido (el padding de
+   .station) y lo que se apoya en el borde de arriba: el medallón y el estado.
    Los enlaces, los SVG y los <em> llevan .route delante: la página fija su color y su tamaño con más especificidad.
    --lane es la x del hilo dentro de la sección (GreenThread: el 2,5 % del ancho, hasta 1440 px). */
 .route{position:relative;max-width:1440px;margin:auto;padding:112px 5% 96px;--lane:calc(min(100vw,1440px) * .025);--arena:#f6efdd}
@@ -24,30 +27,30 @@
 
 /* ---- Las estaciones ---- */
 /* minmax(0,1fr): a wide child (a row of tabs, a carousel) must never widen the page. */
-.stations{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:88px;margin:0;padding:0}
-.station{position:relative;scroll-margin-top:96px}
+.stations{list-style:none;display:grid;grid-template-columns:minmax(0,1fr);gap:72px;margin:0;padding:0}
+.station{position:relative;scroll-margin-top:96px;padding:52px 0 46px}
 .stationHead{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 22px;margin-bottom:30px}
-/* Room for the medallion, which sits at the start of this line (on a wide screen it moves to the margin). */
-.stationMeta{display:flex;align-items:center;min-height:40px;padding-left:52px}
-.stationHead h3{grid-column:1;margin-top:10px;font-size:clamp(32px,3.7vw,54px);line-height:1.05;letter-spacing:-.04em}
-.stationHead>p{grid-column:1;margin-top:10px;max-width:520px;font-size:18px;line-height:1.5;color:var(--muted)}
-.stationArt{grid-column:2;grid-row:1 / span 3;display:block;width:124px}
+/* The name and its line stay together when the drawing beside them is taller: the name sits at the foot of its row,
+   the line at the head of the next. */
+.stationHead h3{grid-column:1;align-self:end;font-size:clamp(32px,3.7vw,54px);line-height:1.05;letter-spacing:-.04em}
+.stationHead>p{grid-column:1;align-self:start;margin-top:10px;max-width:520px;font-size:18px;line-height:1.5;color:var(--muted)}
+.stationArt{grid-column:2;grid-row:1 / span 2;display:block;width:124px}
 .stationArt img{display:block;width:100%;height:auto;filter:drop-shadow(0 14px 14px #061b3d29)}
 :global([data-contygo-theme=dark]) .stationArt img{filter:drop-shadow(0 0 22px #6f9dff40)}
 .station[data-status=soon] .stationArt img{opacity:.92}
 
-/* The medallion: hollow until the thread arrives. Green when the step can be started; dotted when it is coming. */
-.node{position:absolute;left:0;top:0;z-index:4;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--line-strong);transition:background .4s,border-color .4s,box-shadow .5s var(--unfold),transform .5s var(--unfold)}
+/* The medallion: hollow until the thread arrives. Green when the step can be started; dotted when it is coming.
+   It sits on the top edge of the box, and the state beside it: the line passes behind both (on a wide screen the
+   medallion moves to the thread, beside the step's name). */
+.tag{position:absolute;left:48px;top:-15px;z-index:4;display:flex;padding:0 10px;background:var(--bg)}
+.node{position:absolute;left:0;top:-20px;z-index:4;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--line-strong);transition:background .4s,border-color .4s,box-shadow .5s var(--unfold),transform .5s var(--unfold)}
 .station[data-status=soon] .node{border-style:dashed}
 .node b{font:800 16px/1 var(--font-contygo-heading),sans-serif;color:var(--muted);transition:color .4s}
-/* The short branch that ties the medallion to the thread (phones and medium screens: the medallion is inside the text column). */
-.node:before{content:"";position:absolute;right:100%;top:50%;width:calc(5vw - var(--lane) + 2px);height:2px;margin-top:-1px;background:var(--line-strong);transition:background .4s}
 .node:after{content:"";position:absolute;inset:-2px;border-radius:50%;box-shadow:0 0 0 2px var(--green);opacity:0;pointer-events:none}
 .station[data-status=open] .node[data-lit=true],:global(main:not([data-thread-ready=true])) .station[data-status=open] .node{background:var(--green);border-color:var(--green);box-shadow:0 0 0 6px #25d36630;transform:scale(1.06)}
 .station[data-status=open] .node[data-lit=true] b,:global(main:not([data-thread-ready=true])) .station[data-status=open] .node b{color:#061b3d}
 .station[data-status=soon] .node[data-lit=true],:global(main:not([data-thread-ready=true])) .station[data-status=soon] .node{border-color:var(--ink)}
 .station[data-status=soon] .node[data-lit=true] b,:global(main:not([data-thread-ready=true])) .station[data-status=soon] .node b{color:var(--ink)}
-.node[data-lit=true]:before{background:var(--green)}
 .station[data-status=open] .node[data-lit=true]:after{animation:nodeRing 1.2s ease-out .1s both}
 @keyframes nodeRing{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(2)}}
 
@@ -124,10 +127,10 @@
 
 /* ---- Pantalla ancha: el medallón va sobre el hilo, en el margen; los pasos 2 a 5 ponen su nombre a la izquierda ---- */
 @media(min-width:1200px){
-  .node{left:calc(var(--lane) - 5vw);top:44px;width:46px;height:46px;margin-left:-23px}
+  .node{left:calc(var(--lane) - 5vw);top:50px;width:46px;height:46px;margin-left:-23px}
   .node b{font-size:18px}
-  .node:before{display:none}
-  .stationMeta{min-height:0;padding-left:0}
+  .tag{left:-10px}
+  .station[data-wide] .node{top:66px}
 }
 /* The licence beside the migratory folder (ServiceShowcase puts them side by side from 1240 px): its drawing heads the
    card and takes the height that is left, so both folders end level with no hole. */
@@ -146,8 +149,8 @@
   .station:not([data-wide]) .stationBody{align-self:center}
   /* Step 1 opens the route: its drawing stands beside its name. */
   .station[data-wide] .stationHead{grid-template-columns:auto minmax(0,1fr);gap:0 28px}
-  .station[data-wide] .stationArt{grid-column:1;grid-row:1 / span 3;width:132px}
-  .station[data-wide] :is(.stationMeta,.stationHead h3,.stationHead>p){grid-column:2}
+  .station[data-wide] .stationArt{grid-column:1;grid-row:1 / span 2;width:132px}
+  .station[data-wide] :is(.stationHead h3,.stationHead>p){grid-column:2}
 }
 @media(max-width:999px){
   .panel{padding:20px}
@@ -171,14 +174,13 @@
   .map li:not(:last-child):before{left:46px;top:19px}
   .map b{width:40px;height:40px;font-size:16px}
   .map strong{font-size:16px}
-  .stations{gap:64px}
+  .stations{gap:50px}
+  .station{padding:38px 0 30px}
   .stationHead{gap:0 12px;margin-bottom:22px}
-  .stationHead h3{margin-top:8px;font-size:clamp(28px,7.6vw,34px)}
+  .stationHead h3{font-size:clamp(28px,7.6vw,34px)}
   .stationHead>p{margin-top:6px;font-size:16.5px}
   .stationArt{width:76px}
-  .node:before{width:13px}
-  .stationMeta{padding-left:50px}
-  .panel{gap:20px;padding:16px;border-radius:22px;margin-inline:-6px}
+  .panel{gap:20px;padding:14px;border-radius:22px}
   .chips li,.licences li{min-height:44px;padding:8px 14px;font-size:15.5px}
   .licences li[data-first]{padding-right:14px}
   .actions{gap:8px 24px}
@@ -188,7 +190,7 @@
   .licenceArt{width:84px}
   .route .start{min-height:54px;font-size:16px;padding-left:22px}
   .start i{width:42px;height:42px}
-  .banner{grid-template-columns:auto minmax(0,1fr);gap:12px 14px;margin:20px -6px 0;width:calc(100% + 12px);padding:12px;border-radius:22px}
+  .banner{grid-template-columns:auto minmax(0,1fr);gap:12px 14px;margin-top:20px;padding:12px;border-radius:22px}
   .bannerArt{width:72px;border-radius:16px}
   .bannerCopy>span{font-size:15px}
   .bannerGo{grid-column:1 / -1;justify-content:space-between;min-height:54px;font-size:16px}

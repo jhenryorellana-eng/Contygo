@@ -765,3 +765,12 @@ El dueño aprobó las cinco mejoras; el celular manda.
 - Visto en claro y oscuro, en 390, 768, 1024 y 1440 px.
 - Pruebas: `tests/ruta-inmigrante.test.cjs`.
 
+
+## Los recuadros de la ruta (14-11-2026)
+
+Pedido del dueño sobre la versión publicada: «que marque bien cada sección al hacer scroll… así se diferenciaría una sección de otra».
+
+- Cada paso es un recuadro que cuelga del hilo verde. El hilo es su lado izquierdo; los otros tres los dibuja al pasar: cruza por arriba, baja por la derecha (el carril espejo del hilo) y vuelve por abajo. El último cuarto de vuelta lo cierra el propio hilo al llegar.
+- Punteado = lo que falta por recorrer, igual que la ruta. Verde = recorrido. Al subir, se desdibuja.
+- El estado («Disponible», «Próximamente») va sobre el borde de arriba, como el título de una ficha. El medallón también, salvo en pantalla ancha, donde sigue sobre el hilo junto al nombre.
+- La línea vive en `GreenThread.tsx` (`data-thread="frame"`); en CSS solo queda el aire entre la línea y el contenido. En celular nada invade ya el margen: por ahí pasa la línea.

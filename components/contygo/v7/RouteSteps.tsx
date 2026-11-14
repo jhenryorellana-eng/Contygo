@@ -4,6 +4,9 @@
    (brief del dueño «Landing ContyGo: categorías y servicios», 13-11-2026; los datos, en lib/contygo-route.ts).
    El hilo verde es la ruta y cada paso es una estación suya: un medallón con su número que el hilo enciende al llegar.
    Verde relleno si el paso ya se puede empezar; punteado, como la ruta que falta, si está por llegar.
+   Cada paso es un recuadro que cuelga del hilo (14-11-2026, pedido del dueño: «que marque bien cada sección al hacer
+   scroll»): el hilo es su lado izquierdo y dibuja los otros tres mientras se recorre (GreenThread, data-thread="frame").
+   Su número y su estado van sobre el borde de arriba, como el título de una ficha.
    - Paso 1, Migratorio: la vitrina de los favoritos y dos carpetas, Trámites migratorios y Licencia de conducir
      (de un aliado: sin guía ni contrato aquí, «Empezar» escribe al equipo).
    - Pasos 2 a 5: una hoja con lo que ya se puede empezar (tarjetas del catálogo) y lo que viene (etiquetas punteadas).
@@ -39,11 +42,12 @@ const Status = ({ open }: { open: boolean }) => <span className={r.status} data-
 /** One step of the route: its medallion (the thread lights it), whether it can be started, its name and its content. */
 function Station({ step, index, wide, children }: { step: RouteStep; index: number; wide?: boolean; children: ReactNode }) {
   const open = stepOpen(step);
-  return <li id={step.id} className={r.station} data-status={open ? "open" : "soon"} data-wide={wide || undefined}>
-    {/* Outside the header: the header unfolds (its own layer) and the medallion has to stay above the thread. */}
+  return <li id={step.id} className={r.station} data-thread="frame" data-status={open ? "open" : "soon"} data-wide={wide || undefined}>
+    {/* Outside the header: the header unfolds (its own layer), and the medallion and the state have to stay above the
+        thread and above the line of the box, which passes behind them. */}
     <span className={r.node} data-react="station" aria-hidden="true"><b>{index + 1}</b></span>
+    <span className={r.tag}><Status open={open} /></span>
     <header className={r.stationHead} data-reveal>
-      <div className={r.stationMeta}><Status open={open} /></div>
       <h3><span className={r.sr}>Paso {index + 1}: </span>{step.name}</h3>
       <p>{step.line}</p>
       <span className={r.stationArt} aria-hidden="true"><Image src={`/contygo/v8/${step.art}.webp`} alt="" width={512} height={512} sizes="140px" /></span>

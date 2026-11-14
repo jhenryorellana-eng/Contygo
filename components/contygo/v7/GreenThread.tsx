@@ -8,6 +8,10 @@ import s from "./ContygoLanding.module.css";
  * that follows the reader down the page, crosses the journey steps and ends as the
  * long stroke of the ContyGo check. Anchors are read from `[data-thread]` elements.
  *
+ * Los recuadros de la ruta (14-11-2026): cada `[data-thread="frame"]` es una caja que cuelga del hilo. El hilo es su
+ * lado izquierdo y dibuja los otros tres mientras el lector la recorre: sale del hilo, cruza por arriba, baja por la
+ * derecha y vuelve por abajo; el último cuarto de vuelta lo cierra el propio hilo al llegar. Punteado = lo que falta.
+ *
  * Rendimiento (28-09-2026, medido en un celular emulado con la CPU a ¼): la geometría del
  * hilo se calcula aquí, con las mismas curvas que se dibujan, y nunca se le pide al
  * navegador punto a punto (getPointAtLength costaba 600 ms por cuadro). Nada de lo que
@@ -18,6 +22,8 @@ import s from "./ContygoLanding.module.css";
 type Knot = { x: number; y: number; tx: number; ty: number };
 type Box = { x: number; y: number; w: number; h: number };
 type Curve = [number, number, number, number, number, number, number, number];
+/** A box of the route: its outline (from the thread, around, and back to it) and how much of it is drawn. */
+type Frame = { line: SVGPathElement; top: number; bottom: number; r: number; edge: number; side: number; len: number; off: number };
 
 const DOWN = { tx: 0, ty: 1 };
 const RIGHT = { tx: 1, ty: 0 };
@@ -31,6 +37,8 @@ const HEAD_LINE = .62;
 // Trail length behind the head, in pixels of thread.
 const TRAIL = 150;
 const SVG_NS = "http://www.w3.org/2000/svg";
+// A frame's top and bottom edges each cross the page while the head travels this far (less in a short box).
+const FRAME_SWEEP = 140;
 
 function unit(tx: number, ty: number) { const l = Math.hypot(tx, ty) || 1; return { tx: tx / l, ty: ty / l }; }
 
@@ -115,7 +123,7 @@ function route(main: HTMLElement) {
   }
   knots.push(knot(mark.x + mark.w * CHECK_TIP.x, mark.y + mark.h * CHECK_TIP.y, CHECK));
   // On desktop the steps share one line: that stretch is drawn while the section scrolls by.
-  return { knots, row: mobile ? null : { y: steps[0].y, x: steps[0].x + 3 } };
+  return { knots, row: mobile ? null : { y: steps[0].y, x: steps[0].x + 3 }, left, right, mobile };
 }
 
 /** Cubic Bézier segments through the knots: each handle only reaches as far as the gap measured along its own direction. */
@@ -154,6 +162,22 @@ function sample(segments: Curve[]) {
   let highest = -Infinity;
   ys.forEach((y, i) => { highest = Math.max(highest, y); reach[i] = highest; });
   return { xs: Float64Array.from(xs), ys: Float64Array.from(ys), lens: Float64Array.from(lens), reach, total: length };
+}
+
+/** Length of a frame's outline drawn when the head of the thread is at height `y`.
+ *  The box is whole (but for its last quarter turn) a little before the head reaches its foot, so a box that fits on
+ *  screen is seen closed; that last turn waits for the head: the thread itself ties the box. */
+function frameShown(f: Frame, y: number, viewport: number) {
+  const arc = Math.PI * f.r / 2, start = f.top + f.r, tie = f.bottom - f.r;
+  if (y <= start) return 0;
+  if (y >= tie) return f.len;
+  const boxed = f.bottom - Math.max(f.r + 8, Math.min(viewport * .2, (f.bottom - f.top) * .45));
+  const span = boxed - start, sweep = Math.min(FRAME_SWEEP, span * .3), across = 2 * arc + f.edge;
+  if (y < start + sweep) return across * (y - start) / sweep;
+  if (y < boxed - sweep) return across + f.side * (y - start - sweep) / (span - 2 * sweep);
+  if (y < boxed) return across + f.side + (arc + f.edge) * (y - (boxed - sweep)) / sweep;
+  const knot = Math.min(40, tie - boxed);
+  return f.len - arc + (y > tie - knot ? arc * (y - (tie - knot)) / knot : 0);
 }
 
 /* ---- Lo que el hilo activa al pasar (data-react) ----
@@ -210,11 +234,12 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
   const track = useRef<SVGPathElement>(null);
   const line = useRef<SVGGElement>(null);
   const trail = useRef<SVGGElement>(null);
+  const boxes = useRef<SVGGElement>(null);
   const head = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const main = scope.current, svgEl = svg.current, trackEl = track.current, lineEl = line.current, trailEl = trail.current, headEl = head.current;
-    if (!main || !svgEl || !trackEl || !lineEl || !trailEl || !headEl) return;
+    const main = scope.current, svgEl = svg.current, trackEl = track.current, lineEl = line.current, trailEl = trail.current, headEl = head.current, boxesEl = boxes.current;
+    if (!main || !svgEl || !trackEl || !lineEl || !trailEl || !headEl || !boxesEl) return;
     const still = matchMedia("(prefers-reduced-motion: reduce)");
     let total = 0, drawn = 0, goal = 0, top = 0, frame = 0, pending = 0, arrived = false, painted = -1, scrolled = false;
     let lens = new Float64Array(0), xs = new Float64Array(0), ys = new Float64Array(0), reach = new Float64Array(0);
@@ -225,6 +250,7 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
     // Elements that react when the thread passes (`lit` once reached). Titles, figures and list icons
     // are also pushed aside by the head (side: away from the thread).
     let reactors: { el: HTMLElement; kind: string; at: number; order: number; lit: boolean; side: number; wake: boolean }[] = [];
+    let frames: Frame[] = [];
     const WAKES = new Set(["title", "pop", "count"]);
 
     const nearest = (x: number, y: number) => {
@@ -278,6 +304,15 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
       }
       const point = pointAt(drawn);
       headEl!.style.transform = `translate3d(${point.x.toFixed(1)}px,${point.y.toFixed(1)}px,0)`;
+      // The boxes of the route follow the head's height (the thread runs straight down beside them).
+      for (const f of frames) {
+        const shown = frameShown(f, point.y, innerHeight), off = shown <= .01 ? -1 : +(f.len - shown).toFixed(1);
+        if (off !== f.off) {
+          if (off < 0) f.line.style.visibility = "hidden";
+          else { if (f.off < 0) f.line.style.visibility = ""; f.line.style.strokeDashoffset = String(off); }
+          f.off = off;
+        }
+      }
       for (const mark of marks) {
         const reached = drawn >= mark.at - 2;
         if (reached !== mark.reached) { mark.reached = reached; mark.el.setAttribute("data-reached", String(reached)); }
@@ -343,6 +378,22 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
       pieces = [{ line: drawnPath, trail: cometPath, from: 0, len: total, lineOff: -1, trailKey: "off" }];
       row = built.row ? { y: built.row.y, from: lengthNear(built.row.x, built.row.y), span: innerHeight * .45 } : null;
       const mobile = width <= 760;
+      // The boxes: a rounded outline from lane to lane whose left side is the thread. Each has its dotted outline
+      // (what is ahead) and the green one over it (what the thread has drawn).
+      const r = built.mobile ? 22 : 28, arc = Math.PI * r / 2, x0 = built.left, x1 = built.right, n = (v: number) => v.toFixed(1);
+      const outlines: SVGPathElement[] = [];
+      frames = Array.from(main!.querySelectorAll<HTMLElement>('[data-thread="frame"]')).map(el => {
+        const b = offset(el, main!), y0 = b.y, y1 = b.y + b.h, edge = x1 - x0 - 2 * r, side = b.h - 2 * r, len = 4 * arc + 2 * edge + side;
+        const turn = `A${r} ${r} 0 0 1 `;
+        const d = `M${n(x0)} ${n(y0 + r)}${turn}${n(x0 + r)} ${n(y0)}H${n(x1 - r)}${turn}${n(x1)} ${n(y0 + r)}V${n(y1 - r)}${turn}${n(x1 - r)} ${n(y1)}H${n(x0 + r)}${turn}${n(x0)} ${n(y1 - r)}`;
+        const ahead = document.createElementNS(SVG_NS, "path"), lineOver = document.createElementNS(SVG_NS, "path");
+        ahead.setAttribute("d", d); ahead.setAttribute("class", s.frameAhead);
+        lineOver.setAttribute("d", d); lineOver.setAttribute("class", s.frameLine); lineOver.setAttribute("pathLength", len.toFixed(2));
+        lineOver.style.strokeDasharray = `${len.toFixed(2)} ${len.toFixed(2)}`; lineOver.style.visibility = "hidden";
+        outlines.push(ahead, lineOver);
+        return { line: lineOver, top: y0, bottom: y1, r, edge, side, len, off: -1 };
+      });
+      boxesEl!.replaceChildren(...outlines);
       marks = Array.from(main!.querySelectorAll<HTMLElement>('[data-thread="step"]')).map((el, i) => {
         const b = offset(el, main!), x = mobile && i % 2 ? b.x + b.w - 3 : b.x + 3;
         return { el, at: lengthNear(x, b.y), reached: el.dataset.reached === "true" };
@@ -415,6 +466,7 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
   return <>
     <svg ref={svg} className={s.thread} aria-hidden="true" focusable="false" preserveAspectRatio="none">
       <path ref={track} className={s.threadTrack} />
+      <g ref={boxes} />
       <g ref={line} className={s.threadLine} />
       <g ref={trail} className={s.threadTrail} />
     </svg>

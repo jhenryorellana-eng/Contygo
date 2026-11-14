@@ -4,9 +4,10 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { waLink } from "@/lib/config";
+import { APPOINTMENT_URL, COMMUNITY_URL, via, waLink } from "@/lib/config";
 import { LANDING_FROM_CENTS, landingFaqs as faqs } from "@/lib/contygo-landing-faq";
-import { CONTYGO_SERVICES, VISIBLE_SERVICES, seasonOpen, type ContygoCategory, type ContygoService } from "@/lib/contygo-catalog";
+import { CONTYGO_SERVICES, VISIBLE_SERVICES, seasonOpen, type ContygoService } from "@/lib/contygo-catalog";
+import { ALLIES, OWNER_PENDING } from "@/lib/contygo-route";
 import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
@@ -16,12 +17,14 @@ import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
+import { PUBLIC_REGISTER } from "../rebuild/CertificateShowcase";
 import BrandLoader from "../rebuild/BrandLoader";
 import type { ServiceOrigin } from "../rebuild/ServiceCinemaDialog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import CommunityButton from "./CommunityButton";
-import AppointmentButton from "./AppointmentButton";
-import ServiceShowcase, { type Star } from "./ServiceShowcase";
+import HelpWays from "./HelpWays";
+import RouteSteps from "./RouteSteps";
+import type { Star } from "./ServiceShowcase";
 import Finale from "./Finale";
 import { dropTheme } from "./themeDrop";
 import s from "./ContygoLanding.module.css";
@@ -36,6 +39,10 @@ const LandingChat = dynamic(() => import("./LandingChat"), { ssr: false });
 
 // V7 · «El hilo verde». Direction and reasons: docs/contygo-v7-direccion-arte.md.
 // Copy is kept from V6 unless the direction document says otherwise.
+// Since 14-11-2026 the page follows the owner's brief «Landing ContyGo: categorías y servicios» (13-11-2026): the
+// promise is «La ruta del inmigrante»; under the hero, the three ways to help (HelpWays) and the five steps of the
+// route (RouteSteps, with the catalog as step 1); at the end, the partners. The sections that prove trust (how a
+// service works, the app, the registry, the contract, the questions and the closing) stay after the route.
 type Theme = "light" | "dark";
 const THEME_KEY = "contygo-appearance";
 // Illustration system V8 (28-09-2026, material-de-diseno/ilustraciones-v8): one paper sculpture per service, each
@@ -44,7 +51,7 @@ const art = (name: string) => `/contygo/v8/${name}.webp`;
 // The owner's star products, the most requested (30-09-2026; Ajuste de estatus joined them on 10-10-2026 and
 // Preparación de audiencia on 12-10-2026, still without its films): they lead
 // on their own stage («Vitrina», chosen by the owner among three concepts). Above them, the seasonal services
-// (28-10-2026); below, the rest of the catalog in two groups.
+// (28-10-2026); below, the rest of the migratory catalog and the driver's licence, each in its folder (RouteSteps).
 const featured: Star[] = [
   { id: "visa-juvenil", name: "Visa Juvenil", short: "Visa Juvenil", label: "Para el futuro de tus hijos", copy: "Acompañamos a tu familia en cada etapa, con un expediente preparado con cuidado desde el primer día." },
   { id: "apelacion", name: "Apelación", short: "Apelación", label: "Cuando cada día cuenta", copy: "Organizamos la documentación de tu apelación ante la BIA con orden y atentos a tus plazos." },
@@ -54,20 +61,6 @@ const featured: Star[] = [
 ];
 /** Seasonal services (the lottery, 28-10-2026): their own card above the stars while the window is open. */
 const seasonal = VISIBLE_SERVICES.filter(item => item.season);
-/** The rest of the catalog in the owner's order (28-10-2026): immigration first, then taxes and business. A service
- *  not listed here joins its group at the end, so a new one never goes missing. */
-const CATALOG_ORDER: { title: string; note: string; art: string[]; ids: string[]; categories: ContygoCategory[] }[] = [
-  { title: "Inmigración", note: "Asilo, corte, permisos y familia", art: ["asilo", "corte", "familia"],
-    ids: ["asilo", "cambio-corte", "permiso-de-trabajo", "i-360", "reapertura", "evaluacion-asilo"], categories: ["familia", "asilo", "corte"] },
-  { title: "Impuestos y negocios", note: "Tu ITIN, tus impuestos y tu empresa", art: ["impuestos", "empresa"],
-    ids: ["itin", "impuestos", "llc"], categories: ["fiscal", "empresa"] },
-];
-const rest = VISIBLE_SERVICES.filter(item => !item.season && !featured.some(star => star.id === item.id));
-const catalogGroups = CATALOG_ORDER.map(group => ({
-  title: group.title, note: group.note, art: group.art,
-  items: [...group.ids.map(id => rest.find(item => item.id === id)).filter((item): item is ContygoService => Boolean(item)),
-    ...rest.filter(item => !CATALOG_ORDER.some(other => other.ids.includes(item.id)) && group.categories.includes(item.category))],
-})).filter(group => group.items.length);
 const visa = CONTYGO_SERVICES.find(item => item.id === "visa-juvenil");
 
 const paidCount = CONTYGO_SERVICES.filter(item => !item.free).length;
@@ -90,7 +83,7 @@ const HERO_ART = {
 // First visit of the session: marked before the first paint, so the entrance never flickers.
 const INTRO = `try{var d=document.documentElement;if(!d.dataset.cgIntro){d.dataset.cgIntro=sessionStorage.getItem("contygo-intro")?"done":"play";sessionStorage.setItem("contygo-intro","1")}}catch(e){}`;
 const proof = [
-  { icon: "shield", text: "Consultor de inmigración registrado en Utah", href: "#registro" },
+  { icon: "shield", text: "Comprueba su registro en Utah", href: "#registro" },
   { icon: "app", text: "En español, desde tu celular" },
   { icon: "file", text: "Revisas tu contrato antes de decidir" },
 ];
@@ -192,9 +185,9 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     const cta = heroCta.current && window.IntersectionObserver ? new IntersectionObserver(([entry]) => { setHeaderCta(!entry.isIntersecting && entry.boundingClientRect.top < 0); setHeroVisible(entry.isIntersecting); }) : null;
     if (cta && heroCta.current) cta.observe(heroCta.current);
     // Phones: a bottom bar keeps the main action under the thumb, except where the person is already
-    // choosing (services) or facing the final call to action.
+    // choosing (the three ways, the route with its services) or facing the final call to action.
     const seen = new Map<Element, boolean>();
-    const watched = ["#servicios", "#empezar"].map(id => document.querySelector(id)).filter(Boolean) as Element[];
+    const watched = ["#ayuda", "#ruta", "#empezar"].map(id => document.querySelector(id)).filter(Boolean) as Element[];
     const busy = window.IntersectionObserver ? new IntersectionObserver(entries => {
       entries.forEach(entry => seen.set(entry.target, entry.isIntersecting));
       setDock(!Array.from(seen.values()).some(Boolean));
@@ -240,10 +233,10 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     <header className={s.header} data-scrolled={scrolled} data-cta={headerCta}>
       <div className={s.headerInner}>
         <a className={s.logo} href="#inicio" aria-label="ContyGo · Inicio"><Image src={logo} width={3000} height={849} alt="ContyGo" priority sizes="160px" /></a>
-        <nav aria-label="Principal"><a href="#servicios">Servicios</a><a href="#recorrido">Cómo funciona</a><a href="#registro">Quién te acompaña</a><a href="#preguntas">Preguntas</a></nav>
+        <nav aria-label="Principal"><a href="#ruta">Servicios</a>{COMMUNITY_URL && <a href={via(COMMUNITY_URL, "nav")}>Comunidad</a>}{APPOINTMENT_URL && <a href={via(APPOINTMENT_URL, "nav")}>Sesión con Henry</a>}<a href="#preguntas">Preguntas</a></nav>
         <div className={s.headerActions}>
           <button className={s.themeToggle} type="button" onPointerEnter={preloadOtherTheme} onTouchStart={preloadOtherTheme} onFocus={preloadOtherTheme} onClick={event => { const next: Theme = theme === "light" ? "dark" : "light"; void dropTheme(event.currentTarget, next, () => flushSync(() => setTheme(next))); }} aria-label={`Activar modo ${theme === "light" ? "oscuro" : "claro"}`} aria-pressed={theme === "dark"}><span key={theme} className={s.toggleIcon}><Icon kind={theme === "light" ? "moon" : "sun"} /></span></button>
-          <a className={s.login} href="https://contygo.app/entrar">Mi cuenta <Icon /></a>
+          <a className={s.login} href="https://contygo.app/entrar">Entrar <Icon /></a>
           <a className={s.headerCta} href="#servicios" tabIndex={headerCta ? 0 : -1} aria-hidden={!headerCta}>Elegir trámite <Icon /></a>
         </div>
       </div>
@@ -251,13 +244,12 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     <main ref={main} className={s.main}>
       <section className={s.hero} id="inicio">
         <div className={s.heroCopy}>
-          <span className={s.eyebrow}><i /> Personas + tecnología. Contigo.</span>
-          <h1>Tu historia sigue.<br />El siguiente paso,<br /><em>ContyGo.</em></h1>
-          <p className={s.lead}>Tu trámite, más claro. Preparamos tus documentos contigo y te acompañamos paso a paso, desde una sola plataforma.</p>
+          <span className={s.eyebrow}><i /> Henry Orellana · Consultor de inmigración registrado en Utah</span>
+          <h1>La ruta del<br />inmigrante,<br />paso a paso,<br /><em>ContyGo.</em></h1>
+          <p className={s.lead}>Haz tu trámite en la app, aprende cada paso en comunidad y habla con Henry cuando necesites una respuesta para ti.</p>
           <div className={s.heroActions}>
-            <a ref={heroCta} className={s.primary} href="#servicios">Elige tu trámite <span><Icon /></span></a>
+            <a ref={heroCta} className={s.primary} href="#ruta">Empezar mi ruta <span><Icon /></span></a>
             <CommunityButton />
-            <AppointmentButton />
           </div>
           {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
           <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>
@@ -276,13 +268,14 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
       </section>
 
-      <section className={s.services} id="servicios" data-thread="services" data-anim>
-        <ServiceShowcase seasonal={inSeason} stars={featured} groups={catalogGroups} open={open} warm={warm} />
+      <HelpWays />
+
+      <RouteSteps seasonal={inSeason} stars={featured} open={open} warm={warm}>
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
-      </section>
+      </RouteSteps>
 
       <section className={s.journey} id="recorrido">
-        <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}>02 · A tu ritmo, con claridad</span><h2>No tienes que<br /><em>entenderlo todo hoy.</em></h2></div><p>Hagámoslo paso a paso. Así comienza tu experiencia con ContyGo.</p></div>
+        <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}>Así funciona cada trámite</span><h2>No tienes que<br /><em>entenderlo todo hoy.</em></h2></div><p>Hagámoslo paso a paso. Así comienza tu experiencia con ContyGo.</p></div>
         <ol className={s.scenes}>{journey.map((step, i) => <li key={step.title} data-thread="step" data-reveal data-react="scene"><span className={s.stepDot} aria-hidden="true"><b>0{i + 1}</b></span><span className={s.sceneImage}><Image src={step.image} alt="" fill sizes="(max-width:760px) 92vw, 30vw" /></span><span className={s.stepNumber}>0{i + 1}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>
         <a className={s.inlineLink} href="#servicios">Elegir dónde empezar <Icon /></a>
       </section>
@@ -293,7 +286,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <div className={s.appPhone} data-thread="phone"><AppPhone /></div>
           <span className={s.realUi}>Ilustración de tu expediente en ContyGo</span>
         </div>
-        <div className={s.platformCopy} data-reveal data-react="title"><span className={s.eyebrow}>03 · Tu expediente, conectado</span><h2>La app organiza.<br /><em>El equipo<br />te acompaña.</em></h2><p>La tecnología pone orden. Las personas te ayudan a avanzar. Tu preparación tiene un lugar, desde el primer documento hasta el siguiente paso.</p><ul><li data-react="pop"><Icon kind="file" /><div><strong>Tu información, en un lugar.</strong><span>Aporta los datos y documentos que tu servicio necesita.</span></div></li><li data-react="pop"><Icon kind="path" /><div><strong>Sabes qué viene después.</strong><span>Consulta el recorrido y las indicaciones de tu preparación.</span></div></li><li data-react="pop"><Icon kind="chat" /><div><strong>Hay alguien del otro lado.</strong><span>Comunícate con el equipo desde Soporte en tu cuenta.</span></div></li></ul><a className={s.inlineLink} href="#servicios">Conocer mi servicio <Icon /></a></div>
+        <div className={s.platformCopy} data-reveal data-react="title"><span className={s.eyebrow}>Tu expediente, conectado</span><h2>La app organiza.<br /><em>El equipo<br />te acompaña.</em></h2><p>La tecnología pone orden. Las personas te ayudan a avanzar. Tu preparación tiene un lugar, desde el primer documento hasta el siguiente paso.</p><ul><li data-react="pop"><Icon kind="file" /><div><strong>Tu información, en un lugar.</strong><span>Aporta los datos y documentos que tu servicio necesita.</span></div></li><li data-react="pop"><Icon kind="path" /><div><strong>Sabes qué viene después.</strong><span>Consulta el recorrido y las indicaciones de tu preparación.</span></div></li><li data-react="pop"><Icon kind="chat" /><div><strong>Hay alguien del otro lado.</strong><span>Comunícate con el equipo desde Soporte en tu cuenta.</span></div></li></ul><a className={s.inlineLink} href="#servicios">Conocer mi servicio <Icon /></a></div>
       </section>
 
       {/* Navy ink sheet: the certificate always reads on the brand navy, in both appearances. */}
@@ -301,7 +294,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
 
       <section className={s.backing} id="respaldo">
         <div className={s.backingIntro} data-reveal data-react="title">
-          <span className={s.eyebrow}>04 · Todo por escrito</span>
+          <span className={s.eyebrow}>Todo por escrito</span>
           <h2>Claro desde el principio.<br /><em>Nada escondido.</em></h2>
           <p>Antes de pagar sabes qué incluye tu servicio, cuánto cuesta y qué pasa si algo no sale a tiempo.</p>
           <p className={s.honest}><b>Somos consultores, no abogados.</b> Preparamos tus documentos y te acompañamos; no damos asesoría legal ni representación. Decirlo claro también es cuidarte.</p>
@@ -339,9 +332,23 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       </section>
 
       <Finale onOpen={open} />
+
+      {/* The partners (brief, 13-11-2026): each one answers for its own service. With no logo yet, its initials. */}
+      <section className={s.allies} aria-labelledby="aliados-titulo">
+        <div><h2 id="aliados-titulo" className={s.eyebrow}>Nuestros aliados</h2><p>Cada aliado presta y responde por su propio servicio.</p></div>
+        <ul>{ALLIES.map(ally => <li key={ally.name}>
+          <span className={s.allyMark} aria-hidden="true">{OWNER_PENDING.allyLogo ? <Image src={OWNER_PENDING.allyLogo} alt="" width={96} height={96} /> : ally.initials}</span>
+          <span><strong>{ally.name}</strong><small>{ally.service}</small></span>
+        </li>)}</ul>
+      </section>
       <GreenThread scope={main} />
     </main>
-    <footer className={s.footer}><div><a href="#inicio" className={s.logo}><Image src={logo} width={3000} height={849} alt="ContyGo" sizes="150px" /></a><span>Siempre contigo. Paso a paso.</span></div><p>El consultor no es abogado y no presta servicios legales. ContyGo ofrece asistencia administrativa y tecnológica. No garantiza decisiones ni tiempos de las autoridades.</p><div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a><a href="https://contygo.app/entrar">Mi cuenta <span aria-hidden="true">↗</span></a></div></footer>
+    <footer className={s.footer}>
+      <div><a href="#inicio" className={s.logo}><Image src={logo} width={3000} height={849} alt="ContyGo" sizes="150px" /></a><span>Siempre contigo. Paso a paso.</span></div>
+      <p>Henry Orellana es consultor de inmigración registrado en Utah (Reg. 14304807-IC00). No es abogado y no puede dar asesoría legal ni realizar los servicios legales que realiza un abogado. El registro no constituye un aval del Estado de Utah. ContyGo ofrece asistencia administrativa y tecnológica, y no garantiza decisiones ni tiempos de las autoridades.</p>
+      <p>ContyGo es una marca de USA LATINO PRIME LLC · Highland, Utah</p>
+      <div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/terminos">Términos</a><a href="/privacidad">Privacidad</a><a href={PUBLIC_REGISTER} target="_blank" rel="noopener noreferrer">Registro público de Utah <span aria-hidden="true">↗</span></a><a href="https://contygo.app/entrar">Entrar <span aria-hidden="true">↗</span></a></div>
+    </footer>
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
       <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>

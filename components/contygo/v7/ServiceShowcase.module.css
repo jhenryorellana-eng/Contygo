@@ -6,15 +6,17 @@
 .whole{white-space:nowrap}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
-/* ---- El escenario: empieza justo bajo las cifras y ocupa todo el ancho ---- */
-.stage{position:relative;margin:-128px calc(50% - 50vw) 0;padding:104px max(5%,calc(50vw - 660px)) 72px;color:#f6f8f7;overflow:hidden;
+/* ---- El escenario: ocupa todo el ancho, bajo la cabecera del paso 1 de la ruta (antes del 14-11-2026 empezaba
+   justo bajo las cifras) ---- */
+.stage{position:relative;margin:0 calc(50% - 50vw);padding:80px max(5%,calc(50vw - 660px)) 72px;color:#f6f8f7;overflow:hidden;
   background:radial-gradient(70% 55% at 50% 0%,#25d36624,transparent 70%),radial-gradient(60% 45% at 50% 100%,#3470d640,transparent 72%),linear-gradient(#061b3d,#0a2350)}
 :global([data-contygo-theme=dark]) .stage{background:radial-gradient(70% 55% at 50% 0%,#25d3662e,transparent 70%),radial-gradient(60% 45% at 50% 100%,#6f9dff33,transparent 72%),linear-gradient(#0b2a5c,#0a2350);box-shadow:inset 0 1px 0 #ffffff14,inset 0 -1px 0 #ffffff14}
 .stageHead{position:relative;z-index:1;max-width:760px;margin:0 auto 76px;text-align:center}
 .stageEyebrow{display:inline-flex;align-items:center;gap:12px;font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#25d366}
 .showcase .laurel{width:19px;height:35px;color:#25d366}.showcase .laurel[data-flip]{transform:scaleX(-1)}
-.stageHead h2{margin-top:16px;color:#fff}
-.stageHead h2 em{color:#25d366}
+/* An h4 by its place in the page (section, step, this), with the size of a title: smaller than the step's name. */
+.stageHead h4{margin:16px 0 0;font:800 clamp(30px,3.4vw,50px)/1.06 var(--font-contygo-heading),sans-serif;letter-spacing:-.045em;color:#fff}
+.stageHead h4 em{color:#25d366}
 .stageHead p{max-width:560px;margin:18px auto 0;font-size:18px;line-height:1.6;color:#c3cfe0}
 .stageRow{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:30px}
 
@@ -41,11 +43,15 @@
 .pedestalCard:hover .stagePlay svg,.pedestalCard[data-lit=true] .stagePlay svg{color:#061b3d}
 
 /* ---- Todo el catálogo, directo ---- */
-.listHead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin:96px 0 30px}
-.listHead h3{font-size:clamp(28px,2.6vw,38px);letter-spacing:-.035em;line-height:1.1}
-.listHead h3 em{font-style:normal;color:var(--accent)}
+.listHead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin:72px 0 28px}
+.listHead h4{margin:0;font:800 clamp(26px,2.4vw,36px)/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}
+.listHead h4 em{font-style:normal;color:var(--accent)}
 .listHead>span{font-size:16px;color:var(--muted)}
 .shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+/* Outside a folder (the steps of the route): as many columns as fit, each card with a small drawing. */
+.shelf.loose{grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+.loose .shelfItem{grid-template-columns:min(34%,128px) 1fr auto}
+:global([data-contygo-theme=dark]) .loose .shelfItem{--sheet:#081c40}
 .shelfItem{position:relative;display:grid;grid-template-columns:40% 1fr auto;align-items:center;gap:14px;padding:10px 18px 10px 10px;border-radius:24px;border:1px solid var(--line);background:var(--sheet);box-shadow:var(--paper);transition:transform .45s var(--unfold),box-shadow .45s}
 .shelfItem:hover{transform:translateY(-4px);box-shadow:var(--lift)}
 .shelfArt{position:relative;display:block;aspect-ratio:1;border-radius:18px;background:var(--tint,var(--soft));overflow:hidden}
@@ -75,10 +81,15 @@
 .pedestalCard:nth-child(5) .float>span{animation-delay:-6s}
 /* Cuatro favoritos: en pantallas medianas, dos por fila (con cinco, el último centrado). */
 @media(max-width:1100px){.stageRow,.stageRow[data-count="5"]{grid-template-columns:1fr 1fr;row-gap:56px}.stageRow[data-count="5"]>*,.stageRow[data-count="5"]>:nth-child(4){grid-column:auto}.stageRow[data-count="5"]>:nth-child(5){grid-column:1 / -1;justify-self:center;width:calc(50% - 15px)}}
-@media(max-width:1000px){.shelf{grid-template-columns:1fr 1fr}}
+/* Below the side-by-side folders (1240 px) the cards go two per row, with the drawing capped: three were too tight
+   inside a folder (a name like «(Re-apertura)» ran under the arrow). */
+@media(max-width:1239px){.shelf:not(.loose){grid-template-columns:1fr 1fr}.shelfItem{grid-template-columns:min(40%,150px) 1fr auto}}
+/* An odd card left alone on the last row takes the whole row, so the folder has no hole. */
+@media(min-width:761px) and (max-width:1239px){.shelf:not(.loose)>:last-child:nth-child(odd){grid-column:1 / -1}}
 @media(max-width:760px){
-  .stage{margin:-72px -22px 0;padding:72px 22px 18px}
+  .stage{margin:0 -22px;padding:44px 22px 18px}
   .stageHead{margin-bottom:34px}
+  .stageHead h4{font-size:clamp(32px,8.6vw,44px);line-height:1.08}
   .stageHead p{font-size:17px}
   .stageRow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-inline:-22px;padding:6px 22px 16px 36px;scroll-padding-left:36px}
   .stageRow::-webkit-scrollbar{display:none}
@@ -102,8 +113,9 @@
   .stagePrice{flex:none;text-align:left}
   .stagePlay{flex:1;justify-content:center;min-height:50px;padding:0 12px;border-color:#25d366;background:#25d366;color:#061b3d;font-size:15px;white-space:nowrap}
   .showcase .stagePlay svg{color:#061b3d}
-  .listHead{display:block;margin:64px 0 22px}.listHead h3{margin-bottom:6px}
-  .shelf{grid-template-columns:1fr;gap:12px}
+  .listHead{display:block;margin:48px 0 20px}.listHead h4{margin-bottom:6px}
+  .shelf:not(.loose){grid-template-columns:1fr}
+  .shelf{gap:12px}
   .shelfItem{grid-template-columns:34% 1fr auto;gap:12px;padding:8px 14px 8px 8px;border-radius:20px}
   .shelfCopy strong{font-size:17px}
 }
@@ -130,18 +142,52 @@
 .showcase .seasonGo svg{width:16px;height:16px}
 .seasonCard:hover .seasonGo{transform:translateX(3px)}
 
-/* ---- El catálogo en dos grupos (28-10-2026): cada uno con sus esculturas de categoría, su línea y cuántos son ---- */
-.group+.group{margin-top:60px}
-.groupHead{display:flex;align-items:center;gap:18px;margin:0 0 22px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+/* ---- El catálogo en dos carpetas (12-11-2026): cada categoría es una carpeta de su color, con su pestaña ----
+   Azul, los trámites migratorios; arena, la licencia de conducir (hasta el 14-11-2026, taxes y negocios). La carpeta solo lleva relleno (sin sombra ni filtro): las
+   tarjetas de dentro siguen siendo el papel. La pestaña de delante es la suya, con cuántos servicios guarda; la de la
+   otra carpeta asoma detrás, en su color, y lleva a ella. Las orejas curvas unen la pestaña con la carpeta. */
+.showcase [data-tone=azul]{--folder:#e7eefb;--folder-deep:#d0ddf5}
+.showcase [data-tone=arena]{--folder:#f6efdd;--folder-deep:#e9dcbd}
+:global([data-contygo-theme=dark]) .showcase [data-tone=azul]{--folder:#103470;--folder-deep:#1a448c}
+:global([data-contygo-theme=dark]) .showcase [data-tone=arena]{--folder:#3b3628;--folder-deep:#4c4633}
+.folders{display:grid;gap:48px}
+.folder{display:flex;flex-direction:column;min-width:0;--corner:28px;--ear:18px}
+.tabs{display:flex;align-items:flex-end;gap:6px;min-width:0;padding:0 calc(var(--corner) + var(--ear))}
+.tab{position:relative;z-index:1;flex:none;display:flex;align-items:center;gap:10px;padding:14px 20px 12px;border-radius:18px 18px 0 0;background:var(--folder)}
+.tab:before,.tab:after{content:"";position:absolute;bottom:0;width:var(--ear);height:var(--ear)}
+.tab:before{right:100%;background:radial-gradient(circle var(--ear) at 0 0,#0000 97%,var(--folder))}
+.tab:after{left:100%;background:radial-gradient(circle var(--ear) at 100% 0,#0000 97%,var(--folder))}
+.tab h5{margin:0;font:800 clamp(20px,1.8vw,24px)/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em;white-space:nowrap;color:var(--ink)}
+/* «Nuevo» instead of a count: the amber of the page's other «Nuevo» tags. */
+.tabBadge{padding:4px 10px;border-radius:20px;background:linear-gradient(135deg,#ffd77a,#f5b544);color:#3b2500;font:850 12px/1.3 var(--font-contygo-body),sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.tabCount{display:grid;place-items:center;min-width:26px;height:26px;padding:0 8px;border-radius:13px;background:var(--ink);color:var(--bg);font:800 13px/1 var(--font-contygo-heading),sans-serif}
+.showcase .peek{display:inline-flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0;margin-bottom:-12px;padding:10px 16px 22px;border:0;border-radius:14px 14px 0 0;background:var(--folder-deep);color:var(--ink);font:800 15px/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.01em;white-space:nowrap;transition:transform .3s var(--unfold)}
+.showcase .peek svg{width:15px;height:15px;color:var(--accent)}
+.peekShort{display:none}
+.folderBody{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:20px;border-radius:var(--corner);background:var(--folder)}
+.folderHead{display:flex;align-items:center;gap:14px;margin:0 4px 18px}
+.folderNote{min-width:0;font-size:16px;line-height:1.35;color:var(--muted)}
 .groupArt{display:flex;flex:none;padding-left:12px}
-.groupArt>span{position:relative;width:60px;height:60px;margin-left:-12px;border-radius:50%;background:var(--soft);box-shadow:0 0 0 3px var(--bg),var(--paper);overflow:hidden}
+.groupArt>span{position:relative;width:52px;height:52px;margin-left:-12px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--folder);overflow:hidden}
 .groupArt>span:nth-child(2){z-index:1}.groupArt>span:nth-child(3){z-index:2}
-.groupArt img{object-fit:contain;padding:9px}
-.groupText{display:flex;flex-direction:column;gap:3px;min-width:0}
-.groupText h4{font:800 clamp(21px,1.9vw,26px)/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em}
-.groupText>span{font-size:15px;color:var(--muted)}
-.groupCount{margin-left:auto;flex:none;padding:7px 13px;border-radius:40px;border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
+.groupArt img{object-fit:contain;padding:8px}
+.folder .shelf{flex:1}
+.folderFoot{margin:14px 6px 2px;font-size:14px;line-height:1.5;color:var(--muted)}
 :global([data-contygo-theme=dark]) .groupArt>span{background:#fffdf7}
+:global([data-contygo-theme=dark]) .folder .shelfItem{--sheet:#081c40}
+@media(hover:hover) and (pointer:fine){.showcase .peek:hover{transform:translateY(-4px)}}
+/* Wide screens: the two folders side by side, two columns of cards beside one; with the same rows they end level. */
+@media(min-width:1240px){
+  /* The second folder never gets narrower than 400 px: its tab («Licencia de conducir · Nuevo») has to fit. */
+  .folders[data-pair]{grid-template-columns:minmax(0,1fr) minmax(400px,.5fr);gap:28px;align-items:start}
+  .folders[data-pair] .folder:last-child .tab h5{font-size:clamp(18px,1.5vw,21px)}
+  .folders[data-pair][data-even]{align-items:stretch}
+  .folders[data-pair][data-even] .shelf{grid-auto-rows:1fr}
+  .folders[data-pair] .peek{display:none}
+  .folders[data-pair] .folder:first-child .shelf{grid-template-columns:1fr 1fr}
+  .folders[data-pair] .folder:last-child .shelf{grid-template-columns:1fr}
+  .folders[data-pair] .shelfItem{grid-template-columns:36% 1fr auto}
+}
 @media(max-width:900px){
   .seasonCard{grid-template-columns:120px 1fr;gap:16px;padding:12px 16px 16px 12px}
   .seasonAction{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:space-between;padding-top:12px;border-top:2px dashed #e7d29d}
@@ -162,25 +208,43 @@
   .seasonAction{margin-top:8px;padding-top:14px}
   .seasonPrice{font-size:30px}
   .seasonGo{padding:13px 22px;font-size:16px}
-  .group+.group{margin-top:40px}
-  .groupHead{gap:12px;margin-bottom:16px;padding-bottom:14px}
+  /* The folders: a thin frame of colour around the same cards (the folder steps 6 px into the page margin, so the
+     cards keep their width), the tab with its count and the other folder's short name beside it. */
+  .folders{gap:34px}
+  .folder{margin-inline:-6px;--corner:18px;--ear:12px}
+  .tabs{gap:5px}
+  .tab{gap:6px;padding:11px 12px 9px;border-radius:14px 14px 0 0}
+  .tab h5{font-size:clamp(14px,4.1vw,16px)}
+  .tabCount{min-width:22px;height:22px;padding:0 6px;font-size:12px}
+  .tabBadge{padding:3px 8px}
+  .folderFoot{margin:10px 8px 6px}
+  .showcase .peek{gap:4px;margin-bottom:-10px;padding:9px 10px 19px;border-radius:12px 12px 0 0;font-size:clamp(13px,3.5vw,14px)}
+  .showcase .peek svg{width:14px;height:14px}
+  .peekShort{display:inline}.peekFull{display:none}
+  /* A tab that carries a word («Nuevo») has no room for the other folder's tab beside it. */
+  .showcase .folder[data-badged] .peek{display:none}
+  .folderBody{padding:12px 6px 6px}
+  .folderHead{gap:10px;margin:0 8px 12px}
+  .folderNote{font-size:14.5px}
   .groupArt{padding-left:10px}
-  .groupArt>span{width:40px;height:40px;margin-left:-10px}
+  .groupArt>span{width:38px;height:38px;margin-left:-10px}
   .groupArt img{padding:6px}
-  .groupText h4{font-size:21px}
-  .groupText>span{font-size:14px}
-  .groupCount{display:none}
-  .shelfItem{grid-template-columns:27% 1fr auto;padding:7px 12px 7px 7px;border-radius:18px}
+  .shelfItem,.loose .shelfItem{grid-template-columns:27% 1fr auto;padding:7px 12px 7px 7px;border-radius:18px}
   .shelfArt{border-radius:13px}
   .shelfCopy{gap:4px}
   .shelfCopy strong{font-size:16.5px}
   .shelfPrice{font-size:16px}
 }
+/* Narrow phones: the tabs give up the count first, then the other folder's tab, so the names never clip. */
+@media(max-width:379px){.tabCount,.tabBadge{display:none}}
+@media(max-width:339px){.showcase .peek{display:none}}
 /* In the hand (touch screens): the card gives under the finger, a quick press before the window opens. */
 @media(hover:none){
   .shelfItem,.seasonCard{-webkit-tap-highlight-color:transparent;transition:transform .16s ease-out,box-shadow .2s}
   .shelfItem:active,.seasonCard:active{transform:scale(.97)}
   .shelfItem:active .go{background:var(--green);border-color:var(--green);color:#061b3d}
+  .showcase .peek{-webkit-tap-highlight-color:transparent;transition:transform .16s ease-out}
+  .showcase .peek:active{transform:translateY(3px)}
   .pedestalCard{-webkit-tap-highlight-color:transparent}
   .pedestalCard:active .float{transform:scale(.96);transition:transform .16s ease-out}
 }

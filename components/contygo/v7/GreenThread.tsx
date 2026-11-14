@@ -200,7 +200,8 @@ function react(el: HTMLElement, kind: string, order: number) {
       bead?.animate([{ translate: "0 0" }, { translate: `${room}px 0`, offset: .45 }, { translate: `${room * .92}px 0`, offset: .55 }, { translate: "0 0" }], { duration: 1500, delay: 700, easing: "cubic-bezier(.65,0,.35,1)" });
       break;
     }
-    // "scene", "phone", "title", "sheet", "contract" and "step" are pure CSS: a resting state before the thread, a transition after.
+    // "scene", "phone", "title", "sheet", "contract", "step" and "station" (the medallions of the route) are pure CSS:
+    // a resting state before the thread, a transition after.
   }
 }
 
@@ -353,7 +354,12 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
         const b = offset(el, main!);
         // data-react-y moves the side anchors up (e.g. .2: react when the top fifth meets the thread).
         const ay = b.y + b.h * (Number(el.dataset.reactY) || .5);
-        const hit = [nearest(b.x, ay), nearest(b.x + b.w, ay), nearest(b.x + b.w / 2, b.y)].sort((p, q) => p.distance - q.distance)[0];
+        // Inside a data-react-root (the catalog's folders) a card lights with its row: it keys on the thread beside
+        // the root's left edge. Otherwise a card in a far column keyed on a later stretch that passes closer to it,
+        // and stayed dim for as long as it was on screen (12-11-2026).
+        const root = el.closest<HTMLElement>("[data-react-root]");
+        const hit = root ? nearest(offset(root, main!).x, ay)
+          : [nearest(b.x, ay), nearest(b.x + b.w, ay), nearest(b.x + b.w / 2, b.y)].sort((p, q) => p.distance - q.distance)[0];
         const kind = el.dataset.react ?? "card";
         const order = counters.get(el.parentElement) ?? 0; counters.set(el.parentElement, order + 1);
         const previous = reactors.find(r => r.el === el);

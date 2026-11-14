@@ -538,6 +538,7 @@ El dueño eligió **Vitrina**. El código de los otros dos está en el historial
   - **Inmigración:** Asilo Político, Cambio de Corte, Permiso de Trabajo, I-360, Reapertura y Evaluación de Asilo.
   - **Impuestos y negocios:** ITIN, Impuestos y LLC.
   - Cada encabezado lleva las esculturas de categoría V8 superpuestas en círculos (asilo, corte y familia; impuestos y empresa), una línea y cuántos servicios hay.
+  - Desde el 12-11-2026 los grupos tienen otros nombres y son carpetas: ver «12 nov 2026 · El catálogo en dos carpetas».
   - Un servicio nuevo que no esté en la lista entra al final de su grupo según su categoría: nunca desaparece.
 - **Movimiento.** Solo `transform`. La escultura de temporada flota con `data-loop` y se queda quieta con «reducir movimiento».
 
@@ -673,3 +674,94 @@ El dueño aprobó las cinco mejoras; el celular manda.
   3. «Tu hora con Henry · Abriendo su agenda…».
   4. Amanece en el fondo de la agenda (`#f6f8f7`, o `#04122b` con el teléfono en modo oscuro) y el navegador ya está yendo allí (1,65 s). Si tarda, aparece `BrandLoader`.
   - Sigue siendo un enlace: otra pestaña, sin JavaScript o con «reducir movimiento» va directo. Al volver con «Atrás» la transición desaparece.
+
+## 12 nov 2026 · El catálogo en dos carpetas
+
+> Desde el 14 nov 2026 las carpetas son «Trámites migratorios» y «Licencia de conducir», dentro del paso 1 de la ruta; ITIN, taxes y LLC pasaron a los pasos Finanzas y Negocios. Ver «La ruta del inmigrante», más abajo. Lo que sigue describe el diseño de las carpetas, que no cambió.
+
+**Por qué.** El dueño pidió que las categorías se vean categorizadas de verdad, en el celular y en escritorio, y les puso nombre: **Procesos Migratorios** (todo lo que no es taxes ni negocios) y **Taxes y Negocios** («taxes» es la palabra que usa la gente). Antes eran dos encabezados pequeños sobre una línea fina y las tarjetas de los dos grupos se veían iguales.
+
+**Cómo es** (`components/contygo/v7/ServiceShowcase.tsx`, datos en `CATALOG_ORDER` de `ContygoLanding.tsx`):
+
+- **Cada categoría es una carpeta de su color**, con pestaña: azul para Procesos Migratorios y arena para Taxes y Negocios, en los dos tonos. Viene del propio oficio (un expediente se guarda en carpetas) y del verbo «ordenar» del vocabulario de movimiento.
+  - La carpeta solo lleva relleno, sin sombra ni filtro. Las tarjetas de dentro siguen siendo el papel y no cambian.
+  - La pestaña lleva el nombre y cuántos servicios guarda. Dentro, arriba, las esculturas de categoría y la línea que la explica.
+- **Escritorio (desde 1240 px): las dos carpetas lado a lado.** Procesos Migratorios ocupa dos tercios, con dos columnas de tarjetas; Taxes y Negocios, un tercio, con una. Con 6 y 3 servicios las dos tienen tres filas y terminan a la misma altura.
+  - Solo se ponen lado a lado si son dos y la primera tiene más servicios. Si las filas no coinciden, cada una mide lo suyo. En cualquier otro caso van una bajo la otra.
+- **Celular y tableta: una bajo la otra.** Al lado de la pestaña de cada carpeta asoma, detrás y en su color, la pestaña de la otra («Taxes ⌄», «Migratorios ⌃»). Así se sabe desde el principio que hay dos categorías, y al tocarla la página baja o sube hasta esa carpeta.
+  - No son filtros (rechazados el 30-09): no se oculta ningún servicio.
+  - En el celular la carpeta entra 6 px en el margen de la página, para que las tarjetas conserven su ancho.
+  - En pantallas angostas la pestaña suelta primero el número (menos de 380 px) y después la pestaña de la otra carpeta (menos de 340 px): el nombre nunca se corta.
+  - En tableta las tarjetas van de dos en dos y una tarjeta impar ocupa toda la última fila.
+- **El hilo.** Una tarjeta del catálogo se enciende con su fila: toma como referencia el tramo del hilo junto al borde izquierdo de las carpetas (`data-react-root`, en `GreenThread.tsx`). Antes, una tarjeta de una columna lejana se guiaba por un tramo posterior del hilo y seguía apagada mientras estaba en pantalla.
+
+**Comprobado** con Playwright en 320, 340, 360, 375, 380, 390, 414, 430, 760, 761, 900, 1024, 1239, 1240, 1440 y 1920 px: las pestañas caben, ningún texto se corta y la página no se desplaza de lado. En 390 px, tocar la pestaña que asoma lleva a la otra carpeta y una tarjeta sigue abriendo su servicio.
+
+## 14 nov 2026 · La ruta del inmigrante
+
+**Por qué.** Henry entregó dos documentos el 13 nov 2026: «Landing ContyGo: categorías y servicios» (la estructura de la página) y «Simulador ContyGo: brief para la propuesta técnica» (de él, solo la parte que va en la landing). ContyGo deja de presentarse como un catálogo de trámites y pasa a ser «la ruta del inmigrante»: cinco pasos para crecer en Estados Unidos, de los que hoy se ofrece sobre todo el primero. El dueño pidió seguir esa estructura **con nuestro diseño**, no con el del documento (azul plano, Nunito, tarjetas grises).
+
+**La idea.** El hilo verde ya era el camino de la página; ahora es, literalmente, la ruta. Cada paso es una **estación** del hilo.
+
+**La página, de arriba abajo** (`ContygoLanding.tsx`):
+
+1. **Portada.** Sobre el titular, «Henry Orellana · Consultor de inmigración registrado en Utah». Titular: «La ruta del inmigrante, paso a paso, ContyGo.» (cuatro líneas; el subrayado verde sigue en «ContyGo.»). Dos botones: «Empezar mi ruta» (verde, baja a la ruta) y el del Club. «Citas con Henry» sale del hero: ahora es una de las tres tarjetas de abajo.
+2. **Cifras.** Sin cambios: por su borde entra el hilo.
+3. **«¿Cómo te ayudamos hoy?»** (`HelpWays.tsx`): tres hojas de papel, una por forma de acompañar. Cada una lleva la pieza de marca de su producto, no un icono genérico:
+   - **Servicios:** la plaza de papel con los cinco caminos. Botón verde «Ver servicios».
+   - **Comunidad, ContyGo Club:** la mesa del Club vista desde arriba, con el hilo uniendo las sillas y un asiento libre con «+» que late. Al tocar «Unirme al Club», ese «+» vuela a su silla (`ClubDoorway`).
+   - **Sesión con Henry:** el calendario cuyo reloj marca las diez y diez, el check. Al tocar «Agendar sesión», crece hasta el centro (`HenryDoorway`).
+   - En el celular cada tarjeta es corta: la pieza junto al nombre, el texto y el botón a todo el ancho.
+4. **«Tu ruta, paso a paso»** (`RouteSteps.tsx`, datos en `lib/contygo-route.ts`):
+   - **Itinerario:** los cinco pasos en una línea punteada, cada uno con su número y si está disponible; al tocarlo se baja a ese paso. Hace falta porque el paso 1 es largo y los demás quedarían lejos. En el celular se desliza de lado. No es un filtro: no oculta nada.
+   - **Estación:** un medallón con el número, la etiqueta «Disponible» o «Próximamente», el nombre, su línea y su escultura. En pantalla ancha (desde 1200 px) el medallón va sobre el hilo, en el margen; en pantallas menores va junto a la etiqueta, unido al hilo por una rama corta.
+   - **El código de color:** verde relleno = ya se puede empezar; **punteado = está por llegar**, igual que el hilo dibuja punteada la ruta que falta. Vale para el medallón, la hoja del paso, las etiquetas de lo que viene y los cuatro movimientos del simulador.
+   - **Un paso está «Disponible» si ya tiene al menos un servicio en el catálogo.** Lo decide el catálogo, no un texto fijo. Por eso Finanzas (ITIN y taxes) y Negocios (LLC) salen disponibles, aunque el documento los traía como «Próximamente»; el propio documento pide cambiar Finanzas si ya se ofrecen ITIN y taxes.
+   - **Paso 1, Migratorio:** la vitrina de los favoritos (sin cambios, ahora bajo la cabecera del paso) y dos carpetas: **Trámites migratorios** (azul, los seis servicios restantes, con la línea «Henry Orellana no es abogado y no puede dar asesoría legal») y **Licencia de conducir** (arena, etiqueta «Nuevo», de SG Services Group). Debajo, la banda marina del permiso de trabajo.
+     - La licencia no está en el catálogo de contygo: no tiene guía ni contrato aquí. «Empezar» escribe al equipo por WhatsApp; «¿Aún no tienes ITIN? Empieza aquí» abre la guía del ITIN.
+   - **Pasos 2 a 5:** una hoja por paso. Arena si ya tiene servicios (sus tarjetas del catálogo, que abren la guía como siempre); gris con borde punteado si está por llegar. Dentro, lo que viene en etiquetas punteadas, «Avísame cuando llegue» y «Apréndelo en ContyGo Club».
+   - **Paso 3, Certificaciones: la cara del Simulador ContyGo en la landing.** Las cuatro licencias (seguros de vida marcada «Primero en llegar», la única con borde verde), los cuatro movimientos (mira el video, elige tu estado, revisa los requisitos antes de pagar, practica en el simulador) y «Con tu licencia, eliges libremente la empresa con la que quieres trabajar».
+     - **Sin precio y sin promesas.** El brief del simulador manda que nadie pague, ni vea el precio, antes de saber si califica en su estado; y prohíbe «100 % de aprobación» o ingresos garantizados. La landing solo anuncia.
+   - Al final: «En los pasos 2 a 5 te informamos, educamos y preparamos. No vendemos seguros, inversiones, préstamos ni propiedades.»
+5. **Lo que se queda** después de la ruta, porque sostiene la confianza y la venta de un trámite: cómo funciona cada trámite, la app, el registro de Henry, el contrato a la vista, las preguntas y el cierre con el check. Sus rótulos ya no llevan «02 ·», «03 ·», «04 ·»: los números son ahora de los pasos de la ruta.
+6. **Aliados**, tras el cierre: «Cada aliado presta y responde por su propio servicio» y SG Services Group.
+7. **Pie:** el aviso del documento, con el número de registro (14304807-IC00), «ContyGo es una marca de USA LATINO PRIME LLC · Highland, Utah» y el enlace al registro público de Utah.
+
+**Menú:** Servicios, Comunidad, Sesión con Henry y Preguntas; «Mi cuenta» pasa a llamarse «Entrar».
+
+**Lo que el dueño aún debe dar** (`OWNER_PENDING` en `lib/contygo-route.ts`; el documento lo lista en «Por completar antes de publicar»). Mientras falte, la página no lo inventa:
+
+| Dato | Mientras falta |
+|---|---|
+| Precio y duración de la sesión con Henry | La tarjeta dice «Elige tu horario en su agenda» |
+| Lugares que quedan en el Club (de 100) | Solo «Fundadores: $25 al mes» |
+| Qué incluye «Empieza gratis: tu permiso de trabajo» | La banda dice «Empieza por tu permiso de trabajo» y muestra su precio real: hoy es un servicio de pago, y «gratis» sería falso |
+| Logo de SG Services Group | Sus iniciales, «SG» |
+
+**«Avísame cuando llegue»** abre WhatsApp con el mensaje ya escrito («Hola, avísame cuando llegue Certificaciones a ContyGo.»). No guarda nada en ninguna base de datos.
+
+**De dónde viene cada visita al Club y a la agenda.** El mismo enlace lleva `utm_medium` distinto según dónde se tocó (`via` en `lib/config.ts`): `hero`, `nav`, `ayuda` (las tres tarjetas) y `ruta` («Apréndelo en ContyGo Club»).
+
+**Ilustraciones nuevas** (Codex, misma familia V8; encargo en `material-de-diseno/ilustraciones-v8/prompts/lote-d-ruta.txt`):
+
+| Archivo | Porqué |
+|---|---|
+| servicio-licencia-conducir | Un auto y la tarjeta de la licencia |
+| categoria-certificaciones | Un certificado con su sello y un birrete: la licencia profesional |
+| categoria-patrimonio | Una casa junto a barras que crecen, con un brote arriba |
+
+**Detalles de construcción.**
+
+- Los títulos siguen su lugar en la página: sección (h2), paso (h3), «Los favoritos» y «Más trámites» (h4), pestañas de carpeta (h5).
+- El medallón va fuera de la cabecera del paso. La cabecera se despliega con una animación y eso la convierte en una capa propia: dentro de ella, el hilo pasaba por encima del número.
+- La lista de estaciones usa `minmax(0,1fr)`: sin eso, una fila de pestañas ancha ensanchaba toda la página en el celular.
+- La carpeta de la licencia nunca baja de 400 px junto a la de trámites, y en el celular no muestra la pestaña de la otra carpeta: su propia pestaña lleva «Nuevo» y no caben las dos.
+- La barra inferior del celular («Elige tu trámite») se esconde mientras se ven las tres tarjetas y la ruta: ahí la persona ya está eligiendo.
+
+**Comprobado** con Playwright:
+
+- Pestañas y ancho de página en 320, 340, 360, 375, 390, 414, 430, 600, 768, 1024, 1239, 1240, 1300, 1440, 1920 y 2560 px: todo cabe y nada es más ancho que la pantalla.
+- En 390 y 1440 px: el itinerario lleva a su paso (queda a 96 px del borde), los medallones se encienden al paso del hilo y nada tapa su número; las tarjetas de Finanzas y Negocios, la banda del permiso y el enlace del ITIN abren su guía; la tarjeta del Club hace su transición y sale con `utm_medium=ayuda`.
+- Visto en claro y oscuro, en 390, 768, 1024 y 1440 px.
+- Pruebas: `tests/ruta-inmigrante.test.cjs`.
+

@@ -3,7 +3,7 @@
 Sistema de ilustraciones de ContyGo: una escultura de papel por categoría y una por servicio, cada una con su porqué. Se dibujan una sola vez para los dos tonos (claro y oscuro).
 
 - Originales: PNG 1024 px con transparencia, en esta carpeta.
-- Versiones web: `python a-web.py` genera WebP de 512 px en `public/contygo/v8/`.
+- Versiones web: `python a-web.py` genera WebP de 512 px en `public/contygo/v8/`. (El lote D se convirtió con Chromium, misma medida y calidad: en la Mac no había PIL.)
 - Encargos a Codex (`codex-image`): en `prompts/`.
   - La dirección de arte común está en `prompts/comun.txt`.
   - El piloto (`piloto.txt`) sirvió de referencia de estilo para los lotes A, B y C.
@@ -35,5 +35,8 @@ Sistema de ilustraciones de ContyGo: una escultura de papel por categoría y una
 | servicio-itin | Tu tarjeta de identificación fiscal |
 | servicio-impuestos | La declaración enviada, con su visto bueno |
 | servicio-llc | El certificado de constitución y tus tarjetas: empresa e identidad |
+| servicio-licencia-conducir | Un auto y la tarjeta de la licencia (14 nov 2026, lote D: `prompts/lote-d-ruta.txt`) |
+| categoria-certificaciones | Un certificado con su sello y un birrete: la licencia profesional (lote D) |
+| categoria-patrimonio | Una casa junto a barras que crecen, con un brote arriba (lote D) |
 
 Fotos del recorrido corregidas: `v7-fotos/paso-01-entiende-v2.png` y `paso-03-avanza-v2.png`. En las originales, el teléfono mostraba la pantalla por la cara de las cámaras; ahora son tomas por encima del hombro, físicamente correctas.

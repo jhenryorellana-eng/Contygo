@@ -1,0 +1,113 @@
+/* «¿Cómo te ayudamos hoy?»: ver HelpWays.tsx. Tres hojas de papel, cada una con la pieza de marca de su producto.
+   El verde es de lo que se pulsa: el botón de cada tarjeta. Lo que se mueve solo usa transform y lleva data-loop
+   (se pausa fuera de pantalla). Los enlaces y los SVG llevan .card delante: la página fija su color y su tamaño con más
+   especificidad. */
+.ways{max-width:1440px;margin:auto;padding:104px 5% 0}
+.head{margin-bottom:44px}
+.head h2{margin-top:20px}
+.cards{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:22px}
+.card{position:relative;display:flex;flex-direction:column;gap:20px;padding:14px 14px 16px;border-radius:30px;border:1px solid var(--line);background:var(--sheet);box-shadow:var(--paper);transition:transform .45s var(--unfold),box-shadow .45s}
+
+/* ---- La pieza de cada tarjeta, sobre su propio fondo ---- */
+.art{position:relative;display:grid;place-items:center;height:176px;border-radius:20px;overflow:hidden}
+.card[data-way=servicios] .art{background:radial-gradient(90% 90% at 50% 10%,#f0faf3,#d9f2e2)}
+.card[data-way=club] .art{background:radial-gradient(80% 70% at 50% 0%,#25d36633,transparent 70%),linear-gradient(#0b2a5c,#061b3d)}
+.card[data-way=henry] .art{background:radial-gradient(90% 90% at 50% 10%,#fffbf2,#f5ead2)}
+:global([data-contygo-theme=dark]) .card[data-way=servicios] .art{background:radial-gradient(90% 90% at 50% 10%,#12494f,#0c3240)}
+:global([data-contygo-theme=dark]) .card[data-way=club] .art{background:radial-gradient(80% 70% at 50% 0%,#25d3663d,transparent 70%),linear-gradient(#123a7a,#0a2a5c)}
+:global([data-contygo-theme=dark]) .card[data-way=henry] .art{background:radial-gradient(90% 90% at 50% 10%,#40392a,#2b271c)}
+.art>img{width:164px;height:164px;object-fit:contain;transition:transform .9s var(--unfold)}
+
+/* The Club's table: people round it, the green thread joining them and one free seat, yours. */
+.table{position:relative;width:138px;aspect-ratio:1}
+.card .ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring circle{fill:none;stroke:#25d366;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:.5 5}
+.top{position:absolute;inset:27%;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fffdf7,#efe6d2);box-shadow:0 12px 22px -10px #000000cc}
+.top img{width:50%;height:auto}
+.chair{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;transform:rotate(var(--a)) translateY(-60px) rotate(calc(var(--a) * -1))}
+.chair i{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;background:#fffdf7;color:#061b3d;font-style:normal;overflow:hidden;box-shadow:0 6px 12px -6px #000}
+.chair i[data-tint=mint]{background:#c9f4da}
+.card .chair svg{width:22px;height:22px;margin-top:6px}
+.chair .yours{overflow:visible;background:#25d366;animation:beat 2.4s ease-in-out infinite}
+.yours b{font:800 19px/1 var(--font-contygo-heading),sans-serif;transform:translateY(-1px)}
+
+/* Henry's calendar: the card of the transition, resting. Its hands mark ten past ten, ContyGo's check. */
+.calendar{display:grid;grid-template-rows:24% 1fr;width:100px;height:108px;border-radius:21px;background:#fffdf7;overflow:hidden;box-shadow:0 0 0 1.5px #061b3d1f,0 20px 30px -18px #061b3d99;rotate:-4deg;transition:rotate .5s var(--unfold)}
+.band{position:relative;background:linear-gradient(180deg,#2fe074,#1fbf5c)}
+.band i{position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#fffdf7;box-shadow:inset 0 1px 1px #061b3d66}
+.band i:first-child{left:27%}
+.band i:last-child{right:27%}
+.calendar .dial{place-self:center;display:block;width:68px;height:68px;overflow:visible}
+.dial [data-part=ring]{fill:none;stroke:#25d366;stroke-width:2}
+.dial [data-part=tick]{fill:#061b3d4d}
+.dial [data-hand]{fill:none;stroke:#061b3d;stroke-linecap:round;transform-box:view-box;transform-origin:20px 20px;transition:stroke .3s}
+.dial [data-hand=hour]{stroke-width:3.6;transform:rotate(-46deg)}
+.dial [data-hand=minute]{stroke-width:3;transform:rotate(39deg)}
+.dial [data-part=pin]{fill:#061b3d}
+
+/* ---- Lo que dice y su botón ---- */
+.copy{display:flex;flex:1;flex-direction:column;gap:8px;padding:0 8px}
+.kind{font-size:12px;font-weight:800;line-height:1.5;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.copy h3{font-size:clamp(22px,1.9vw,28px);line-height:1.15;letter-spacing:-.03em}
+.copy p{font-size:16px;line-height:1.55;color:var(--muted)}
+.meta{margin-top:auto;padding-top:10px;font-size:14.5px;font-weight:700;line-height:1.4;color:var(--ink)}
+.card .go{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:6px 6px 6px 24px;border-radius:40px;font-size:16.5px;font-weight:750;transition:transform .3s var(--unfold),box-shadow .3s;-webkit-tap-highlight-color:transparent}
+.go i{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:50%;transition:transform .35s var(--unfold)}
+.card .go svg{width:20px;height:20px}
+.card[data-way=servicios] .go{background:var(--green);color:#061b3d}
+.card[data-way=servicios] .go i{background:#061b3d;color:#fff}
+.card[data-way=club] .go{background:#061b3d;color:#fff}
+:global([data-contygo-theme=dark]) .card[data-way=club] .go{background:#123468}
+.card[data-way=henry] .go{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.card:is([data-way=club],[data-way=henry]) .go i{background:var(--green);color:#061b3d}
+.card .go:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:40px}
+@media(hover:hover){
+  .card:hover{transform:translateY(-4px);box-shadow:var(--lift)}
+  .card:hover .art>img{transform:translateY(-4px) scale(1.05)}
+  .card:hover .calendar{rotate:0deg}
+  .card:hover .dial [data-hand]{stroke:#1fbf5c}
+  .card:hover .dial [data-hand=hour]{animation:hour .9s cubic-bezier(.3,.6,.15,1)}
+  .card:hover .dial [data-hand=minute]{animation:minute .9s cubic-bezier(.3,.6,.15,1)}
+  .go:hover i{transform:rotate(-35deg)}
+  .card[data-way=henry] .go:hover{box-shadow:inset 0 0 0 1.5px var(--green)}
+}
+.go:active{transform:scale(.98)}
+@keyframes beat{0%,100%{transform:none}50%{transform:scale(1.12)}}
+@keyframes hour{from{transform:rotate(-76deg)}to{transform:rotate(-46deg)}}
+@keyframes minute{from{transform:rotate(-321deg)}to{transform:rotate(39deg)}}
+
+/* Medium screens: the cards keep three columns while a name fits on two lines; below, they stack. */
+/* `scale` shrinks what is seen, not the room it takes: the negative margin gives that room back. */
+@media(max-width:1100px){.cards{gap:16px}.art{height:150px}.art>img{width:140px;height:140px}.table{scale:.9;margin:-7px}.calendar{scale:.9;margin:-5px}}
+@media(max-width:900px){
+  .cards{grid-auto-flow:row;gap:14px}
+  /* One short card each: its piece beside its name, then the words and the button across the full width. */
+  .card{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:0 16px;padding:12px 12px 14px;border-radius:26px}
+  .art{grid-row:1 / span 2;width:92px;height:92px;border-radius:18px}
+  .art>img{width:88px;height:88px}
+  .table{scale:.6;margin:-28px}
+  .calendar{scale:.62;margin:-21px -19px}
+  .copy{display:contents}
+  .kind{align-self:end}
+  .copy h3{align-self:start;margin-top:4px}
+  .copy p,.meta,.card .go{grid-column:1 / -1}
+  .copy p{margin-top:12px}
+  .meta{margin-top:8px;padding-top:0}
+  .card .go{margin-top:14px}
+}
+@media(max-width:760px){
+  .ways{padding:64px 22px 0}
+  .head{margin-bottom:26px}
+  .head h2{margin-top:14px}
+  .card{grid-template-columns:80px minmax(0,1fr);gap:0 14px}
+  .art{width:80px;height:80px;border-radius:16px}
+  .art>img{width:78px;height:78px}
+  .table{scale:.52;margin:-34px}
+  .calendar{scale:.54;margin:-25px -23px}
+  .copy h3{font-size:21px}
+  .copy p{font-size:15.5px;line-height:1.5}
+  .meta{font-size:14px;padding-top:6px}
+  .card .go{min-height:54px;font-size:16px;padding-left:22px}
+  .go i{width:42px;height:42px}
+}
+@media(prefers-reduced-motion:reduce){.chair .yours{animation:none}.card .dial [data-hand]{animation:none!important}}

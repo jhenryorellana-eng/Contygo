@@ -8,7 +8,7 @@
    Sigue siendo un enlace: abrir en otra pestaña, sin JavaScript o con «reducir movimiento» va directo. */
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { COMMUNITY_URL } from "@/lib/config";
+import { COMMUNITY_URL, via } from "@/lib/config";
 import ClubDoorway, { Person, type DoorwayOrigin } from "./ClubDoorway";
 import s from "./CommunityButton.module.css";
 
@@ -20,13 +20,17 @@ export function hint(rel: "preconnect" | "prefetch", href: string) {
   document.head.appendChild(link);
 }
 
-export default function CommunityButton() {
+/** The way into the Club for any link on the page: the «+» flies from `seat` to its chair (ClubDoorway) and the browser
+    goes there in the same tab. `medium` says where on the page it was pressed. Still a plain link: another tab, no
+    JavaScript or «reduce motion» go straight there. Without a link (lib/config.ts) `href` is null. */
+export function useClubDoor(medium = "hero") {
   const [origin, setOrigin] = useState<DoorwayOrigin | null>(null);
   const seat = useRef<HTMLElement>(null);
+  const href = COMMUNITY_URL ? via(COMMUNITY_URL, medium) : null;
 
   // The Club opens sooner: the connection from the start, its page as the hand reaches for the button.
-  useEffect(() => { if (COMMUNITY_URL) hint("preconnect", new URL(COMMUNITY_URL).origin); }, []);
-  const warm = () => { if (COMMUNITY_URL) hint("prefetch", COMMUNITY_URL); };
+  useEffect(() => { if (href) hint("preconnect", new URL(href).origin); }, [href]);
+  const warm = () => { if (href) hint("prefetch", href); };
   // Coming back with «Atrás» restores this page as it was left: the transition must not still be on screen.
   useEffect(() => {
     const restored = (event: PageTransitionEvent) => { if (event.persisted) setOrigin(null); };
@@ -39,16 +43,21 @@ export default function CommunityButton() {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const box = seat.current?.getBoundingClientRect();
-    if (!box) return;
+    if (!box || !box.width) return;
     event.preventDefault();
     if (origin) return;
     setOrigin({ x: box.left + box.width / 2, y: box.top + box.height / 2, size: box.width });
   }
 
+  return { href, seat, link: { onClick: enter, onPointerEnter: warm, onPointerDown: warm, onFocus: warm }, door: origin && href ? createPortal(<ClubDoorway href={href} origin={origin} />, document.body) : null };
+}
+
+export default function CommunityButton() {
+  const { href, seat, link, door } = useClubDoor();
   // Without a link (hidden for now, lib/config.ts) there is no button.
-  if (!COMMUNITY_URL) return null;
+  if (!href) return null;
   return <>
-    <a className={s.community} href={COMMUNITY_URL} onClick={enter} onPointerEnter={warm} onPointerDown={warm} onFocus={warm}>
+    <a className={s.community} href={href} {...link}>
       <span className={s.ring} data-loop aria-hidden="true" />
       <span className={s.seats} aria-hidden="true">
         <i><Person /></i>
@@ -62,6 +71,6 @@ export default function CommunityButton() {
       <svg className={s.arrow} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       <em className={s.tag} aria-hidden="true">Nuevo</em>
     </a>
-    {origin && createPortal(<ClubDoorway href={COMMUNITY_URL} origin={origin} />, document.body)}
+    {door}
   </>;
 }

@@ -34,6 +34,13 @@ export const COMMUNITY_URL: string | null = "https://club.contygo.app/?utm_sourc
  */
 export const APPOINTMENT_URL: string | null = "https://citas.contygo.app/?utm_source=landing&utm_medium=hero";
 
+/** El mismo enlace, marcado con el lugar de la página donde se tocó (utm_medium): hero, nav, ayuda, ruta. */
+export function via(url: string, medium: string): string {
+  const next = new URL(url);
+  next.searchParams.set("utm_medium", medium);
+  return next.toString();
+}
+
 /** Video de fallback general (cuando un servicio no define el suyo). */
 export const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
 

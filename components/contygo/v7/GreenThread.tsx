@@ -11,6 +11,7 @@ import s from "./ContygoLanding.module.css";
  * Los recuadros de la ruta (14-11-2026): cada `[data-thread="frame"]` es una caja que cuelga del hilo. El hilo es su
  * lado izquierdo y dibuja los otros tres mientras el lector la recorre: sale del hilo, cruza por arriba, baja por la
  * derecha y vuelve por abajo; el último cuarto de vuelta lo cierra el propio hilo al llegar. Punteado = lo que falta.
+ * La caja en la que está el hilo lleva `data-here` (16-11-2026): su hoja se alza y la cruza un brillo, en RouteSteps.module.css.
  *
  * Rendimiento (28-09-2026, medido en un celular emulado con la CPU a ¼): la geometría del
  * hilo se calcula aquí, con las mismas curvas que se dibujan, y nunca se le pide al
@@ -23,7 +24,7 @@ type Knot = { x: number; y: number; tx: number; ty: number };
 type Box = { x: number; y: number; w: number; h: number };
 type Curve = [number, number, number, number, number, number, number, number];
 /** A box of the route: its outline (from the thread, around, and back to it) and how much of it is drawn. */
-type Frame = { line: SVGPathElement; top: number; bottom: number; r: number; edge: number; side: number; len: number; off: number };
+type Frame = { el: HTMLElement; line: SVGPathElement; top: number; bottom: number; r: number; edge: number; side: number; len: number; off: number; here: boolean };
 
 const DOWN = { tx: 0, ty: 1 };
 const RIGHT = { tx: 1, ty: 0 };
@@ -312,6 +313,9 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
           else { if (f.off < 0) f.line.style.visibility = ""; f.line.style.strokeDashoffset = String(off); }
           f.off = off;
         }
+        // The box the thread is in.
+        const here = !still.matches && point.y >= f.top + f.r && point.y < f.bottom - f.r;
+        if (here !== f.here) { f.here = here; f.el.dataset.here = String(here); }
       }
       for (const mark of marks) {
         const reached = drawn >= mark.at - 2;
@@ -391,7 +395,7 @@ export default function GreenThread({ scope }: { scope: RefObject<HTMLElement> }
         lineOver.setAttribute("d", d); lineOver.setAttribute("class", s.frameLine); lineOver.setAttribute("pathLength", len.toFixed(2));
         lineOver.style.strokeDasharray = `${len.toFixed(2)} ${len.toFixed(2)}`; lineOver.style.visibility = "hidden";
         outlines.push(ahead, lineOver);
-        return { line: lineOver, top: y0, bottom: y1, r, edge, side, len, off: -1 };
+        return { el, line: lineOver, top: y0, bottom: y1, r, edge, side, len, off: -1, here: el.dataset.here === "true" };
       });
       boxesEl!.replaceChildren(...outlines);
       marks = Array.from(main!.querySelectorAll<HTMLElement>('[data-thread="step"]')).map((el, i) => {

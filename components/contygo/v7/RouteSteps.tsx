@@ -7,6 +7,9 @@
    Cada paso es un recuadro que cuelga del hilo (14-11-2026, pedido del dueño: «que marque bien cada sección al hacer
    scroll»): el hilo es su lado izquierdo y dibuja los otros tres mientras se recorre (GreenThread, data-thread="frame").
    Su número y su estado van sobre el borde de arriba, como el título de una ficha.
+   La hoja de cada paso (su «cuadro») es tinta: el azul de la marca, con las tarjetas blancas encima. La del paso en el
+   que está el hilo se alza, toma un filo verde y la cruza un brillo, una sola vez (16-11-2026: «llamativo pero
+   elegante»; una ola de color, cuentas de luz y el salto de la figura se probaron ese día y el dueño los vio exagerados).
    - Paso 1, Migratorio: la vitrina de los favoritos y dos carpetas, Trámites migratorios y Licencia de conducir
      (de un aliado: sin guía ni contrato aquí, «Empezar» escribe al equipo).
    - Pasos 2 a 5: una hoja con lo que ya se puede empezar (tarjetas del catálogo) y lo que viene (etiquetas punteadas).

@@ -774,3 +774,11 @@ Pedido del dueño sobre la versión publicada: «que marque bien cada sección a
 - Punteado = lo que falta por recorrer, igual que la ruta. Verde = recorrido. Al subir, se desdibuja.
 - El estado («Disponible», «Próximamente») va sobre el borde de arriba, como el título de una ficha. El medallón también, salvo en pantalla ancha, donde sigue sobre el hilo junto al nombre.
 - La línea vive en `GreenThread.tsx` (`data-thread="frame"`); en CSS solo queda el aire entre la línea y el contenido. En celular nada invade ya el margen: por ahí pasa la línea.
+
+### El cuadro de cada paso, en tinta (16-11-2026)
+
+El dueño: «que esos cuadros tengan más resalte… llamativo pero elegante», en los cinco pasos.
+
+- La hoja de los pasos 2 a 5 pasa del papel arena al azul de la marca, con las tarjetas blancas encima, una sombra debajo y un filo fino. Una luz verde en la esquina si el paso ya se puede empezar; azul y con borde punteado si está por llegar. En Migratorio, el volumen lo llevan sus dos carpetas.
+- Cuando el hilo está en un paso, su hoja se alza, toma un filo verde y la cruza un brillo, una sola vez. Nada más se mueve.
+- Probado y descartado ese día por exagerado («parece ya hasta chusco»): una ola de color que llenaba el recuadro, cuentas de luz por el borde y la figura que saltaba. También se le ofrecieron una hoja blanca con luces de color y el papel arena con relieve; eligió la tinta.

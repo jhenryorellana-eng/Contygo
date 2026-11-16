@@ -143,7 +143,7 @@
 .seasonCard:hover .seasonGo{transform:translateX(3px)}
 
 /* ---- El catálogo en dos carpetas (12-11-2026): cada categoría es una carpeta de su color, con su pestaña ----
-   Azul, los trámites migratorios; arena, la licencia de conducir (hasta el 14-11-2026, taxes y negocios). La carpeta solo lleva relleno (sin sombra ni filtro): las
+   Azul, los trámites migratorios; arena, la licencia de conducir (hasta el 14-11-2026, taxes y negocios). La carpeta lleva su relleno y una sombra debajo (ningún filtro): las
    tarjetas de dentro siguen siendo el papel. La pestaña de delante es la suya, con cuántos servicios guarda; la de la
    otra carpeta asoma detrás, en su color, y lleva a ella. Las orejas curvas unen la pestaña con la carpeta. */
 .showcase [data-tone=azul]{--folder:#e7eefb;--folder-deep:#d0ddf5}
@@ -165,6 +165,10 @@
 .showcase .peek svg{width:15px;height:15px;color:var(--accent)}
 .peekShort{display:none}
 .folderBody{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:20px;border-radius:var(--corner);background:var(--folder)}
+/* With the sheets of the other steps in relief (16-11-2026), the folders take the same volume: their colour deepens
+   towards the foot (the head keeps the tab's colour, so the joint does not show) and their shadow falls below. */
+.folderBody{background:linear-gradient(180deg,var(--folder) 30%,var(--folder-deep) 190%);box-shadow:0 34px 56px -38px #061b3d80}
+:global([data-contygo-theme=dark]) .folderBody{box-shadow:0 34px 56px -38px #000000b3}
 .folderHead{display:flex;align-items:center;gap:14px;margin:0 4px 18px}
 .folderNote{min-width:0;font-size:16px;line-height:1.35;color:var(--muted)}
 .groupArt{display:flex;flex:none;padding-left:12px}

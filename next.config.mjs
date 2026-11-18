@@ -50,6 +50,8 @@ const nextConfig = {
         "declaraciondeimpuestos",
       ],
       "loteria-de-visas": ["loteria-visas-dv-2027", "loteria-dv-2027", "loteria", "loteria-visas", "loteria-de-visas-2027", "dv-2027", "dv2027", "visa-2027"],
+      // El link directo de ContyGo Club (app/club, 18-11-2026): otras formas de escribirlo.
+      club: ["comunidad", "contygo-club", "contygoclub", "club-contygo"],
       terminos: ["terminos-y-condiciones", "terminos-condiciones"],
       privacidad: ["politica-de-privacidad", "privacidad-politica"],
     };

@@ -69,6 +69,43 @@ test('el botón de ContyGo Club lleva al Club por https, y se distingue de otros
   assert.equal(url.searchParams.get('utm_medium'), 'hero');
 });
 
+test('el link directo del Club (/club, /club/unirse) lleva al Club sin abrir la landing', async () => {
+  const { COMMUNITY_URL, clubDirectLink } = require('../lib/config.ts');
+  if (COMMUNITY_URL === null) return; // Con el Club oculto, el link lleva a la portada de la landing.
+  const { NextRequest } = require('next/server');
+  const route = require('../app/club/[[...pagina]]/route.ts');
+  const club = new URL(COMMUNITY_URL).host;
+  const visit = (address, pagina) => new URL(route.GET(new NextRequest(`https://landing.invalid${address}`), { params: { pagina } }).headers.get('location'));
+
+  const home = route.GET(new NextRequest('https://landing.invalid/club'), { params: {} });
+  assert.equal(home.status, 302, 'temporal: el Club ya cambió de dirección una vez');
+  assert.equal(home.headers.get('cache-control'), 'no-store');
+  const to = new URL(home.headers.get('location'));
+  assert.deepEqual([to.protocol, to.host, to.pathname], ['https:', club, '/']);
+  // Marcado: se distingue de los botones de la página (hero, nav, ayuda, ruta).
+  assert.deepEqual([to.searchParams.get('utm_source'), to.searchParams.get('utm_medium')], ['landing', 'directo']);
+
+  assert.equal(visit('/club/unirse', ['unirse']).pathname, '/unirse');
+  // Lo que traiga el link se conserva y manda sobre la marca (un anuncio, por ejemplo).
+  const ad = visit('/club?utm_medium=anuncio&utm_campaign=enero&fbclid=abc', undefined);
+  assert.deepEqual(['utm_source', 'utm_medium', 'utm_campaign', 'fbclid'].map(key => ad.searchParams.get(key)), ['landing', 'anuncio', 'enero', 'abc']);
+  // Una página que no está en la lista lleva a la portada del Club, y nunca a otro sitio.
+  for (const pagina of [['otra'], ['unirse', 'x'], ['__proto__'], ['constructor'], ['', 'evil.example'], ['https:', '', 'evil.example']]) {
+    const there = visit('/club/x', pagina);
+    assert.deepEqual([there.protocol, there.host, there.pathname], ['https:', club, '/'], pagina.join('/'));
+  }
+  assert.equal(new URL(clubDirectLink('unirse', new URLSearchParams())).searchParams.get('utm_medium'), 'directo');
+
+  // Otras formas de escribirlo llegan a /club, y ningún servicio vive en esas direcciones.
+  const { default: config } = await import(pathToFileURL(path.join(root, 'next.config.mjs')).href);
+  const redirects = new Map((await config.redirects()).map(item => [item.source, item.destination]));
+  for (const alias of ['/comunidad', '/contygo-club', '/contygoclub', '/club-contygo']) assert.equal(redirects.get(alias), '/club', alias);
+  assert.ok(!redirects.has('/club'), '/club no redirige dentro de la landing: lo atiende su ruta');
+  for (const service of CONTYGO_SERVICES) for (const taken of [getServiceGuideUrl(service.id), `/${service.slug}`, `/${service.id}`]) {
+    assert.ok(!['/club', '/comunidad', '/contygo-club', '/contygoclub', '/club-contygo'].includes(taken), `${taken} es de un servicio`);
+  }
+});
+
 test('«Citas con Henry» lleva a su agenda por https', () => {
   const { APPOINTMENT_URL } = require('../lib/config.ts');
   if (APPOINTMENT_URL === null) return; // Sin link, el botón no aparece.

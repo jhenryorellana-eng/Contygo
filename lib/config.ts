@@ -41,6 +41,23 @@ export function via(url: string, medium: string): string {
   return next.toString();
 }
 
+/** Las páginas del Club a las que lleva su link directo: la portada (/club) y la de unirse (/club/unirse). */
+const CLUB_PAGES = new Map([["", "/"], ["unirse", "/unirse"]]);
+
+/**
+ * El link directo del Club (18-11-2026): landing.contygo.app/club y /club/unirse, para mandárselo a un cliente. No abre
+ * la landing: lleva al Club (app/club). Va marcado utm_medium=directo, para distinguirlo de los botones de la página; lo
+ * que traiga el link (la campaña de un anuncio, por ejemplo) se conserva y manda sobre esa marca. Una página que no está
+ * en la lista lleva a la portada del Club, nunca a otro sitio. Con el Club oculto (COMMUNITY_URL en null), null.
+ */
+export function clubDirectLink(page: string, query: URLSearchParams): string | null {
+  if (!COMMUNITY_URL) return null;
+  const to = new URL(via(COMMUNITY_URL, "directo"));
+  to.pathname = CLUB_PAGES.get(page) ?? "/";
+  query.forEach((value, key) => to.searchParams.set(key, value));
+  return to.toString();
+}
+
 /** Video de fallback general (cuando un servicio no define el suyo). */
 export const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
 

@@ -11,6 +11,7 @@
    Lo que se mueve solo usa transform; los bucles llevan data-loop y se pausan fuera de pantalla.
    En el celular los favoritos se eligen por su nombre y la tarjeta de delante sigue al dedo (StarCarousel); en
    escritorio, la que tiene el puntero se enciende, su escultura lo mira y las demás se apagan un poco (30-10-2026). */
+import { BlackFridayTag } from "./BlackFriday";
 import Image from "next/image";
 import { useRef, type PointerEvent, type ReactNode } from "react";
 import { CONTYGO_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
@@ -74,6 +75,7 @@ export function ServiceTile({ item, prices, open, warm }: { item: ContygoService
     <span className={s.shelfArt} data-flight-art><Image src={art(item.id)} alt="" fill sizes="(max-width:760px) 34vw, 12vw" /></span>
     <span className={s.shelfCopy}><strong>{keepWhole(item.name)}</strong>{item.free ? <span className={s.shelfPrice}>Gratis</span> : fromPriceLabel(prices, item.slug) && <span className={s.shelfPrice}><small>desde</small> {fromPriceLabel(prices, item.slug)}</span>}</span>
     <i className={s.go}><Arrow /></i>
+    {!item.free && <BlackFridayTag />}
   </button>;
 }
 
@@ -131,6 +133,7 @@ export default function ServiceShowcase({ seasonal, stars, groups, open, warm }:
         const item = find(star.id);
         return <button key={star.id} type="button" className={s.pedestalCard} data-service={star.id} data-react="card" onClick={e => open(item, e.currentTarget)} onPointerMove={lean} onPointerLeave={rest} {...reach(item)} aria-label={label(item, true)}>
           <span className={s.spot} aria-hidden="true" />
+          {!item.free && <BlackFridayTag className={s.starTag} />}
           <span className={s.float} data-flight-art><span data-loop><Image src={art(star.id)} alt="" fill sizes="(max-width:760px) 70vw, 26vw" /></span></span>
           <span className={s.pedestal} aria-hidden="true" />
           <span className={s.stageCopy}>

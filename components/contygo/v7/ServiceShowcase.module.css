@@ -270,3 +270,7 @@
   .float>span,.seasonArt>span{animation:none}
   :global(main[data-thread-ready=true]) .shelfItem:not([data-lit=true]) .shelfArt img{opacity:1;transform:none}
 }
+
+/* Black Friday: the tag of a favourite sits beside its sculpture, not on the card's corner (the card has no box). */
+.showcase .starTag{left:50%;top:6px;margin-left:44px}
+.showcase .starTag i{display:inline}

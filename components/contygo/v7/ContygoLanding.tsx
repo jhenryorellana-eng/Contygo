@@ -15,6 +15,7 @@ import { CONTENT_CATEGORY } from "@/lib/meta/events";
 import { trackBrowserWhenReady } from "@/lib/meta/pixel-client";
 import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
+import { BlackFridayBanner, BlackFridayHero, BlackFridayStrip } from "./BlackFriday";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
 import { PUBLIC_REGISTER } from "../rebuild/CertificateShowcase";
@@ -230,6 +231,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
   return <div ref={root} className={`${s.page} ${themeStyles.surface}`} data-contygo-theme={theme} data-theme-ready={ready}>
     <script dangerouslySetInnerHTML={{ __html: INTRO }} />
     <a className={s.skip} href="#servicios">Saltar a servicios</a>
+    <BlackFridayStrip />
     <header className={s.header} data-scrolled={scrolled} data-cta={headerCta}>
       <div className={s.headerInner}>
         <a className={s.logo} href="#inicio" aria-label="ContyGo · Inicio"><Image src={logo} width={3000} height={849} alt="ContyGo" priority sizes="160px" /></a>
@@ -258,6 +260,8 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           <Image key={theme} src={HERO_ART[theme].src} alt="Una mujer revisa su trámite en el celular; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." fill priority unoptimized sizes="(max-width:760px) 100vw, 52vw" />
           {/* The official symbol, exact to the pixel, where the ribbon's curl points (after the photo: GreenThread reads the first img). */}
           <span className={s.heroMark} data-loop aria-hidden="true"><Image src={`/contygo/v7/simbolo-${theme === "dark" ? "oscuro" : "claro"}.png`} alt="" width={568} height={640} unoptimized priority /></span>
+          {/* After the photo and the symbol: GreenThread reads this box's first img. */}
+          <BlackFridayHero />
         </div>
       </section>
 
@@ -267,6 +271,8 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         {clients && <div data-react="count"><strong data-value={clients.split(" ")[0]}>{clients.split(" ")[0]}</strong><span>{clients.split(" ").slice(1).join(" ")}</span></div>}
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
       </section>
+
+      <BlackFridayBanner />
 
       <HelpWays />
 

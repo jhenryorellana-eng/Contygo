@@ -7,6 +7,7 @@
    Al tocar el Club o la sesión, esa misma pieza hace la transición de siempre (ClubDoorway, HenryDoorway).
    Sin cifras inventadas: los lugares que quedan en el Club y el precio de la sesión solo salen cuando el dueño los da
    (OWNER_PENDING). El Club es de pago y Henry no es abogado: ni «gratis» ni resultados migratorios. */
+import { BlackFridayTag } from "./BlackFriday";
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import { OWNER_PENDING } from "@/lib/contygo-route";
@@ -57,6 +58,7 @@ export default function HelpWays() {
           <span className={w.meta}>Fundadores: $25 al mes{clubSeatsLeft !== null && ` · Quedan ${clubSeatsLeft} de 100`}</span>
         </div>
         <a className={w.go} href={club.href} {...club.link}>Unirme al Club <i><Arrow /></i></a>
+        <BlackFridayTag className={w.offer} />
         {club.door}
       </article>}
 

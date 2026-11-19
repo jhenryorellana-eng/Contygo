@@ -782,3 +782,12 @@ El dueño: «que esos cuadros tengan más resalte… llamativo pero elegante», 
 - La hoja de los pasos 2 a 5 pasa del papel arena al azul de la marca, con las tarjetas blancas encima, una sombra debajo y un filo fino. Una luz verde en la esquina si el paso ya se puede empezar; azul y con borde punteado si está por llegar. En Migratorio, el volumen lo llevan sus dos carpetas.
 - Cuando el hilo está en un paso, su hoja se alza, toma un filo verde y la cruza un brillo, una sola vez. Nada más se mueve.
 - Probado y descartado ese día por exagerado («parece ya hasta chusco»): una ola de color que llenaba el recuadro, cuentas de luz por el borde y la figura que saltaba. También se le ofrecieron una hoja blanca con luces de color y el papel arena con relieve; eligió la tinta.
+
+## Black Friday 2026 (19-11-2026)
+
+50 % en los honorarios, solo el viernes 27 de noviembre (hora de Utah). Fechas y reglas en `lib/black-friday.ts`; el sábado 28 el anuncio desaparece solo.
+
+- Referencia del dueño: una etiqueta de neón rojo «BLACK FRIDAY». Lo nuestro: el mismo letrero en el verde del hilo, como foto (`public/contygo/v8/black-friday-neon.webp`, hecha con Codex).
+- Piezas: la franja de arriba, la placa que cuelga en la foto del hero («Faltan 8 días»), el cartel grande con cuenta atrás bajo las cifras y la etiqueta «−50 %» en cada servicio con precio y en la tarjeta del Club.
+- Descartado: una etiqueta plana en cuatro colores («sé mucho más creativo… más detallista») y, de la segunda tanda, la etiqueta con cinta de raso, el cartel con sello y las cintas de precinto (guardados en un stash: «Black Friday · los cuatro carteles…»).
+- La landing solo anuncia: el descuento lo aplican contygo.app y el Club al cobrar.

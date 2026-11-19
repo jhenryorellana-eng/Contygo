@@ -1,0 +1,82 @@
+/* El anuncio de Black Friday: ver BlackFriday.tsx. Un letrero de neón verde sobre negro.
+   Pensado primero para el celular; la pantalla ancha lo reparte en dos columnas al final del archivo.
+   Los colores de texto van en los span de dentro, no en el <a>: la página fija el color de los enlaces con más peso.
+   Con «reducir movimiento» la página apaga todas las animaciones (ContygoLanding.module.css): nada depende de ellas. */
+
+/* ---- La franja de arriba: negra, con un tubo de neón por debajo ---- */
+.strip{position:relative;z-index:31;display:block;min-height:40px;background:#030811;box-shadow:inset 0 -2px 0 #25d366,inset 0 -9px 14px -8px #25d366;text-decoration:none;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.stripLine{display:flex;align-items:center;justify-content:center;gap:9px;min-height:40px;padding:7px 12px;color:#f4f7fb;font-size:14.5px;line-height:1.3;white-space:nowrap}
+.stripLine b{font:800 15px/1.2 var(--font-contygo-heading),sans-serif;color:#3ee886;text-shadow:0 0 7px #25d366,0 0 18px #25d366b3}
+.stripLine strong{font-weight:800}
+.strip .stripLine svg{flex:none;width:17px;height:17px;color:#3ee886}
+.strip:focus-visible{outline:3px solid #3ee886;outline-offset:-3px}
+
+/* ---- La placa del hero: cuelga de dos hilos en la esquina de la foto, se balancea al llegar y lleva al cartel ---- */
+.hero{position:absolute;z-index:3;right:10px;top:6px;display:block;width:min(50%,198px);text-decoration:none;rotate:4deg;transform-origin:50% -20px;-webkit-tap-highlight-color:transparent;animation:hang 2.6s cubic-bezier(.3,.7,.3,1) .95s backwards}
+@keyframes hang{0%{rotate:-15deg;translate:0 -34px;opacity:0}12%{opacity:1}30%{rotate:11deg;translate:0 0}52%{rotate:-3deg}74%{rotate:6.5deg}100%{rotate:4deg}}
+.heroPiece{position:relative;display:block}
+.heroPiece:before,.heroPiece:after{content:"";position:absolute;bottom:100%;width:1.5px;height:26px;background:linear-gradient(#04122b00,#04122b8c)}
+.heroPiece:before{left:20%}.heroPiece:after{right:20%}
+:global([data-contygo-theme=dark]) .heroPiece:before,:global([data-contygo-theme=dark]) .heroPiece:after{background:linear-gradient(#ffffff00,#ffffff66)}
+.heroPhoto{display:block;border-radius:16px;background:#000;overflow:hidden;box-shadow:0 0 0 1px #25d3664d,0 16px 28px -12px #04122bcc,0 0 30px -6px #25d366b3}
+/* The photo has a black margin round the sign: the plaque crops it. The sign flickers on once the plaque has settled. */
+.hero .heroPhoto img{display:block;width:100%;height:auto;scale:1.16;animation:neonOn 1.5s 2.2s backwards}
+@keyframes neonOn{0%{opacity:.12}9%{opacity:1}14%{opacity:.25}21%{opacity:1}30%{opacity:.5}36%,100%{opacity:1}}
+/* The wait («Faltan 8 días») sits on the plaque's top corner: below it is the face in the photo. */
+.heroWait{position:absolute;left:-10px;top:-13px;padding:5px 12px 6px;border-radius:20px;background:#04122b;color:#3ee886;font:800 12.5px/1.2 var(--font-contygo-heading),sans-serif;white-space:nowrap;box-shadow:0 0 0 2.5px var(--bg),0 8px 14px -6px #04122b99}
+:global([data-contygo-theme=dark]) .heroWait{box-shadow:0 0 0 1.5px #25d366,0 8px 14px -6px #000}
+.hero:focus-visible{outline:3px solid var(--accent);outline-offset:6px;border-radius:18px}
+
+/* ---- El cartel grande: en el celular va de lado a lado; el letrero ilumina la pared y parpadea al entrar en pantalla ---- */
+.banner{margin:34px 0 0;scroll-margin-top:86px}
+.board{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);padding:22px 22px 34px;background:radial-gradient(78% 40% at 50% 21%,#25d36630,#0000 72%),#030811;color:#f4f7fb;overflow:hidden}
+.art{margin:-16px -20px -8px}
+.board .photo{display:block;width:100%;height:auto;mix-blend-mode:screen}
+.board[data-seen=true] .photo{animation:neonOn 1.5s .3s backwards}
+.copy{position:relative;display:grid;justify-items:start}
+.when{margin:12px 0;padding:6px 13px 7px;border-radius:30px;box-shadow:inset 0 0 0 1.5px #3ee886;font:800 14.5px/1.3 var(--font-contygo-heading),sans-serif;color:#3ee886}
+.banner h2{margin:0;font:800 clamp(27px,7.7vw,38px)/1.08 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em;color:#f4f7fb}
+.clock{display:grid;gap:8px;width:100%;margin-top:22px}
+.clockLabel{font-size:14.5px;font-weight:700;color:#a9b6c9}
+.cells{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;max-width:372px}
+.cells>span{display:grid;justify-items:center;gap:4px;padding:12px 4px 10px;border-radius:16px;background:#25d36612;box-shadow:inset 0 0 0 1.5px #25d36680,0 0 16px -6px #25d366}
+.cells b{font:800 clamp(27px,8.2vw,36px)/1 var(--font-contygo-heading),sans-serif;font-variant-numeric:tabular-nums;color:#eafff1;text-shadow:0 0 10px #25d366cc}
+.cells small{font-size:12.5px;font-weight:700;color:#a9b6c9}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;width:100%;margin-top:22px}
+.banner .go{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:56px;padding:5px 5px 5px 24px;border-radius:40px;background:#25d366;color:#04122b;font-size:16.5px;font-weight:800;transition:transform .3s var(--unfold);-webkit-tap-highlight-color:transparent}
+.go i{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:50%;background:#04122b;color:#fff;transition:transform .35s var(--unfold)}
+.banner .go svg{width:20px;height:20px}
+.banner .link{display:inline-flex;align-items:center;min-height:46px;font-size:16px;font-weight:750;color:#f4f7fb;border-bottom:2px solid #3ee886}
+.fine{margin:14px 0 0;max-width:46ch;font-size:14px;line-height:1.55;color:#a9b6c9}
+@media(hover:hover){.banner .go:hover{transform:translateY(-2px)}.go:hover i{transform:rotate(-35deg)}}
+.banner .go:active{transform:scale(.98)}
+.banner :is(.go,.link):focus-visible{outline:3px solid #3ee886;outline-offset:3px}
+
+/* ---- La etiqueta de cada tarjeta ----
+   Cuelga de la esquina del dibujo del servicio, donde nunca tapa su nombre ni su precio. En el celular solo lleva la
+   cifra (el dibujo es estrecho); la de los favoritos y la del Club tienen sitio para «el viernes». */
+.tag{position:absolute;left:-7px;top:-11px;z-index:2;rotate:-5deg;pointer-events:none;filter:drop-shadow(0 0 1px #3ee886) drop-shadow(0 0 5px #25d366b3)}
+.tag>span{display:inline-flex;align-items:baseline;gap:4px;padding:5px 9px 5px 19px;background:radial-gradient(circle at 10px 50%,#3ee886 2.6px,#0000 3.2px),#04122b;color:#f4f7fb;font:800 12.5px/1.25 var(--font-contygo-heading),sans-serif;white-space:nowrap;
+  clip-path:polygon(13px 0,calc(100% - 5px) 0,100% 5px,100% calc(100% - 5px),calc(100% - 5px) 100%,13px 100%,0 50%)}
+.tag b{font-size:14.5px;color:#3ee886}
+.tag i{display:none;font-style:normal}
+
+@media(min-width:761px){
+  .stripLine{gap:11px;min-height:42px;font-size:15px}
+  .tag{left:-8px;top:-12px}
+  .tag i{display:inline}
+  .tag>span{padding:5px 11px 5px 21px}
+  .hero{right:1%;top:4%;width:clamp(210px,36%,290px)}
+  .heroWait{font-size:13.5px;padding:6px 14px 7px}
+}
+/* ---- Pantalla ancha: el cartel es una ficha con el letrero a la izquierda ---- */
+@media(min-width:900px){
+  .banner{max-width:1440px;margin:56px auto 0;padding:0 5%;scroll-margin-top:96px}
+  .board{grid-template-columns:minmax(0,.9fr) minmax(0,1fr);align-items:center;gap:0 5%;padding:38px 5% 42px 3.5%;border-radius:36px;background:radial-gradient(46% 70% at 25% 50%,#25d36630,#0000 72%),#030811;box-shadow:0 44px 70px -42px #04122bcc}
+  :global([data-contygo-theme=dark]) .board{box-shadow:inset 0 0 0 1px #ffffff1f,0 44px 70px -42px #000}
+  .art{margin:-10px 0}
+  .banner h2{max-width:16ch;font-size:clamp(32px,3.3vw,48px)}
+  .banner .go{width:auto;justify-content:flex-start}
+  .when{margin-top:0;font-size:15px}
+  .fine{font-size:14.5px}
+}

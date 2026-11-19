@@ -111,3 +111,7 @@
   .go i{width:42px;height:42px}
 }
 @media(prefers-reduced-motion:reduce){.chair .yours{animation:none}.card .dial [data-hand]{animation:none!important}}
+
+/* Black Friday: the Club's tag hangs from the card's top right corner. */
+.ways .offer{left:auto;right:18px;top:-13px}
+.ways .offer i{display:inline}

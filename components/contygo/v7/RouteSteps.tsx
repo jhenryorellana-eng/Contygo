@@ -18,12 +18,16 @@
    Arriba, un itinerario lleva a cada paso: el primero es largo y los demás quedarían lejos.
    «Avísame cuando llegue» escribe por WhatsApp: no guarda nada en ningún sitio. */
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { COMMUNITY_URL, via, waLink } from "@/lib/config";
 import { VISIBLE_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
 import { DRIVERS_LICENCE, OWNER_PENDING, ROUTE_SERVICE_IDS, ROUTE_STEPS, stepOpen, stepServices, type RouteStep } from "@/lib/contygo-route";
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import ServiceShowcase, { TileShelf, type CatalogGroup, type Star } from "./ServiceShowcase";
+import ServiceTiers from "./ServiceTiers";
+import { RouteIntro, RouteStation, StarterSheet, StepSheet } from "./RouteSheets";
+import sheets from "./RouteSheets.module.css";
+import { useFresh } from "./useFresh";
 import page from "./ContygoLanding.module.css";
 import r from "./RouteSteps.module.css";
 
@@ -81,6 +85,10 @@ function Panel({ step, open, warm }: { step: RouteStep; open: Props["open"]; war
 
 export default function RouteSteps({ seasonal, stars, open, warm, children }: Props) {
   const prices = useServicePrices();
+  // 20-11-2026: the owner asked to segment the migratory services by type (ServiceTiers), and on 21-11-2026 to present
+  // the route another way and to give every step the design of the first (RouteSheets). Until he asks to publish it,
+  // the published page stays as it is; in development the new route shows, and the switch below goes back to today's.
+  const [fresh, choose] = useFresh();
   const rank = (id: string) => { const at = MIGRATORY_ORDER.indexOf(id); return at < 0 ? MIGRATORY_ORDER.length : at; };
   const migratory = VISIBLE_SERVICES.filter(item => !item.season && !stars.some(star => star.id === item.id) && !ROUTE_SERVICE_IDS.includes(item.id)).sort((a, b) => rank(a.id) - rank(b.id));
   const itin = find("itin"), permit = find("permiso-de-trabajo");
@@ -104,36 +112,44 @@ export default function RouteSteps({ seasonal, stars, open, warm, children }: Pr
       art: ["servicio-licencia-conducir"], items: [], badge: "Nuevo", body: licence },
   ];
 
-  return <section className={r.route} id="ruta" aria-labelledby="ruta-titulo" data-thread="services" data-anim>
-    <div className={page.sectionHeading} data-reveal data-react="title">
-      <div><span className={page.eyebrow}><i />Tu ruta, paso a paso</span><h2 id="ruta-titulo">Cinco pasos para crecer<br /><em>en Estados Unidos.</em></h2></div>
-      <p>ContyGo nace para ser la primera aplicación del inmigrante. Hoy empieza por tu proceso migratorio, y cada nueva versión suma un paso.</p>
-    </div>
-
-    <nav className={r.map} aria-label="Los cinco pasos" data-reveal>
-      <ol>{ROUTE_STEPS.map((step, i) => <li key={step.id}><a href={`#${step.id}`} data-live={stepOpen(step)}>
-        <b aria-hidden="true">{i + 1}</b>
-        <span><strong>{step.name}</strong><small>{stepOpen(step) ? "Disponible" : "Próximamente"}</small></span>
-      </a></li>)}</ol>
-    </nav>
-
-    <ol className={r.stations}>{ROUTE_STEPS.map((step, i) => step.id === "servicios"
-      ? <Station key={step.id} step={step} index={i} wide>
-        <ServiceShowcase seasonal={seasonal} stars={stars} groups={groups} open={open} warm={warm} />
-        {/* The owner's banner (brief): «Empieza gratis» only once he says what the free part includes; until then it
-            is the paid service, with its live price. */}
-        {permit && <button type="button" className={r.banner} data-react="card" onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>
+  const banner = permit && <button type="button" className={r.banner} data-react="card" onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>
           <span className={r.bannerArt} data-flight-art><Image src="/contygo/v8/servicio-permiso-de-trabajo.webp" alt="" fill sizes="100px" /></span>
           <span className={r.bannerCopy}>
             <strong>{free ? "Empieza gratis: tu permiso de trabajo" : "Empieza por tu permiso de trabajo"}</strong>
             <span>{free ?? "Si tu asilo lleva 150 días o más en trámite, prepara tu I-765 desde la app."}</span>
           </span>
           <span className={r.bannerGo}>{free ? "Empezar gratis" : permitFrom ? <>Empezar <small>desde {permitFrom}</small></> : "Empezar"} <i><Arrow /></i></span>
-        </button>}
-      </Station>
-      : <Station key={step.id} step={step} index={i}><Panel step={step} open={open} warm={warm} /></Station>)}</ol>
+        </button>;
+
+  return <section className={r.route} id="ruta" aria-labelledby="ruta-titulo" data-thread="services" data-anim>
+    {fresh ? <RouteIntro /> : <>
+      <div className={page.sectionHeading} data-reveal data-react="title">
+        <div><span className={page.eyebrow}><i />Tu ruta, paso a paso</span><h2 id="ruta-titulo">Cinco pasos para crecer<br /><em>en Estados Unidos.</em></h2></div>
+        <p>ContyGo nace para ser la primera aplicación del inmigrante. Hoy empieza por tu proceso migratorio, y cada nueva versión suma un paso.</p>
+      </div>
+
+      <nav className={r.map} aria-label="Los cinco pasos" data-reveal>
+        <ol>{ROUTE_STEPS.map((step, i) => <li key={step.id}><a href={`#${step.id}`} data-live={stepOpen(step)}>
+          <b aria-hidden="true">{i + 1}</b>
+          <span><strong>{step.name}</strong><small>{stepOpen(step) ? "Disponible" : "Próximamente"}</small></span>
+        </a></li>)}</ol>
+      </nav>
+    </>}
+
+    {/* The banner of step 1 (brief): «Empieza gratis» only once the owner says what the free part includes; until
+        then it is the paid service, with its live price. */}
+    {fresh
+      ? <ol className={sheets.stations}>{ROUTE_STEPS.map((step, i) => <RouteStation key={step.id} step={step} index={i}>{step.id === "servicios"
+        ? <><StarterSheet step={step} index={i} permit={permit} itin={itin} open={open} warm={warm} /><ServiceTiers open={open} warm={warm} /></>
+        : <StepSheet step={step} index={i} open={open} warm={warm} />}</RouteStation>)}</ol>
+      : <ol className={r.stations}>{ROUTE_STEPS.map((step, i) => step.id === "servicios"
+        ? <Station key={step.id} step={step} index={i} wide><ServiceShowcase seasonal={seasonal} stars={stars} groups={groups} open={open} warm={warm} />{banner}</Station>
+        : <Station key={step.id} step={step} index={i}><Panel step={step} open={open} warm={warm} /></Station>)}</ol>}
 
     <p className={r.note}>En los pasos 2 a 5 te informamos, educamos y preparamos. No vendemos seguros, inversiones, préstamos ni propiedades.</p>
     {children}
+    {process.env.NODE_ENV === "development" && <div role="group" aria-label="Ruta" style={{ position: "fixed", left: 10, bottom: 10, zIndex: 90, display: "flex", alignItems: "center", gap: 4, padding: 5, borderRadius: 30, background: "#061b3df2", color: "#fff", font: "700 13px/1 system-ui", boxShadow: "0 10px 30px -10px #061b3d99", whiteSpace: "nowrap" }}>
+      {([[false, "Hoy"], [true, "Nueva"]] as const).map(([value, label]) => <button key={label} type="button" aria-pressed={fresh === value} onClick={() => choose(value)} style={{ height: 38, padding: "0 14px", border: 0, borderRadius: 20, cursor: "pointer", font: "inherit", background: fresh === value ? "#25d366" : "#ffffff1f", color: fresh === value ? "#061b3d" : "#fff" }}>{label}</button>)}
+    </div>}
   </section>;
 }

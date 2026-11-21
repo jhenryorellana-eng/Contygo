@@ -76,10 +76,10 @@ export function BlackFridayStrip() {
 
 /** The plaque on the hero's picture: the first thing seen. It hangs from two wires in the picture's top corner and
  *  leads to the sign. */
-export function BlackFridayHero() {
+export function BlackFridayHero({ className }: { /** The hero's story makes it smaller on a phone, so it stays off her face. */ className?: string }) {
   const phase = useBlackFriday(), wait = useWait(phase);
   if (phase === "fuera") return null;
-  return <a className={b.hero} href="#black-friday" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% de descuento. ${wait}. Ver la oferta`}>
+  return <a className={className ? `${b.hero} ${className}` : b.hero} href="#black-friday" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% de descuento. ${wait}. Ver la oferta`}>
     <span className={b.heroPiece}>
       <span className={b.heroPhoto}><Image src={SIGN.src} alt="" width={SIGN.width} height={SIGN.height} sizes="(max-width:760px) 52vw, 300px" priority /></span>
       <span className={b.heroWait} aria-hidden="true">{wait}</span>

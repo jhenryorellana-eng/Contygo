@@ -1,0 +1,181 @@
+/* Los tramos del paso 1: ver ServiceTiers.tsx. Pensado primero para el celular; la pantalla ancha, al final.
+   Cada tramo tiene su color (--t), y el color baja con la ruta: papel claro, verde, azul, azul noche y tinta.
+   Solo colores de la marca. Los enlaces y los SVG llevan .tiers delante: la página fija su color y su tamaño con
+   más peso.
+   La sección se queda quieta mientras se baja (.pin) y los tramos pasan por el escenario (.stage), uno a la vez.
+   Lo que pone ServiceTiers.tsx al hacer scroll, en cada tramo: --x cuánto ha llegado (0 a 1), --c cuánto lo tapa el
+   siguiente, --o cuánto se han abierto sus filas, --u cuánto ha subido su lista (px) y --more si queda lista por ver.
+   En la barra, --p es el avance por los cinco. El tramo que llega barre la hoja en diagonal (.edge es su filo de luz). */
+.tiers{position:relative}
+.tiers button{font:inherit;cursor:pointer;text-align:left}
+/* Measures the screen without the browser's bars, so the section stops in the same place when they hide. */
+.probe{position:absolute;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none}
+.track{position:relative}
+.head{margin:0 0 18px}
+.head h4{margin:0 0 6px;font:800 clamp(26px,7.4vw,36px)/1.08 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}
+.head h4 em{font-style:normal;color:var(--accent)}
+.head p{margin:0;font-size:16px;line-height:1.45;color:var(--muted)}
+.foot{margin:20px 2px 0;font-size:14px;line-height:1.5;color:var(--muted)}
+
+/* ---- El color de cada tramo ---- */
+.tiers [data-tier]{--t:radial-gradient(80% 90% at 90% 0,#fff,#fff0 70%),linear-gradient(150deg,#f1fbf5,#bfeccf);--t-ink:#061b3d;--t-flat:#c3edd2;--halo:#25d36659}
+.tiers [data-tier=medio]{--t:linear-gradient(150deg,#22c869,#087f46);--t-ink:#fff;--t-flat:#0a8a4b;--halo:#25d36673}
+.tiers [data-tier=masivos]{--t:radial-gradient(90% 100% at 88% 0,#7fabff80,#0000 66%),linear-gradient(150deg,#2460d6,#123f8f);--t-ink:#fff;--t-flat:#17489f;--halo:#2460d680}
+.tiers [data-tier=premium]{--t:radial-gradient(90% 100% at 88% 0,#25d36670,#0000 62%),linear-gradient(150deg,#0e3a7a,#061b3d);--t-ink:#fff;--t-flat:#092552;--halo:#25d36659}
+.tiers [data-tier=alto]{--t:radial-gradient(90% 100% at 88% 0,#3f7df066,#0000 64%),linear-gradient(150deg,#082554,#020a1a);--t-ink:#fff;--t-flat:#041330;--halo:#061b3d99}
+
+/* ---- La barra de paradas: cinco números; la que se ve se abre con su nombre y su color ---- */
+.rail{position:relative;margin:0 0 10px;padding:6px 6px 14px;border-radius:28px;background:var(--glass);background:color-mix(in srgb,var(--bg) 88%,transparent);box-shadow:0 0 0 1px var(--line),0 16px 26px -18px #04122b80}
+.rail ol{list-style:none;display:flex;gap:4px;margin:0;padding:0}
+.rail li{flex:0 0 auto;min-width:0;transition:flex-grow .35s var(--unfold)}
+.rail li:has([data-on]){flex:1 1 auto}
+.rail button{display:flex;align-items:center;gap:7px;width:100%;min-height:44px;padding:4px;border:0;border-radius:24px;background:none;color:var(--ink);font:800 15px/1 var(--font-contygo-heading),sans-serif;white-space:nowrap;transition:background-color .3s,color .3s;-webkit-tap-highlight-color:transparent}
+.rail b{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-strong);font-size:15px;transition:background-color .3s,color .3s}
+.rail button span{display:none}
+.rail button[data-past] b{background:var(--green);color:#061b3d;box-shadow:none}
+.rail button[data-on]{background:var(--t);color:var(--t-ink);box-shadow:0 12px 18px -12px var(--halo)}
+.rail button[data-on] b{background:#fff;color:#061b3d;box-shadow:none}
+.rail button[data-on] span{display:inline;padding-right:8px;font-size:14px}
+/* A narrow phone: smaller stops, so the name of the one in view fits; on the narrowest, the numbers alone. */
+@media(max-width:389.98px){.rail ol{gap:3px}.rail button{gap:5px;padding:3px}.rail b{width:32px;height:32px;font-size:14px}.rail button[data-on] span{padding-right:6px;font-size:13.5px}}
+@media(max-width:349.98px){.rail ol{justify-content:space-between}.rail li:has([data-on]){flex:0 0 auto}.rail button[data-on] span{display:none}.rail button[data-on]{padding-right:14px}}
+/* How far along the five tiers: it fills with the finger. */
+.gauge{position:absolute;left:24px;right:24px;bottom:6px;height:3px;border-radius:3px;background:var(--line-strong);overflow:hidden}
+.gauge:before{content:"";position:absolute;inset:0;border-radius:3px;background:var(--green);transform-origin:0 50%;scale:var(--p,0) 1}
+
+/* ---- El escenario: los tramos, uno sobre otro; se ve uno a la vez ---- */
+.stage{list-style:none;position:relative;display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);height:clamp(290px,calc(100svh - 232px),800px);margin:0;padding:0;isolation:isolate;border-radius:28px;overflow:hidden;overflow:clip;box-shadow:0 0 0 1px var(--line),0 30px 44px -28px var(--halo),0 20px 30px -24px #04122b99;transition:box-shadow .5s}
+.tier{--x:1;--c:0;--o:1;--u:0px;position:relative;grid-area:1 / 1;display:flex;flex-direction:column;min-width:0;min-height:0;border-radius:28px;background:var(--sheet)}
+.tier:not(:first-child){--x:0}
+/* The cover: the tier's colour, its name and its figure. It takes the room its rows leave. */
+.cover{position:relative;flex:1 0 auto;min-height:clamp(140px,22.5svh,230px);padding:14px 16px 16px;border-radius:28px 28px 0 0;background:var(--t);color:var(--t-ink);overflow:hidden}
+/* A soft sun behind the figure, so the blue ones stand out on the blue covers. */
+.cover:before{content:"";position:absolute;right:-10%;bottom:-46%;width:66%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,#ffffff5c,#ffffff00);pointer-events:none}
+.titles{position:relative;z-index:1;display:grid;justify-items:start;gap:4px;max-width:51%}
+.titles small{margin-bottom:6px;padding:5px 11px;border-radius:20px;background:#fff;color:#04122b;font:800 13px/1.2 var(--font-contygo-heading),sans-serif;white-space:nowrap;box-shadow:0 8px 14px -8px #04122b80}
+.tiers .name{margin:0;font:800 clamp(22px,6.4vw,28px)/1.04 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em;color:inherit;text-wrap:balance}
+.titles>span{font-size:14.5px;font-weight:650;line-height:1.3;opacity:.92}
+/* The scene: beside the name on a low cover; on a tall one it grows into the room under the name. */
+.emblem{position:absolute;right:-2px;bottom:-4px;height:max(min(104%,calc(47vw - 22px)),calc(100% - 64px));aspect-ratio:1;max-width:82%}
+/* The figure settles into place as its tier arrives. */
+.emblem img{width:100%;height:100%;object-fit:contain;object-position:100% 100%;filter:drop-shadow(0 14px 12px #04122b59);scale:calc(.86 + .14 * var(--x));transform-origin:70% 100%}
+/* The window on the tier's list: if the list is taller, it travels up under the cover. */
+/* When the screen has room to spare, the rows take two thirds of it (up to a height each) and the cover the rest. */
+.window{position:relative;flex:2 1 auto;display:flex;flex-direction:column;min-height:0;max-height:calc(var(--count,1) * 158px + 12px);border-radius:0 0 28px 28px;overflow:hidden;overflow:clip}
+.window:after{content:"";position:absolute;z-index:2;left:0;right:0;bottom:0;height:38px;background:linear-gradient(to top,var(--sheet),transparent);opacity:var(--more,0);pointer-events:none}
+.rows{position:relative;flex:1 0 auto;display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:1fr;gap:8px;padding:10px;translate:0 calc(var(--u) * -1)}
+
+/* ---- Una fila: el servicio es un boleto de la ruta. A la izquierda, su dibujo, su nombre y de qué trata; pasada la
+   línea de corte, el talón del color del tramo con su precio. Espera bajo una franja de ese color, que se barre al
+   abrirse (--q), como llega el tramo mismo ---- */
+.tiers .row{--q:clamp(0,calc(var(--o) * var(--span,1) - var(--n,0) * .55),1);--stub:98px;--body:color-mix(in srgb,var(--t-flat) 9%,var(--sheet));position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) var(--stub);grid-template-areas:"art name price" "blurb blurb price";align-content:center;align-items:center;gap:6px 12px;min-height:104px;padding:10px 0 10px 12px;border:0;border-radius:20px;background:var(--body);color:var(--ink);box-shadow:0 0 0 1px var(--line),0 14px 20px -16px #04122bb3;transition:transform .35s var(--unfold),box-shadow .35s;-webkit-tap-highlight-color:transparent}
+.rowArt{grid-area:art;position:relative;display:block;width:54px;height:54px;border-radius:15px;background:var(--sheet);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.rowArt img{object-fit:contain;padding:9%}
+.whole{white-space:nowrap}
+.rowName{grid-area:name;min-width:0;font:800 19px/1.14 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em}
+.blurb{grid-area:blurb;min-width:0;font-size:14.5px;font-weight:600;line-height:1.3;color:var(--muted)}
+/* The stub: it takes the whole height of the ticket, with the tear line and its two notches on its edge. */
+.price{grid-area:price;position:relative;align-self:stretch;display:grid;place-content:center;justify-items:center;gap:2px;margin:-10px 0;padding:8px 6px 36px;border-left:2px dashed var(--body);border-radius:0 20px 20px 0;background:var(--t);color:var(--t-ink);font:800 24px/1.05 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em;text-align:center}
+.price small{display:block;font:700 13px/1.2 var(--font-contygo-body),sans-serif;letter-spacing:0;color:inherit;opacity:.88}
+.price:before,.price:after{content:"";position:absolute;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--sheet);box-shadow:inset 0 0 0 1px var(--line)}
+.price:before{top:-8px;clip-path:inset(8px 0 0)}
+.price:after{bottom:-8px;clip-path:inset(0 0 8px)}
+.rowGo{grid-area:price;align-self:end;justify-self:center;position:relative;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#ffffff3d;color:var(--t-ink);transition:background .3s,color .3s,transform .35s var(--unfold)}
+.tiers .rowGo svg{width:15px;height:15px}
+/* Without a price yet (it is still loading), the arrow alone stands in the stub. */
+.row:not(:has(.price)) .rowGo{align-self:center;width:40px;height:40px;background:var(--t);box-shadow:0 0 0 1px var(--line)}
+/* Not in the catalog yet: a ticket in outline; it asks the team, and it says so. */
+.tiers .row[data-ask]{background:none;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.row[data-ask] .price{border-left-color:var(--line-strong);background:none;color:var(--accent)}
+.row[data-ask] .price small{font-size:15px;font-weight:800;opacity:1}
+.row[data-ask] .rowGo{background:#25d36626;color:var(--accent)}
+/* A partner's service (the driver's licence, in the route's first sheet): its stub says what the ticket does. */
+.row[data-partner] .price small{font-size:16px;font-weight:800;opacity:1}
+.tiers .row:focus-visible,.rail button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+@media(hover:hover){.tiers .row:hover{transform:translateY(-3px);box-shadow:0 0 0 1px var(--line),var(--lift)}.row:hover .rowGo{background:#fff;color:#061b3d;transform:rotate(-35deg)}.row[data-ask]:hover .rowGo{background:#25d366;transform:none}}
+.tiers .row:active{transform:scale(.985)}
+/* The slab: a strip with the slanted edge of light, and the flat colour behind it; both leave to the right. */
+.tiers .row:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(to bottom right,#fff0 calc(50% - 30px),#ffffff8c calc(50% - 2px),var(--t-flat) 50%) calc((var(--q) * 136% - 36%) / .64) 0 / 36% 100% no-repeat,linear-gradient(var(--t-flat),var(--t-flat)) calc(var(--q) * -136% - 1px) 0 / 200% 100% no-repeat;pointer-events:none}
+/* A narrow phone: a slimmer stub and a smaller drawing give the words more room. */
+@media(max-width:359.98px){
+  .tiers .row{--stub:86px;gap:7px 9px;padding-left:10px}
+  .rowArt{width:44px;height:44px}
+  .rowName{font-size:17px}
+  .blurb{font-size:13.5px}
+  .price{font-size:21px}
+}
+
+/* Black Friday: the short tag («−50%»), on the corner of the drawing, so it never covers the name. */
+.tiers .offer{left:-6px;top:-9px;opacity:var(--q)}
+.tiers .offer i{display:none}
+.edge{display:none}
+
+/* ---- La sección se queda quieta mientras pasan los tramos, y cada efecto marca el cambio a su manera ---- */
+@media(min-height:520px){
+  .pin{position:sticky;top:var(--pin-top,84px)}
+  .run{height:300svh}
+  .tier:not([data-on]){pointer-events:none}
+  /* The tier's colour sweeps across on a slant, led by an edge of light; what is underneath gives way a little. */
+  .tier{clip-path:polygon(0 0,calc(var(--x) * 136%) 0,calc(var(--x) * 136% - 36%) 100%,0 100%);will-change:clip-path}
+  .tier>:not(.edge){translate:calc((1 - var(--x)) * 26px - var(--c) * 26px) 0}
+  .edge{display:block;position:absolute;z-index:6;top:0;bottom:0;left:calc(var(--x) * 136% - 36%);width:36%;background:linear-gradient(to bottom right,#fff0 calc(50% - 46px),#ffffff59 calc(50% - 5px),#fff calc(50% - 1.5px),#fff0 50%);pointer-events:none}
+}
+/* A screen too low to hold a sheet (a phone on its side): nothing stays still; the five tiers are a list, all open. */
+@media(max-height:519.98px){
+  .stage{display:grid;grid-template:none;gap:16px;height:auto;border-radius:0;overflow:visible;box-shadow:none}
+  .tier{grid-area:auto;box-shadow:0 0 0 1px var(--line)}
+  .gauge{display:none}
+  .rail{padding-bottom:6px}
+  .emblem img{scale:1}
+}
+
+/* ---- Tableta ---- */
+@media(min-width:761px){
+  .head{margin-bottom:24px}
+  .head p{font-size:17px}
+  .rail{max-width:620px;margin-bottom:14px}
+  .stage{height:clamp(320px,calc(100svh - 246px),760px)}
+  .window{max-height:calc(var(--lines2,1) * 162px + 16px)}
+  .cover{padding:22px 24px}
+  .emblem{height:min(104%,360px);max-width:48%}
+  .tiers .name{font-size:34px}
+  .titles>span{font-size:16px}
+  .rows{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
+}
+/* ---- Pantalla ancha: las paradas van en columna a un lado, y la hoja se abre en dos ---- */
+@media(min-width:1000px){
+  .pin{display:grid;grid-template-columns:230px minmax(0,1fr);gap:0 30px;align-items:start}
+  .head{grid-column:1 / -1}
+  .rail{margin:0;padding:10px;border-radius:30px}
+  .rail ol{position:relative;flex-direction:column;gap:8px}
+  /* The route's line joins the stops, and it turns solid as far as the tiers have gone. */
+  .rail ol:before,.rail ol:after{content:"";position:absolute;left:22px;top:24px;bottom:24px}
+  .rail ol:before{border-left:3px dotted var(--green)}
+  .rail ol:after{width:3px;border-radius:3px;background:var(--green);transform-origin:50% 0;scale:1 var(--p,0)}
+  .rail li{position:relative;z-index:1;flex:none}
+  .rail b{background:var(--bg)}
+  .rail button[data-past] b{background:var(--green)}
+  .rail button[data-on] b{background:#fff}
+  .rail button span{display:inline;padding-right:12px}
+  .gauge{display:none}
+  .stage{height:clamp(390px,calc(100svh - 300px),580px)}
+  .tier{flex-direction:row}
+  .cover{flex:0 0 360px;min-height:0;padding:26px;border-radius:28px 0 0 28px}
+  .titles{max-width:none}
+  .tiers .name{font-size:clamp(28px,2.4vw,34px)}
+  .emblem{right:0;bottom:0;height:auto;width:76%;max-width:none}
+  .window{flex:1 1 0;max-height:none;border-radius:0 28px 28px 0}
+  .rows{flex:none;width:100%;margin:auto 0;gap:14px;padding:20px}
+}
+@media(min-width:1000px) and (max-height:519.98px){
+  .pin{display:block}
+  .rail{margin-bottom:14px}
+}
+:global([data-contygo-theme=dark]) .stage{box-shadow:0 0 0 1px #ffffff24,0 30px 44px -28px var(--halo)}
+@media(prefers-reduced-motion:reduce){
+  .tiers .tier{translate:none;clip-path:none;opacity:var(--x);transition:opacity .3s}
+  .tiers .tier>*,.tiers .row,.tiers .emblem{translate:none}
+  .tiers .emblem img{scale:1}
+  .tiers .edge{display:none}
+  .rail li{transition:none}
+}

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { APPOINTMENT_URL, COMMUNITY_URL, via, waLink } from "@/lib/config";
 import { LANDING_FROM_CENTS, landingFaqs as faqs } from "@/lib/contygo-landing-faq";
@@ -24,6 +24,11 @@ import type { ServiceOrigin } from "../rebuild/ServiceCinemaDialog";
 import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import CommunityButton from "./CommunityButton";
 import HelpWays from "./HelpWays";
+import HenryHand from "./HenryHand";
+import HeroStory, { HeroCaption, HeroFlag, HeroLane } from "./HeroStory";
+import heroStyles from "./HeroStory.module.css";
+import { HERO_PARTS, useFresh, useHeroParts } from "./useFresh";
+import { onSoundHeard, playSound, setSoundMuted, soundMuted, warmSound } from "./brandSound";
 import RouteSteps from "./RouteSteps";
 import type { Star } from "./ServiceShowcase";
 import Finale from "./Finale";
@@ -116,6 +121,27 @@ function Icon({ kind = "arrow", loop }: { kind?: string; loop?: boolean }) {
 /** `initialServiceId`: the link of a service (/visa-juvenil, /apelacion-bia…) opens its guide on arrival, over the landing. */
 export default function ContygoLanding({ initialServiceId }: { initialServiceId?: string } = {}) {
   const [theme, setTheme] = useState<Theme>("light");
+  const [fresh] = useFresh();
+  // The hero under review: which of its pieces are off, and the panel (development only) that turns them on and off.
+  const [heroOff, toggleHero] = useHeroParts(), [heroPanel, setHeroPanel] = useState(false);
+  const on = (part: string) => !fresh || !heroOff.includes(part);
+  // The brand's sound (brandSound.ts): it answers the tap that carries data-sound («Empezar mi ruta»); the first time
+  // it plays, a note says how to silence it.
+  const [muted, setMuted] = useState(false), [soundNote, setSoundNote] = useState(false);
+  useEffect(() => {
+    if (!fresh) return;
+    setMuted(soundMuted());
+    let told = false, hide = 0;
+    const warm = () => warmSound();
+    const tap = (event: MouseEvent) => {
+      if ((event.target as Element | null)?.closest("[data-sound]")) playSound();
+    };
+    const stop = onSoundHeard(() => { if (told) return; told = true; setSoundNote(true); hide = window.setTimeout(() => setSoundNote(false), 6000); });
+    document.addEventListener("pointerdown", warm, { once: true, passive: true });
+    document.addEventListener("click", tap, true);
+    return () => { stop(); clearTimeout(hide); document.removeEventListener("pointerdown", warm); document.removeEventListener("click", tap, true); };
+  }, [fresh]);
+  const silence = (off: boolean) => { setSoundMuted(off); setMuted(off); setSoundNote(false); };
   // The day comes from the browser after the first paint (the page is built ahead): a season that has ended leaves then.
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => { setToday(new Date().toISOString().slice(0, 10)); }, []);
@@ -244,41 +270,50 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       </div>
     </header>
     <main ref={main} className={s.main}>
-      <section className={s.hero} id="inicio">
-        <div className={s.heroCopy}>
+      <section className={fresh ? `${s.hero} ${heroStyles.alive}` : s.hero} id="inicio" data-off={fresh ? heroOff.join(" ") : undefined}>
+        <div className={fresh ? `${s.heroCopy} ${heroStyles.copy}` : s.heroCopy}>
           <span className={s.eyebrow}><i /> Henry Orellana · Consultor de inmigración registrado en Utah</span>
-          <h1>La ruta del<br />inmigrante,<br />paso a paso,<br /><em>ContyGo.</em></h1>
+          {/* The same words; in the hero under review each line is its own piece, to come in like a film's title. */}
+          {fresh
+            ? <h1 className={heroStyles.title}>{["La ruta del", "inmigrante,", "paso a paso,"].map((line, n) => <span key={line} style={{ "--n": n } as CSSProperties}><i>{line}</i> </span>)}<span style={{ "--n": 3 } as CSSProperties}><em>ContyGo.</em></span>{on("bandera") && <HeroFlag />}</h1>
+            : <h1>La ruta del<br />inmigrante,<br />paso a paso,<br /><em>ContyGo.</em></h1>}
           <p className={s.lead}>Haz tu trámite en la app, aprende cada paso en comunidad y habla con Henry cuando necesites una respuesta para ti.</p>
           <div className={s.heroActions}>
-            <a ref={heroCta} className={s.primary} href="#ruta">Empezar mi ruta <span><Icon /></span></a>
+            <a ref={heroCta} className={s.primary} href="#ruta" data-sound="">Empezar mi ruta <span><Icon /></span></a>
             <CommunityButton />
           </div>
           {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
-          <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>
+          {on("comprobaciones") && <ul className={s.proof}>{proof.map(item => <li key={item.text}><Icon kind={item.icon} />{item.href ? <a href={item.href}>{item.text}</a> : <span>{item.text}</span>}</li>)}</ul>}
         </div>
-        <div className={s.heroArt} data-anim data-thread="start" data-exit={HERO_ART[theme].exit} data-exit-dir="down">
-          <Image key={theme} src={HERO_ART[theme].src} alt="Una mujer revisa su trámite en el celular; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." fill priority unoptimized sizes="(max-width:760px) 100vw, 52vw" />
+        <div className={fresh ? `${s.heroArt} ${heroStyles.art}` : s.heroArt} data-anim data-thread="start" data-exit={HERO_ART[theme].exit} data-exit-dir="down">
+          {/* 21-11-2026: the hero as a short story (HeroStory), in review on the local page; the published one, a single photo. */}
+          {fresh ? <HeroStory theme={theme} lift={on("pantalla")} /> : <Image key={theme} src={HERO_ART[theme].src} alt="Una mujer revisa su trámite en el celular; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." fill priority unoptimized sizes="(max-width:760px) 100vw, 52vw" />}
           {/* The official symbol, exact to the pixel, where the ribbon's curl points (after the photo: GreenThread reads the first img). */}
-          <span className={s.heroMark} data-loop aria-hidden="true"><Image src={`/contygo/v7/simbolo-${theme === "dark" ? "oscuro" : "claro"}.png`} alt="" width={568} height={640} unoptimized priority /></span>
+          {on("simbolo") && <span className={s.heroMark} data-loop aria-hidden="true"><Image src={`/contygo/v7/simbolo-${theme === "dark" ? "oscuro" : "claro"}.png`} alt="" width={568} height={640} unoptimized priority /></span>}
           {/* After the photo and the symbol: GreenThread reads this box's first img. */}
-          <BlackFridayHero />
+          {on("letrero") && <BlackFridayHero className={fresh ? heroStyles.sign : undefined} />}
+          {fresh && on("cifras") && <HeroCaption where="art" paidCount={paidCount} fromPrice={fromPrice} clients={clients} />}
         </div>
       </section>
 
-      <section className={s.facts} aria-label="ContyGo en cifras" data-thread="facts">
+      {/* In the hero under review the figures are a caption (HeroCaption), and the lane keeps the thread's way. */}
+      {fresh ? <HeroLane figures={on("cifras")} paidCount={paidCount} fromPrice={fromPrice} clients={clients} /> : <section className={s.facts} aria-label="ContyGo en cifras" data-thread="facts">
         <div data-react="count"><strong data-value={String(paidCount)}>{paidCount}</strong><span>servicios con precio publicado</span></div>
         {fromPrice && <div><strong>{fromPrice}</strong><span>honorarios desde</span></div>}
         {clients && <div data-react="count"><strong data-value={clients.split(" ")[0]}>{clients.split(" ")[0]}</strong><span>{clients.split(" ").slice(1).join(" ")}</span></div>}
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
-      </section>
+      </section>}
 
       <BlackFridayBanner />
 
-      <HelpWays />
+      <HelpWays stars={featured} />
 
       <RouteSteps seasonal={inSeason} stars={featured} open={open} warm={warm}>
         <a className={s.help} href={help}>¿No sabes por dónde empezar? <b>Hablemos <Icon /></b></a>
       </RouteSteps>
+
+      {/* 21-11-2026: who is behind it, after all the services and before how each one works (in review, like the route). */}
+      {fresh && <HenryHand />}
 
       <section className={s.journey} id="recorrido">
         <div className={s.sectionHeading} data-reveal data-react="title"><div><span className={s.eyebrow}>Así funciona cada trámite</span><h2>No tienes que<br /><em>entenderlo todo hoy.</em></h2></div><p>Hagámoslo paso a paso. Así comienza tu experiencia con ContyGo.</p></div>
@@ -353,7 +388,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       <div><a href="#inicio" className={s.logo}><Image src={logo} width={3000} height={849} alt="ContyGo" sizes="150px" /></a><span>Siempre contigo. Paso a paso.</span></div>
       <p>Henry Orellana es consultor de inmigración registrado en Utah (Reg. 14304807-IC00). No es abogado y no puede dar asesoría legal ni realizar los servicios legales que realiza un abogado. El registro no constituye un aval del Estado de Utah. ContyGo ofrece asistencia administrativa y tecnológica, y no garantiza decisiones ni tiempos de las autoridades.</p>
       <p>ContyGo es una marca de USA LATINO PRIME LLC · Highland, Utah</p>
-      <div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/terminos">Términos</a><a href="/privacidad">Privacidad</a><a href={PUBLIC_REGISTER} target="_blank" rel="noopener noreferrer">Registro público de Utah <span aria-hidden="true">↗</span></a><a href="https://contygo.app/entrar">Entrar <span aria-hidden="true">↗</span></a></div>
+      <div className={s.footerBottom}><span>© 2026 USA LATINO PRIME LLC</span><a href="/terminos">Términos</a><a href="/privacidad">Privacidad</a><a href={PUBLIC_REGISTER} target="_blank" rel="noopener noreferrer">Registro público de Utah <span aria-hidden="true">↗</span></a><a href="https://contygo.app/entrar">Entrar <span aria-hidden="true">↗</span></a>{fresh && <button type="button" className={heroStyles.soundSwitch} aria-pressed={!muted} onClick={() => silence(!muted)}>{muted ? "Activar sonidos" : "Silenciar sonidos"}</button>}</div>
     </footer>
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
@@ -366,5 +401,14 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       <noscript dangerouslySetInnerHTML={{ __html: `<style>.${s.linkVeil}{display:none}</style>` }} />
     </div>}
     {service && <ServiceCinemaDialog service={service} origin={origin} onClose={() => setService(null)} />}
+    {/* The first time the brand's sound plays: what it was, and how to silence it. */}
+    {fresh && <div className={heroStyles.soundNote} data-show={soundNote || undefined} role="status" aria-hidden={!soundNote}>
+      <span>Sonido activado</span><button type="button" tabIndex={soundNote ? 0 : -1} onClick={() => silence(true)}>Silenciar</button>
+    </div>}
+    {/* Development only: the pieces of the hero under review, to take off and put back (useHeroParts). */}
+    {process.env.NODE_ENV === "development" && fresh && <div className={heroStyles.parts}>
+      {heroPanel && <ul>{HERO_PARTS.map(([part, label]) => <li key={part}><button type="button" aria-pressed={!heroOff.includes(part)} onClick={() => toggleHero(part)}>{label}</button></li>)}</ul>}
+      <button type="button" aria-expanded={heroPanel} onClick={() => setHeroPanel(open => !open)}>{heroPanel ? "Cerrar" : "Hero: quitar o poner"}</button>
+    </div>}
   </div>;
 }

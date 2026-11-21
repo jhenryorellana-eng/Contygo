@@ -1,0 +1,53 @@
+/* «De la mano de Henry Orellana»: ver HenryHand.tsx. Pensado primero para el celular; la pantalla ancha, al final.
+   Una hoja en tinta, el azul de la marca en los dos temas, como el cartel de la ruta: sus colores van con ella.
+   --x (0 a 1) es cuánto ha llegado la sección: lo pone HenryHand.tsx al hacer scroll. Los enlaces y los SVG llevan
+   .hand delante: la página fija su color y su tamaño con más peso. */
+.hand{--x:1;max-width:1440px;margin:0 auto;padding:6px 22px 72px}
+.sheet{position:relative;display:grid;gap:22px;padding:14px 14px 24px;border-radius:32px;background:radial-gradient(90% 60% at 100% 0,#25d36638,#0000 62%),radial-gradient(80% 60% at 0 100%,#2f6fe452,#0000 64%),linear-gradient(150deg,#0e3a7a,#061b3d 70%);color:#f6f8f7;box-shadow:inset 0 1px 0 #ffffff29,0 40px 60px -36px #04122be6}
+
+/* ---- La foto: llega con el barrido en diagonal, como las hojas de la ruta ---- */
+.photo{--at:calc(var(--x) * 136%);position:relative;margin:0;aspect-ratio:1 / 1.06;border-radius:22px;overflow:hidden;background:#b9bcc6;clip-path:polygon(0 0,var(--at) 0,calc(var(--at) - 36%) 100%,0 100%)}
+.photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 12%;scale:calc(1.08 - .08 * var(--x));transform-origin:50% 30%}
+/* His name, on the photo's foot. */
+.photo:after{content:"";position:absolute;inset:auto 0 0;height:46%;background:linear-gradient(#04122b00,#04122bd9);pointer-events:none}
+.photo figcaption{position:absolute;z-index:1;left:16px;right:16px;bottom:14px;display:grid;gap:1px}
+.photo strong{font:800 24px/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.025em;color:#fff}
+.photo figcaption span{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;font-weight:700;color:#c9f7dc}
+.photo figcaption span:before{content:"";width:8px;height:8px;border-radius:50%;background:#25d366;box-shadow:0 0 0 3px #25d36640}
+.edge{position:absolute;z-index:2;top:0;bottom:0;left:calc(var(--x) * 136% - 36%);width:36%;background:linear-gradient(to bottom right,#fff0 calc(50% - 46px),#ffffff59 calc(50% - 5px),#fff calc(50% - 1.5px),#fff0 50%);opacity:clamp(0,calc((1 - var(--x)) * 9),1);pointer-events:none}
+
+/* ---- Las palabras ---- */
+.copy{display:grid;gap:12px;padding:0 8px;opacity:clamp(0,calc(var(--x) * 3 - 1.6),1);translate:0 calc((1 - var(--x)) * 16px)}
+.hand h2{margin:0;font-size:clamp(30px,8.2vw,44px);line-height:1.05;letter-spacing:-.04em;color:#fff}
+.hand h2 em{font-style:normal;color:#25d366}
+.role{margin:0;font-size:17px;font-weight:650;line-height:1.4;color:#c5d3e8}
+/* What the platform is made of: said once, plainly. */
+.made{margin:0;font-size:16.5px;line-height:1.5;color:#dbe5f2}
+.made strong{display:block;margin-bottom:3px;font:800 19px/1.25 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em;color:#fff}
+.hand blockquote{margin:2px 0 0;padding-left:14px;border-left:3px solid #25d366;font:700 19px/1.35 var(--font-contygo-heading),sans-serif;letter-spacing:-.01em;color:#fff;text-wrap:balance}
+.hand .registry{display:flex;align-items:center;gap:10px;width:fit-content;max-width:100%;min-height:50px;margin-top:6px;padding:5px 16px 5px 6px;border-radius:30px;background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff33;color:#fff;font-size:15.5px;font-weight:800;transition:transform .3s cubic-bezier(.2,.9,.25,1.08),background-color .3s;-webkit-tap-highlight-color:transparent}
+.registry i{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;background:#25d366;color:#061b3d}
+.hand .registry i svg{width:20px;height:20px}
+.hand .registry>svg{width:17px;height:17px;color:#25d366}
+.hand .registry:focus-visible{outline:3px solid #25d366;outline-offset:3px}
+@media(hover:hover){.hand .registry:hover{transform:translateY(-2px);background:#ffffff24}}
+.fine{margin:0;font-size:14px;line-height:1.5;color:#a9b8ca}
+
+@media(min-width:761px){
+  .hand{padding:10px 5% 104px}
+  .sheet{grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:center;gap:0 44px;padding:18px 44px 18px 18px;border-radius:36px}
+  .photo{aspect-ratio:1 / 1.18;border-radius:24px}
+  .photo strong{font-size:27px}
+  .copy{gap:16px;padding:20px 0}
+  .hand h2{font-size:clamp(38px,4.2vw,58px)}
+  .role{font-size:19px}
+  .made{max-width:560px;font-size:18px}
+  .made strong{font-size:22px}
+  .hand blockquote{font-size:21px;max-width:560px}
+}
+@media(prefers-reduced-motion:reduce){
+  .photo{clip-path:none}
+  .photo img{scale:1}
+  .edge{display:none}
+  .copy{opacity:1;translate:none}
+}

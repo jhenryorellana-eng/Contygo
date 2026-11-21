@@ -791,3 +791,77 @@ El dueño: «que esos cuadros tengan más resalte… llamativo pero elegante», 
 - Piezas: la franja de arriba, la placa que cuelga en la foto del hero («Faltan 8 días»), el cartel grande con cuenta atrás bajo las cifras y la etiqueta «−50 %» en cada servicio con precio y en la tarjeta del Club.
 - Descartado: una etiqueta plana en cuatro colores («sé mucho más creativo… más detallista») y, de la segunda tanda, la etiqueta con cinta de raso, el cartel con sello y las cintas de precinto (guardados en un stash: «Black Friday · los cuatro carteles…»).
 - La landing solo anuncia: el descuento lo aplican contygo.app y el Club al cobrar.
+
+## «¿Cómo te ayudamos hoy?»: tres productos, tres colores, y se revelan al bajar (20-11-2026)
+
+El dueño pidió que un producto se distinga del otro («actualmente no se nota la diferencia») y menos texto. De cuatro composiciones eligió las pestañas y pidió que «mientras se hace scroll vaya cambiando de producto, o sea, vaya revelándose».
+
+- **Un color y una ilustración por producto:** verde, Servicios; azul noche, ContyGo Club; papel claro con un toque de verde, Sesión con Henry. Solo colores de la marca: un ámbar para la sesión se probó y el dueño lo quitó («no va en el diseño de la marca»). Las ilustraciones (`public/contygo/v8/producto-*.webp`) se hicieron para esto, en la arcilla de los dibujos de los servicios.
+- **Cuatro datos por producto:** nombre, una frase, un dato (la píldora) y su botón. Se quitó el párrafo.
+- **Al bajar, la sección se queda quieta** y la hoja del siguiente producto sube sobre la anterior, al ritmo del dedo; la de abajo se atenúa. Las pestañas marcan cuál se ve y, al tocarlas, llevan a ese producto.
+- **En el celular** el título se va y las pestañas quedan bajo la cabecera; la hoja termina encima del botón del asistente. **En pantalla ancha** se queda todo, centrado.
+- **Pantalla muy baja** (celular acostado): nada se fija; las pestañas cambian el producto al tocarlas. **Con «reducir movimiento»** el cambio es un fundido.
+- Las otras tres composiciones (portadas, mosaico, baraja) están en un stash: «Productos · las cuatro composiciones…».
+- **Pantalla alta (21-11-2026):** la hoja dejaba un hueco en blanco debajo («podrían llenarlo… sé creativo»). Desde 780 px de alto en el celular y la tableta (800 en escritorio) cada hoja usa el alto y asoma lo que hay dentro (`.peek` en `HelpWays`), solo con datos que la página ya da: los tres trámites más pedidos con su precio en vivo, el programa de la semana del Club y los tres pasos de la sesión. El programa es el de la página del propio Club (leída el 21-11-2026): lunes y jueves, Paso a Paso con Henry; martes, Inglés que Abre Puertas; miércoles, La Ruta del Inmigrante. La primera versión encendía cuatro días bajo «Sesiones en vivo con Henry» y el dueño la hizo quitar: Henry no está todos los días. En pantallas más bajas no sale y la hoja queda como estaba.
+
+## Paso 1 por tramos: los servicios migratorios segmentados por tipo (20-11-2026, en elección)
+
+El dueño pidió segmentar los servicios por tipo, «siguiendo el concepto de la ruta», en cuatro diseños para elegir. Sus cinco tipos, en su orden: autoservicio y bajo costo, costo medio, masivos, premium y alto costo (`lib/contygo-tiers.ts`).
+
+- **Cinco tramos, y el color baja con la ruta:** papel claro, verde, azul, azul noche y tinta. Solo colores de la marca. Cada tramo tiene su escena de arcilla (`public/contygo/v8/escena-*.webp`, 21-11-2026): personas con los mismos objetos de los íconos de sus servicios, para que se entienda qué ofrece (el dueño pidió imágenes «más creativas y mucho más claras en lo que estamos proponiendo»). Hechas con Codex, con los íconos del tramo como referencia.
+- **Composición elegida: las paradas** («me gusta el 3»). Las otras tres (estaciones, escalera, carteles) están en un stash: «Tramos · las cuatro composiciones…».
+- **Con control de scroll, como los productos:** la sección se queda quieta mientras se baja; la barra de paradas marca por cuál se va (y una línea verde se llena con el dedo), el tramo siguiente llega y sus servicios se abren uno tras otro. Si un tramo tiene más servicios de los que caben (masivos en el celular), su lista sube bajo la portada a la velocidad del dedo. Tocar una parada lleva a su tramo. En un celular acostado no se fija nada: es la lista de los cinco.
+- **Efecto del cambio de tramo: el barrido** («me gusta la 2», 21-11-2026): el color del tramo que llega cruza la hoja en diagonal, con un filo de luz. Los otros tres (hoja, vía, portada) están en un stash: «Tramos con scroll · los cuatro efectos…». El interruptor de desarrollo solo cambia entre «Hoy» (la página publicada) y «Tramos».
+- **Las filas de servicio son boletos de la ruta (21-11-2026):** con las escenas en las portadas el dueño sintió que «los servicios no resaltan tanto». De cuatro diseños le gustaron dos («el 2 y el 4») y pidió filas más grandes, que aprovechen el alto de la pantalla y digan «al menos de qué trata un poco». Cada servicio es un boleto: dibujo, nombre grande y una línea de qué trata (`TIER_BLURBS` en `lib/contygo-tiers.ts`, condensada de la descripción del catálogo, sin promesas); pasada la línea de corte, el talón del color del tramo con el precio. Espera bajo una franja de ese color que se barre al abrirse, como llega el tramo. En pantallas altas las filas crecen (hasta ~150 px) y la portada toma el resto. Las cuatro propuestas están en un stash: «Tramos · las cuatro propuestas de filas…».
+- **Los tramos ocupan el lugar de la vitrina de favoritos y de la carpeta de trámites.** La licencia de conducir sigue en su carpeta, debajo.
+- **Servicios que el dueño nombró y no están en el catálogo** (pago de anualidades, cambio de estatus, EB-2, petición familiar): sin precio ni guía; su fila escribe al equipo por WhatsApp. No se inventa nada.
+- **Mientras no elija,** la página publicada sigue con la vitrina y las carpetas (opción «A»).
+
+## La ruta con el lenguaje de los tramos (21-11-2026)
+
+El dueño: la sección «Tu ruta, paso a paso» «no encaja con las nuevas estructuras y no se nota lo que tratamos de transmitir»; quiere que la persona entienda qué es la ruta «y luego darle paso a los servicios», y que Finanzas, Certificaciones y los demás pasos tengan «su diseño como el de migratorio para tener coherencia visual» (`RouteSheets.tsx`).
+
+- **De cuatro presentaciones le gustaron dos cosas y pidió mezclarlas:** «lo de la ruta del primero, ese detalle» (la línea punteada que va de un paso a otro, a un lado y al otro) y la clasificación de los pasos en hojas. Las cuatro (camino, escalera, pase, nada) están en un stash: «Ruta · las cuatro presentaciones…».
+- **La presentación es un cartel** en el azul de la marca (también en el tema claro): el título, la frase y el mapa de la ruta, con las cinco paradas sobre la línea punteada, cada una con su escena, su frase y si ya está disponible; aparecen una tras otra al llegar. La primera versión, solo el título con pastillas, le pareció «muy simple».
+- **Cada paso es una parada de la ruta:** su número va sobre la línea punteada, que llega desde el paso anterior cruzando al otro lado. Los pasos impares paran a la izquierda y los pares a la derecha, y su hoja se compone hacia ese lado. El hilo verde sigue dibujando el recuadro de cada paso al pasar (se probó sin él y, en escritorio, «la línea no sigue el camino de los servicios, solo aparece en el costado izquierdo»); el número de la parada va sobre ese borde.
+- **Cada paso es una hoja como las de los tramos:** portada de su color con su escena de arcilla (`public/contygo/v8/ruta-*.webp`, hechas con Codex con los íconos del paso como referencia) y, debajo, sus servicios como boletos. Lo que está por llegar va en boletos en contorno («Próximamente», «Primero en llegar»), sin precio ni promesa. El paso 1 lleva solo la portada; debajo siguen sus tramos.
+- **La hoja del paso 1 lleva dos boletos, «lo que viene con tu estatus»:** el permiso de trabajo (antes un banner al pie del paso) y la licencia de conducir, del aliado SG Services Group (antes una carpeta; su boleto escribe al equipo, y debajo van su nota y el enlace al ITIN). Sueltos al pie del paso «están separando y estorban». En esta versión el paso 1 ya no usa `ServiceShowcase`: si vuelve un servicio de temporada (la lotería), hay que darle su lugar aquí.
+- **Los efectos son los de Migratorio, al ritmo del dedo:** la línea se dibuja hasta la parada y su número se asienta; el color del paso barre la hoja en diagonal con su filo de luz, desde el lado de su parada; la escena entra con ella; los boletos se abren con su franja, y después llegan, uno tras otro, lo que viene, los pasos de «Así funcionará» y los botones.
+- **El color de cada paso es el de su lugar en la ruta,** los mismos cinco de los tramos: papel claro, verde, azul, azul noche y tinta.
+- **Los textos son los de `lib/contygo-route.ts`.** Solo se añadió una línea a ITIN, Impuestos y LLC (`TIER_BLURBS`), condensada de su descripción del catálogo.
+- **Mientras no pida publicarlo,** la página publicada sigue como estaba (interruptor «Hoy / Nueva», solo en desarrollo).
+
+## El hero, vivo (21-11-2026, en revisión)
+
+El dueño: «quiero que se sienta viva… me gusta la imagen de la chica pero me gustaría que también muestre el celular… más imágenes que pasen la una y la otra y se sienta como un video corto de 3 o 5 segundos… ella mira y luego muestra la pantalla, y en esta debe estar el logo y la plataforma de ContyGo bien diseñado», en el celular y en escritorio; y la franja de cifras, «horrible, ordinario» (`HeroStory.tsx`).
+
+- **Tres fotos de la misma escena, en bucle** (unos 9 segundos): mira su celular, levanta la mirada y lo muestra a la cámara. Las dos nuevas se hicieron con Codex a partir de la foto del hero de cada tema, con la cinta en su sitio (`public/contygo/v8/hero-{claro,oscuro}-{2,3}.webp`). La primera foto sigue siendo la de siempre: de su cinta sale el hilo de la página.
+- **La pantalla del teléfono es la app dibujada en código,** no parte de la foto: nítida a cualquier tamaño. Se coloca sobre el teléfono con la perspectiva de la foto (sus cuatro esquinas se midieron sobre una pantalla azul lisa, que luego se pintó de tinta). Primero el símbolo y el logo; luego un trámite de ejemplo que avanza («Hola, Ana», Permiso de trabajo, paso 3 de 4, un aviso de Soporte). A media escena la pantalla sale del teléfono hacia quien mira, para que se lea también en un celular. Es una ilustración con datos de ejemplo.
+- **En el celular la foto ocupa más** (casi cuadrada), y el letrero de Black Friday se achica para no taparle la cara. El botón «Empezar mi ruta» queda algo más abajo que antes.
+- **Las cifras son un rótulo que cambia** (`HeroCaption`), como el de una película: una cifra a la vez, con las mismas palabras de antes. En el celular va sobre el pie de la foto; en pantalla ancha, en la franja bajo el hero, al pie de la foto.
+- **El hilo verde pasa bajo el hero como siempre** (`HeroLane`, `data-thread="facts"`): sale de la cinta, corre por esa franja hasta el margen y baja. Al quitar la franja de cifras se quedó un rato sin ese punto y cruzaba la página por el medio: «se ve pésimo… quiero que siga estando la ruta de la línea verde como estaba antes». Cualquier cambio bajo el hero tiene que conservar un elemento con `data-thread="facts"`.
+- **Una bandera de Estados Unidos flamea junto al titular** (`HeroFlag`, pedido del dueño): la bandera exacta, dibujada en un lienzo, con la onda de la tela y su brillo de satén. Sus colores son los de la bandera, no los de la marca. Se probó antes como boleto de la ruta en tinta: «no me gusta». Ya no cuentan desde cero (se llegaba a ver «+0» y «0 %»).
+- **El titular, «más cinematográfico»:** entra línea por línea desde detrás de su borde, enfocándose; su tinta va del azul noche al azul de la marca; «ContyGo.» lleva el brillo de satén de la cinta, que lo recorre despacio; lo demás llega después, en calma. Detrás del hero, dos resplandores (verde y azul) se mueven muy lento, y el aura detrás de ella respira. Las palabras del titular no cambian.
+- **Menos cosas (21-11-2026):** el dueño lo sintió «muy cargado… hay cosas que no quiero que vayan», sin decir cuáles. El hero arranca sin las tres piezas que él no pidió: el rótulo de cifras, la pantalla que sale del teléfono (la app queda dentro del teléfono) y las luces de fondo. Un panel solo de desarrollo («Hero: quitar o poner», `useHeroParts`) apaga y enciende cada pieza (también el letrero de Black Friday, la bandera, el símbolo y las tres comprobaciones) para que él decida viéndolo; lo que elija se deja fijo y el panel se quita.
+- **Con «reducir movimiento»** no hay secuencia: queda la tercera foto con la app ya abierta.
+- **Mientras no pida publicarlo,** la página publicada sigue con su foto única y su franja (`useFresh`, el mismo interruptor «Hoy / Nueva» de la ruta).
+
+## «De la mano de Henry Orellana» (21-11-2026, en revisión)
+
+Al final de todos los servicios y antes de «Así funciona cada trámite» (`HenryHand.tsx`). El dueño: «algo como "de la mano del asesor acreditado Henry Orellana" y una imagen de Henry como CEO… que se vea bien y corto».
+
+- **Una hoja en tinta,** como el cartel que abre la ruta: la ruta empieza y termina en el azul de la marca. A un lado, su foto; al otro, el título, lo que es, una frase suya, el enlace a su registro y el aviso de que no es abogado.
+- **El título dice «consultor de inmigración registrado en Utah», no «asesor acreditado».** En inmigración, «acreditado» nombra a los representantes que acredita el Departamento de Justicia; Henry no lo es y no puede dar asesoría legal. Si el dueño tiene otra acreditación que quiera nombrar, hay que ver el documento antes de escribirla.
+- **La foto es suya,** de su sesión de estudio (proyecto «CARPETA DE PROYECTO AUTOMATIZADO DE IMAGENES PARA REDES», `motor-contygo/referencias/henry/840.jpg`): recortada, sin retoque (`public/contygo/v8/henry-ceo.webp`). Hay 115 fotos más ahí, con traje gris, traje azul y camiseta.
+- **«CEO de ContyGo»** es como lo nombró el dueño. La frase «No enseño una ruta que leí. Enseño la que recorrí» es de él, de la página de su Club.
+- **«ContyGo está hecho con su experiencia. Cada proceso y cada automatización de la plataforma siguen la forma en que Henry resolvió sus propios trámites.»** El dueño pidió decirlo «en pocas palabras y claras». Habla de lo que él hizo; no promete un resultado a quien lee.
+- **La foto llega con el barrido en diagonal** de las hojas, al ritmo del dedo.
+
+## El sonido de la marca (21-11-2026)
+
+El dueño compuso un sonido («sonido para landing.wav»: casi 4 segundos, una subida de notas y un acorde que se apaga) y pidió ponerlo en la landing, como el arranque de una Mac (`brandSound.ts`).
+
+- **Suena entero y en un solo lugar:** al tocar «Empezar mi ruta». Nunca suena solo.
+- **Lo que se probó y no quedó:** su acorde final, corto, al abrir cada servicio y al entrar al Club o a la agenda de Henry; y solo su subida de notas («el tututuru»), sin el final. Al probarlo: «no tiene sentido… no me gusta». Eligió volver al sonido completo, solo en ese botón.
+- **Se puede silenciar:** la primera vez que suena sale un aviso («Sonido activado · Silenciar») y en el pie de la página hay un interruptor; el silencio se recuerda. En el iPhone respeta el interruptor de silencio.
+- **Archivos** (`public/contygo/audio/marca.*`): AAC, y WAV para los navegadores que no leen AAC. Suena quien lleva `data-sound`.

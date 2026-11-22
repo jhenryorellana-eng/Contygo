@@ -141,3 +141,12 @@ test('la foto de una felicitación se guarda sin sus datos ocultos, y lo que no 
   assert.ok(photo.indexOf('isAdminRequest(req)') > 0 && photo.indexOf('isAdminRequest(req)') < photo.indexOf('adminReviewPhoto('));
   assert.ok(/const valid = [^;]*&& consent;/.test(form) && form.includes('Tapa tus datos antes de enviar'));
 });
+
+test('el recorrido de la app: la cámara que eligió el dueño, sin interruptores, y el hilo conserva su ancla en el teléfono', () => {
+  const fs = require('node:fs'), tour = fs.readFileSync('components/contygo/v7/PlatformTour.tsx', 'utf8'), css = fs.readFileSync('components/contygo/v7/PlatformTour.module.css', 'utf8');
+  assert.ok(!/data-look|cg-tour-look|loupe|\.track/.test(tour + css), 'los efectos que no se eligieron ya no están');
+  assert.equal((tour.match(/data-thread="phone"/g) || []).length, 2, 'un ancla para el teléfono y otra para la pantalla ancha');
+  assert.ok(page.includes('data-thread="platform"') && page.includes('data-thread="phone"'));
+  // Quien pide menos movimiento, o tiene una pantalla muy baja, no se queda con la sección quieta.
+  assert.ok(/@media\(max-width:899\.98px\) and \(min-height:520px\) and \(prefers-reduced-motion:no-preference\)\{[^}]*\.run\{height:/.test(css));
+});

@@ -60,7 +60,8 @@ function painted(img: HTMLImageElement, root: HTMLElement): Box {
 }
 
 function route(main: HTMLElement) {
-  const q = (name: string) => main.querySelector<HTMLElement>(`[data-thread="${name}"]`);
+  // (An anchor may have a stand-in for another screen size: the one on screen is the one that counts.)
+  const q = (name: string) => { const all = Array.from(main.querySelectorAll<HTMLElement>(`[data-thread="${name}"]`)); return all.find(el => el.offsetWidth > 0) ?? all[0] ?? null; };
   const start = q("start"), img = start?.querySelector("img");
   const services = q("services"), platform = q("platform"), faq = q("faq"), finale = q("finale"), facts = q("facts"), phone = q("phone");
   const steps = Array.from(main.querySelectorAll<HTMLElement>('[data-thread="step"]')).map(el => offset(el, main));

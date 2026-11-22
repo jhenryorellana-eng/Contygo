@@ -900,3 +900,15 @@ El dueño pidió primero una sección en la landing («un dashboard donde Henry 
 - **La clave del panel:** `ADMIN_PASSWORD` en Vercel (producción), creada el 22-11-2026 y entregada al dueño. Sin la base del CRM (Supabase, sin conectar), el panel abre directamente en «Reseñas»; sus otras pestañas no tienen datos.
 - **Para probar en local:** sin almacén, en desarrollo se guarda en `.felicitaciones-local/` (fuera de git). Basta arrancar con `ADMIN_PASSWORD=prueba`.
 - **Queda:** `/admin` sigue con el aspecto de la web anterior; `components/reviews/RateForm.tsx` ya no se usa; el freno a envíos repetidos vive en memoria (es un freno, no un muro); la primera felicitación real en producción la envía el dueño (no se escribieron datos de prueba en el almacén real).
+
+## El celular de «Tu expediente, conectado», en el teléfono (22-11-2026)
+
+El dueño: «me gustaría que el celular tenga mejores efectos para la versión mobile, debe de verse mucho mejor y funcional para el modo mobile. Usa más tu creatividad». En el teléfono la sección era una ventana recortada sobre la app, que cambiaba sola: no se veía nunca el celular entero y los botones flotantes de la página lo tapaban (`PlatformTour.tsx`).
+
+- **Ahora el dedo lo recorre:** la sección se queda quieta (como los tramos y los productos, que el dueño eligió así) y lo que pasa en pantalla sigue al scroll: primero el teléfono entero, ladeado, con su sombra; luego sus tres partes. Arriba, los tres botones (dicen por dónde va y llevan a cada parte); debajo, la frase de esa parte; y el teléfono ocupa el resto, a todo el ancho. El pie de la escena queda libre: ahí se posa el botón del asistente.
+- **El efecto es una cámara:** se acerca a cada parte de la app y pasa de una a otra; el teléfono se endereza al acercarse. Se ofrecieron tres en la página local (cámara, una lupa de cristal que recorría el teléfono y tres ventanas que se pasaban de lado); el dueño: **«la cámara me gustó mucho»**. Los otros dos se quitaron del código (quedan en el historial de la sesión, no en git).
+- Un destello cruza la escena cada vez que llega una parte; nada más se mueve por su cuenta mientras el dedo manda.
+- **Sin quedarse quieta** (pantalla muy baja o «reducir movimiento»): los botones cambian la parte y la cámara va sola.
+- **Escritorio: igual que antes** (el teléfono entero a un lado y las tres frases al otro).
+- **El hilo verde:** en el teléfono su ancla es `.anchor` (no se queda quieta con la sección); en escritorio, el teléfono. `GreenThread` toma, de las anclas con el mismo nombre, la que está en pantalla. Comprobado: en escritorio el hilo es idéntico al de antes.
+- Medidas de la app dentro del teléfono (para la cámara): documentos al 69 % de su alto, recorrido al 39 %, Soporte al 10 %; la parte más alta ocupa el 30,6 %. Si cambia `AppPhone`, hay que volver a medirlas (`MOMENTS`).

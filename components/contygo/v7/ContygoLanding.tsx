@@ -25,6 +25,9 @@ import CommunityButton from "./CommunityButton";
 import HelpWays from "./HelpWays";
 import HenryHand from "./HenryHand";
 import PlatformTour from "./PlatformTour";
+import AssistantDoor, { AssistantStart } from "./AssistantDoor";
+import { openAssistant } from "./assistantBus";
+import { CONTRACT_TIME } from "@/lib/agent/landing-chat-ui";
 import HeroStory, { HeroCaption, HeroFlag, HeroLane } from "./HeroStory";
 import heroStyles from "./HeroStory.module.css";
 import { HERO_PARTS, useFresh, useHeroParts } from "./useFresh";
@@ -305,6 +308,8 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
 
       <BlackFridayBanner />
 
+      {/* The assistant's promise, right under the hero: where a visitor decides (its way in and the questions close the page). */}
+      {fresh && <AssistantDoor />}
       <HelpWays stars={featured} />
 
       <RouteSteps seasonal={inSeason} stars={featured} open={open} warm={warm}>
@@ -333,7 +338,8 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       {/* Navy ink sheet: the certificate always reads on the brand navy, in both appearances. */}
       <div className={`${s.inkSheet} ${themeStyles.surface}`} data-contygo-theme="dark" data-react="sheet" data-react-y=".25"><RegistryStage /></div>
 
-      <section className={s.faq} id="preguntas" data-thread="faq">
+      {/* Where «Preguntar también es avanzar» was: the assistant's door (the old list stays with the old page). */}
+      {fresh ? <AssistantStart questions={faqs(fromPrice, visaFrom).map(([question]) => question)} /> : <section className={s.faq} id="preguntas" data-thread="faq">
         <div className={s.faqIntro} data-reveal data-react="title"><span className={s.eyebrow}>Claridad antes de decidir</span><h2>Preguntar también<br /><em>es avanzar.</em></h2><p>Toca una pregunta y te respondemos aquí mismo. Si te queda otra, el equipo te contesta por WhatsApp.</p><a className={s.inlineLink} href="#empezar">Prefiero verlo en vídeo <Icon /></a></div>
         <div className={s.chat} data-anim data-reveal>
           <div className={s.chatHead}><span className={s.chatAvatar}><Image src="/contygo/v7/simbolo-oscuro.png" alt="" width={568} height={640} sizes="24px" /></span><span><strong>ContyGo</strong><small><i aria-hidden="true" />Respuestas claras, en español</small></span></div>
@@ -343,7 +349,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
           </div>
           <a className={s.composer} href={help}><span>¿Otra pregunta? <b>Escríbele al equipo</b></span><i><Icon kind="send" /></i></a>
         </div>
-      </section>
+      </section>}
 
       <Finale onOpen={open} />
 
@@ -365,7 +371,9 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     </footer>
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
-      <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>
+      {fresh
+        ? <a href="#preguntas" tabIndex={!heroVisible && dock && !service ? 0 : -1} onClick={event => { event.preventDefault(); openAssistant(); }}><span><strong>Haz tu contrato tú mismo</strong><small>{fromPrice ? `En ${CONTRACT_TIME} · desde ${fromPrice}` : `En ${CONTRACT_TIME}`}</small></span><i><Icon /></i></a>
+        : <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>}
     </div>
     <LandingChat hidden={Boolean(service)} raised={!heroVisible && dock && !service} onService={open} />
     {linked && <div className={s.linkVeil} data-open={Boolean(service)} aria-hidden="true" onTransitionEnd={event => { if (event.target === event.currentTarget && !service) setLinked(false); }}>

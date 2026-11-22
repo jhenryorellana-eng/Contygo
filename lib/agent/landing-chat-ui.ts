@@ -1,7 +1,11 @@
 /* El chat de la esquina de la portada: lo que muestra la pantalla (el saludo, las necesidades, los mensajes a WhatsApp).
    Sin nada del servidor: este archivo va al navegador. Lo que sabe el modelo y sus reglas viven en ./landing-chat. */
 
-export const LANDING_GREETING = "Te digo cuál es tu servicio, reviso contigo si calificas y te llevo a tu contrato o con una persona del equipo.";
+/** How long the contract takes, in the owner's words (22-11-2026: «que sepa que puede hacer su contrato él mismo y en
+ *  menos de 3 minutos»). Nobody has timed it with real clients yet: it lives here, in one place, to change it if the
+ *  measure says otherwise. */
+export const CONTRACT_TIME = "menos de 3 minutos", CONTRACT_TIME_SHORT = "3 min";
+export const LANDING_GREETING = `Te digo cuál es tu servicio, reviso contigo si calificas y llenamos tu contrato aquí mismo, en ${CONTRACT_TIME}.`;
 
 /** The WhatsApp message to the advisor: who it is and, if any, their question (short; nothing else of theirs). */
 export function advisorMessage(question?: string) {

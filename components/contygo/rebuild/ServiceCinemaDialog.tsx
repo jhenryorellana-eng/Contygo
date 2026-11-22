@@ -453,7 +453,7 @@ function OpenDialog({ service, origin, onClose, initialStage = "service", initia
 
         {/* El bot termina en la ficha: datos, código y firma en ContyGo (lib/contygo-api). */}
         {/* The chat's verdict is for the service it asked about; another variant is evaluated by contygo when contracting. */}
-        {stage === "decision" && <ContractCheckout key={contractService.id} service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} email={visaSession?.email} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 && visaSession?.eligible !== false ? () => setPicker(true) : undefined} />}
+        {stage === "decision" && <ContractCheckout key={contractService.id} via="ficha-web" service={contractService} displayName={visaSession?.displayName} phone={visaSession?.phone} email={visaSession?.email} answers={contract?.answers ?? visaSession?.answers} eligible={contractService.id === service.id ? visaSession?.eligible ?? null : null} externalRef={visaSession?.externalRef} priority={visaSession?.priority} asylum={visaSession?.asylum} hearing={visaSession?.hearing} voice={closingVoice} onChangeService={variants.length > 1 && visaSession?.eligible !== false ? () => setPicker(true) : undefined} />}
 
         {stage === "decision" && !immersive && <>
           <div className={s.decisionGrid}>

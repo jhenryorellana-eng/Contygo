@@ -1,0 +1,42 @@
+/* La hoja del contrato, llenándose: ver ContractSheet.tsx. Una hoja de papel con el hilo verde por la izquierda:
+   cada renglón es un nudo que se enciende cuando su dato llega. Lleva sus colores (papel claro en los dos temas:
+   es un documento). */
+.sheet{--paper:#fff;--ink:#061b3d;--muted:#5a6a80;--rule:#061b3d1f;--green:#25d366;--deep:#087f46;position:relative;display:block;padding:16px 16px 14px;border-radius:22px;background:linear-gradient(#fff,#f7faf8);color:var(--ink);box-shadow:0 0 0 1px #061b3d1f,0 26px 40px -30px #061b3dcc;font-family:var(--font-contygo-body),sans-serif;overflow:hidden}
+.head,.sheet>summary{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;list-style:none;cursor:default}
+.sheet>summary{position:relative;padding-right:30px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sheet>summary::-webkit-details-marker{display:none}
+.title{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.title strong{font:800 17px/1.1 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}
+.title small{font-size:13px;font-weight:800;color:var(--deep)}
+.sheet[data-example] .title small{padding:3px 9px;border-radius:12px;background:#061b3d;color:#fff}
+.meter{display:block;height:5px;border-radius:3px;background:#061b3d14;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--green);transform-origin:0 50%;scale:var(--fill) 1;transition:scale .7s cubic-bezier(.2,.8,.2,1)}
+.chevron{position:absolute;right:4px;top:2px;width:22px;height:22px;border-radius:50%;background:#061b3d0f}
+.chevron:before{content:"";position:absolute;left:7px;top:6px;width:7px;height:7px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);rotate:45deg;transition:rotate .3s,top .3s}
+.sheet[open] .chevron:before{rotate:225deg;top:9px}
+
+.rows{position:relative;list-style:none;display:grid;gap:0;margin:12px 0 0;padding:0}
+/* The thread down the left of the sheet. */
+.rows:before{content:"";position:absolute;left:8px;top:12px;bottom:12px;width:2px;background:linear-gradient(var(--rule) 55%,transparent 0) 0 0/2px 8px repeat-y}
+.rows li{position:relative;display:grid;grid-template-columns:18px 84px minmax(0,1fr);align-items:center;gap:10px;min-height:34px}
+.rows i{position:relative;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--paper);box-shadow:inset 0 0 0 2px #061b3d33;color:#061b3d;transition:background-color .35s,box-shadow .35s}
+.rows li[data-done] i{background:var(--green);box-shadow:0 0 0 4px #25d36626}
+.rows i svg{width:12px;height:12px;animation:tick .45s cubic-bezier(.2,.9,.25,1.3) both}
+@keyframes tick{from{scale:0}}
+.label{font-size:12.5px;font-weight:700;color:var(--muted)}
+.value{min-width:0;font:800 14.5px/1.25 var(--font-contygo-heading),sans-serif;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:write .7s cubic-bezier(.3,.7,.2,1) both}
+@keyframes write{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* A line still to fill. */
+.value em{display:block;height:2px;margin-top:9px;background:linear-gradient(90deg,#061b3d33 55%,transparent 0) 0 0/8px 2px repeat-x}
+.rows li:not([data-has]) .value{animation:none}
+/* The seal, once the code is confirmed. */
+.seal{position:absolute;right:12px;bottom:10px;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--green);color:#061b3d;box-shadow:0 0 0 5px #25d36633,0 12px 18px -10px #061b3d99;rotate:-8deg;animation:seal .6s cubic-bezier(.2,.9,.25,1.25) both}
+.seal svg{width:30px;height:30px}
+@keyframes seal{from{scale:1.7;opacity:0}}
+.caseNumber{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.caseNumber b{color:var(--ink)}
+/* One line that opens (a phone). */
+.sheet[data-compact]{padding:11px 13px;border-radius:18px;box-shadow:0 0 0 1px #061b3d1f,0 14px 22px -18px #061b3dcc}
+.sheet[data-compact] .title strong{font-size:15px}
+.sheet[data-compact] .rows{margin-top:10px}
+@media(prefers-reduced-motion:reduce){.value,.rows i svg,.seal{animation:none}.meter i{transition:none}}

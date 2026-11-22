@@ -1,0 +1,101 @@
+/* «Dime qué necesitas. Lo armamos aquí.»: ver AssistantDoor.tsx. Pensado primero para el celular; la pantalla ancha,
+   al final. La escena es una hoja en tinta (como el cartel de la ruta) donde la conversación y el contrato se ven
+   juntos; lo demás usa los colores de la página. Los botones llevan .door delante: la página fija los suyos con más peso. */
+.door,.close{display:grid;gap:26px;max-width:1440px;margin:auto;padding:76px 22px 72px}
+.door{padding-bottom:30px}
+:is(.door,.close) :is(h3,p,ol){margin:0}
+:is(.door,.close) :is(button,a):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+:is(.door,.close) h3{font:800 20px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em;color:var(--ink)}
+
+/* ---- 1 · La promesa y un solo botón principal ---- */
+.intro{position:relative;z-index:4;display:grid;gap:14px}
+.intro h2{margin:4px 0 0}
+.intro>p{max-width:500px;font-size:17px;line-height:1.6;color:var(--muted)}
+.cta{display:grid;gap:10px;margin-top:6px}
+.door .primary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:66px;padding:8px 8px 8px 26px;border:0;border-radius:40px;background:#25d366;color:#061b3d;font:800 19px/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.01em;cursor:pointer;box-shadow:0 26px 36px -22px #0a7a3fe6;transition:translate .3s cubic-bezier(.2,.9,.25,1.08);-webkit-tap-highlight-color:transparent}
+.primary i{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#061b3d;color:#fff;transition:rotate .35s cubic-bezier(.2,.9,.25,1.08)}
+.primary svg{width:22px;height:22px}
+.door .primary:active{translate:0 1px}
+.door .listen{display:flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 18px;border:0;border-radius:30px;background:none;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink);font:800 15px/1.2 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.listen i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#25d366;color:#061b3d}
+.listen svg{width:16px;height:16px}
+
+/* ---- 2 · Cómo funciona: tres pasos, y el ejemplo que los ilustra ---- */
+.stage{position:relative;z-index:4;display:grid;gap:16px;padding:18px 14px 16px;border-radius:30px;background:radial-gradient(90% 50% at 100% 0,#25d36638,#0000 62%),radial-gradient(80% 50% at 0 100%,#2f6fe452,#0000 64%),linear-gradient(150deg,#0e3a7a,#061b3d 70%);color:#f6f8f7;box-shadow:inset 0 1px 0 #ffffff29,0 34px 50px -34px #04122be6;overflow:hidden}
+.steps{position:relative;list-style:none;display:grid;gap:4px;padding:0}
+.steps li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;padding:9px 12px 9px 9px;border-radius:20px;transition:background-color .45s,opacity .45s;opacity:.62}
+.steps li[data-state=now]{background:#ffffff1f;opacity:1}
+.steps li[data-state=done]{opacity:.9}
+.steps b{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #ffffff73;font:800 16px/1 var(--font-contygo-heading),sans-serif;transition:background-color .4s,color .4s,box-shadow .4s}
+.steps li:is([data-state=now],[data-state=done]) b{background:#25d366;color:#061b3d;box-shadow:none}
+.steps span{display:grid;gap:1px;min-width:0}
+.steps strong{font:800 17px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em;color:#fff}
+.steps small{font-size:14px;line-height:1.35;color:#c5d3e8}
+.demo{display:grid;gap:12px;padding-top:14px;border-top:2px dashed #ffffff29}
+.talk{display:grid;align-content:end;gap:7px;min-height:118px}
+.line{width:fit-content;max-width:88%;padding:9px 13px;border-radius:17px 17px 17px 6px;background:#ffffff1f;color:#f6f8f7;font-size:15px;font-weight:600;line-height:1.35;opacity:.6}
+.line[data-who=you]{justify-self:end;border-radius:17px 17px 6px 17px;background:#fff;color:#061b3d}
+.line[data-new]{opacity:1;animation:say .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes say{from{opacity:0;translate:0 12px;scale:.96}}
+
+/* ---- 3 · Por dónde empezar ---- */
+.start{position:relative;z-index:4;display:grid;gap:12px}
+.needs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.close .needs button{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-height:66px;padding:8px 12px 8px 8px;border:0;border-radius:22px;background:var(--sheet);box-shadow:0 0 0 1px var(--line),var(--paper);color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:translate .3s cubic-bezier(.2,.9,.25,1.08),box-shadow .3s;-webkit-tap-highlight-color:transparent}
+.needs button:last-child:nth-child(odd){grid-column:1 / -1}
+.needs span{display:grid;place-items:center;width:46px;height:46px;border-radius:15px;background:var(--soft)}
+.needs img{width:38px;height:38px;object-fit:contain}
+.needs strong{font:800 15px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em}
+.box{display:grid;gap:8px;margin-top:6px}
+.box label{font:800 16px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em;color:var(--ink)}
+.box>div{display:flex;align-items:center;gap:6px;min-height:60px;padding:5px 5px 5px 18px;border-radius:34px;background:var(--sheet);box-shadow:0 0 0 1.5px var(--line-strong),var(--paper)}
+.box>div:focus-within{box-shadow:0 0 0 3px var(--accent),var(--paper)}
+.box input{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:600 16.5px/1.3 var(--font-contygo-body),sans-serif;outline:0}
+.box input::placeholder{color:var(--muted);opacity:.85}
+.close :is(.round,.send){display:grid;place-items:center;flex:none;width:50px;height:50px;padding:0;border:0;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.close .round{background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.close .send{background:#061b3d;color:#fff;transition:opacity .2s}
+.close .send:disabled{opacity:.3;cursor:default}
+.close :is(.round,.send) svg{width:21px;height:21px}
+
+/* ---- 4 · Las preguntas de siempre, en una fila que se desliza ---- */
+.faqs{position:relative;z-index:4;display:grid;gap:12px;padding-top:22px;border-top:1px solid var(--line)}
+.faqs>div{display:flex;gap:8px;margin:0 -22px;padding:2px 22px 6px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
+.faqs>div::-webkit-scrollbar{display:none}
+.close .faqs button{flex:none;max-width:78%;min-height:48px;padding:9px 16px;border:0;border-radius:24px;background:var(--soft);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font:700 14.5px/1.3 var(--font-contygo-body),sans-serif;text-align:left;cursor:pointer;scroll-snap-align:start}
+.faqs p{font-size:14px;line-height:1.5;color:var(--muted)}
+.faqs a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media(hover:hover){.door .primary:hover{translate:0 -2px}.primary:hover i{rotate:-35deg}.close .needs button:hover{translate:0 -2px;box-shadow:0 0 0 1.5px var(--line-strong),var(--lift)}.close .faqs button:hover{box-shadow:inset 0 0 0 1.5px var(--line-strong)}}
+
+/* ---- La invitación bajo los servicios ---- */
+.invite{position:relative;z-index:4;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 14px 14px 18px;border-radius:24px;background:#061b3d;color:#fff;box-shadow:0 24px 34px -26px #061b3dcc}
+.invite span{display:grid;gap:2px;min-width:0}
+.invite strong{font:800 17px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}
+.invite small{font-size:14.5px;line-height:1.35;color:#c5d3e8}
+.invite button{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 6px 0 18px;border:0;border-radius:30px;background:#25d366;color:#061b3d;font:800 15px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.invite button i{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#061b3d;color:#fff}
+.invite button svg{width:17px;height:17px}
+.invite button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+/* ---- Pantalla ancha: a un lado, la promesa; al otro, cómo funciona. Al final: por dónde empezar junto a las preguntas ---- */
+@media(min-width:900px){
+  .door,.close{grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:34px 7%;padding:120px 5% 110px}
+  .door{align-items:center;padding-bottom:60px}
+  .close{align-items:start}
+  .intro{gap:18px}
+  .intro h2{margin:6px 0 0}
+  .intro>p{font-size:18px;line-height:1.65}
+  .cta{grid-template-columns:auto auto;justify-content:start;align-items:center;gap:12px}
+  .door .primary{min-width:310px}
+  .stage{gap:20px;padding:28px 26px 26px;border-radius:38px}
+  .steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .steps li{grid-template-columns:minmax(0,1fr);align-content:start;gap:10px;padding:14px}
+  .talk{min-height:150px}
+  .line{font-size:16.5px}
+  .close .intro{grid-column:1 / -1}
+  .needs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .faqs{padding-top:0;border-top:0}
+  .faqs>div{flex-wrap:wrap;margin:0;padding:0;overflow:visible}
+  .close .faqs button{max-width:none}
+}
+@media(prefers-reduced-motion:reduce){.line[data-new]{animation:none}.door .primary,.close .needs button{transition:none}.steps li,.steps b{transition:none}}

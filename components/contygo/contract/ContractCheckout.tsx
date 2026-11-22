@@ -172,9 +172,26 @@ type Props = {
   voice?: ClosingVoice;
   /** Visa Juvenil: back to the Básico / Premium picker. */
   onChangeService?: () => void;
+  /** Where this contract is being made («asistente-web», «ficha-web»): it travels with the contract as `utm_via`, so
+   *  the platform can tell the contracts people made by themselves on the site, and through what (22-11-2026). */
+  via?: string;
+  /** What the form holds so far, each time it changes: the assistant shows it on a sheet that fills itself. It never
+   *  leaves the screen. */
+  onProgress?: (snapshot: ContractSnapshot) => void;
+};
+/** The contract as it stands on screen (ContractSheet). */
+export type ContractSnapshot = {
+  stage: "loading" | "form" | "code" | "done" | "blocked" | "failed"; stepLabel: string; stepIndex: number; steps: number;
+  firstName: string; lastName: string; email: string; phone: string; city: string; state: string; plan: string; people: number; caseNumber: string;
 };
 
-export default function ContractCheckout({ service, displayName = "", phone = "", email = "", answers, eligible = null, externalRef, priority, asylum, hearing, voice: sharedVoice, onChangeService }: Props) {
+/** The page's attribution plus how the contract was made (`utm_via`; the server keeps only utm_* keys). */
+function viaAttribution(via?: string) {
+  const page = pageAttribution();
+  return via && page ? { ...page, utm: { ...page.utm, utm_via: via } } : page;
+}
+
+export default function ContractCheckout({ service, displayName = "", phone = "", email = "", answers, eligible = null, externalRef, priority, asylum, hearing, voice: sharedVoice, onChangeService, via, onProgress }: Props) {
   const ownVoice = useVisaVoice();
   const guide = useGuide(sharedVoice ?? ownVoice);
   const [data, setData] = useState<ReadyData | null>(null);
@@ -334,6 +351,14 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
   const steps = useMemo<Step[]>(() => [...(missing.length ? ["questions" as const] : []), "name", "contact", "address", ...(roles.length ? ["people" as const] : []), "plan", "review"], [missing.length, roles.length]);
   const stepIndex = Math.max(0, steps.indexOf(step));
   const plan = data?.service.plans.find(item => item.id === form.planId) ?? data?.service.plans[0];
+  // The assistant's sheet follows the form (what is on screen, to the screen).
+  const report = useRef(onProgress);
+  report.current = onProgress;
+  const planName = text(plan?.name), caseNumber = result?.caseNumber ?? "", stageNow = stage as ContractSnapshot["stage"];
+  useEffect(() => {
+    report.current?.({ stage: stageNow, stepLabel: STEPS[step].label, stepIndex, steps: steps.length, firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(), phone: form.phone.trim(),
+      city: form.city.trim(), state: form.state, plan: steps.indexOf("plan") <= stepIndex || stageNow !== "form" ? planName : "", people: persons.length, caseNumber });
+  }, [stageNow, step, stepIndex, steps, form.firstName, form.lastName, form.email, form.phone, form.city, form.state, planName, persons.length, caseNumber]);
   const installmentOptionId = installmentIdForRequest(plan, form.installmentId);
   const chosenOption = plan ? optionForSelection(plan, form.installmentId) ?? defaultPaymentOption(plan) : null;
   /** The people of the form against the package price by role: contygo publishes no price for this many (PRICE_NOT_QUOTABLE). */
@@ -538,7 +563,7 @@ export default function ContractCheckout({ service, displayName = "", phone = ""
     setErrors({}); setBusy(true);
     try {
       const { status, data: body, retryAfter } = await postJson("/api/contratar/iniciar", {
-        serviceId: service.id, externalRef: reference.current, form: input, answers: answersNow, attribution: pageAttribution(), idempotencyKey: key, captchaToken: captcha.token,
+        serviceId: service.id, externalRef: reference.current, form: input, answers: answersNow, attribution: viaAttribution(via), idempotencyKey: key, captchaToken: captcha.token,
       });
       handle(status, body, retryAfter);
     } catch { show({ step: "RETRY_LATER", reason: "busy" }); }

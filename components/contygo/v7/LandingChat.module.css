@@ -202,6 +202,88 @@
 .legal{flex:none;padding:0 14px 10px;background:var(--bg,#fff);font-size:11.5px;color:var(--muted,#4f5d73);text-align:center}
 
 /* Hover only where there is a pointer: on a phone a tap would leave a card lit. */
+/* ---- El botón dice para qué es (22-11-2026): «Haz tu contrato tú mismo · En menos de 3 minutos» ---- */
+.launcherText small{display:flex;align-items:center;gap:5px;color:var(--accent,#087f46);font-weight:800}
+.launcherText small svg{flex:none;width:14px!important;height:14px!important}
+.launcherText{width:auto;padding-right:2px}
+.launcherText strong{white-space:nowrap}
+/* «3 min», on the node, wherever the words are not shown. */
+.minutes{position:absolute;right:-5px;top:-9px;display:none;padding:3px 8px;border-radius:12px;background:var(--green);color:var(--navy);font:800 11.5px/1.2 var(--font-contygo-heading),sans-serif;box-shadow:0 0 0 2px var(--sheet,#fff),0 6px 10px -6px #061b3d}
+.chat[data-open] .minutes{display:none!important}
+/* A light crosses the button now and then: it is seen without shouting. */
+.launcher:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,#fff0 40%,#ffffffa6 50%,#fff0 60%) 130% 0/250% 100% no-repeat;animation:sweep 6.5s 2.5s ease-in-out infinite}
+@keyframes sweep{0%,72%{background-position:130% 0}100%{background-position:-40% 0}}
+.chat:is([data-open],[data-hidden]) .launcher:after{display:none}
+/* A green pill, the promise in words. */
+.chat:not([data-open]) .launcher{background:var(--green);box-shadow:0 26px 44px -22px #0a7a3fe6,inset 0 0 0 1.5px #ffffff73}
+.chat:not([data-open]) .launcherText strong{color:var(--navy)}
+.chat:not([data-open]) .launcherText small{color:#064a27}
+.chat:not([data-open]) .node{box-shadow:inset 0 0 0 2px #ffffff59,0 0 0 3px #ffffffd9,0 10px 20px -8px #061b3d}
+@media(max-width:760px){
+  /* On a phone the words stay beside the symbol; with the green bar at the foot (it says the same), only the symbol and «3 min». */
+  .chat:not([data-raised]):not([data-open]) .launcher{flex-direction:row-reverse;gap:10px;padding:5px 5px 5px 16px;background:var(--green);box-shadow:0 22px 40px -20px #0a7a3fe6,inset 0 0 0 1.5px #ffffff73}
+  .chat[data-raised]:not([data-open]) .launcher{background:transparent;box-shadow:none}
+  .chat[data-raised] .launcher:after{display:none}
+  .chat:not([data-raised]):not([data-open]) .launcherText{display:flex;text-align:right}
+  .chat:not([data-raised]):not([data-open]) .launcherText small{justify-content:flex-end}
+  .chat:not([data-raised]):not([data-open]) .node{width:54px;height:54px;box-shadow:inset 0 0 0 2px #ffffff59,0 0 0 2px #ffffffd9}
+  .chat[data-raised] .minutes{display:block}
+  .chat:not([data-raised]) .teaser{display:none}
+}
+@media(prefers-reduced-motion:reduce){.launcher:after{animation:none}}
+
+/* ---- El contrato dentro del chat, y lo que llegó con él (22-11-2026) ---- */
+.body{flex:1;display:flex;min-height:0}
+.body .list{min-width:0}
+.headButton[data-on]{background:var(--green);color:var(--navy)!important}
+/* The contract's form, in the conversation: its own colours follow the chat's, and it takes the width of the list. */
+.contract{--cg-text:var(--ink,#061b3d);--cg-text-rgb:6,27,61;--cg-stage-rgb:255,255,255;--cg-accent:#087f46;margin:0 -4px 0 -40px;animation:rise .5s var(--unfold,ease) both}
+:global([data-contygo-theme=dark]) .contract{--cg-text:#f6f8f7;--cg-text-rgb:246,248,247;--cg-stage-rgb:7,31,69;--cg-accent:#25d366}
+.contract>div{height:auto;overflow:visible;padding:0;background:none}
+.preparing{margin:0;padding:22px 4px;font-weight:700;color:var(--muted,#4f5d73)}
+.chat .panel[data-desk] .track{border-top:0;margin-top:0;padding-top:14px}
+.chat .panel[data-desk] .track:before{display:none}
+/* Its sheet. On a wide screen the chat grows and the sheet stands beside it; on a phone, one line that opens. */
+.deskTop{display:none}
+.side{flex:none;display:grid;align-content:start;gap:12px;width:300px;padding:16px;border-left:1px solid var(--line,#061b3d1a);background:var(--soft,#f6f8f7);overflow-y:auto}
+.side p{margin:0;font-size:13.5px;line-height:1.45;color:var(--muted,#4f5d73)}
+.chat .panel[data-desk]{width:min(860px,calc(100vw - 40px));height:min(760px,calc(100dvh - 124px))}
+/* A doubt during the contract. */
+.aside{position:relative;flex:none;display:grid;gap:3px;margin:0 12px;padding:12px 44px 12px 14px;border-radius:18px;background:var(--navy);color:#fff;animation:rise .35s var(--unfold,ease) both}
+.aside small{font-size:12.5px;font-weight:700;opacity:.75}
+.aside p{margin:0;font-size:15px;line-height:1.45;font-weight:600}
+.aside button{position:absolute;right:8px;top:8px;display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#ffffff26;color:#fff!important;cursor:pointer}
+.aside button svg{width:16px!important;height:16px!important}
+/* The films of a service, here. */
+.films{display:grid;gap:10px}
+.filmTabs{display:flex;gap:6px}
+.filmTabs button{flex:1;display:grid;gap:1px;min-height:44px;padding:6px 10px;border:0;border-radius:14px;background:var(--soft,#f6f8f7);box-shadow:inset 0 0 0 1px var(--line,#061b3d1a);color:var(--ink,#061b3d)!important;font:800 13.5px/1.15 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.filmTabs button small{font:600 12px/1 var(--font-contygo-body),sans-serif;color:var(--muted,#4f5d73)}
+.filmTabs button[aria-pressed=true]{background:var(--navy);color:#fff!important;box-shadow:none}
+.filmTabs button[aria-pressed=true] small{color:#ffffffb3}
+.film{display:block;width:100%;aspect-ratio:16/9;border-radius:18px;background:#04122b;object-fit:cover}
+.watch{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border:0;border-radius:999px;background:var(--soft,#f6f8f7);box-shadow:inset 0 0 0 1.5px var(--line-strong,#061b3d33);color:var(--ink,#061b3d)!important;font:800 14.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.watch i{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff}
+.watch i svg{width:12px!important;height:12px!important}
+.watch:disabled{opacity:.5;cursor:default}
+/* What was left unfinished. */
+.resume{display:grid;gap:8px;margin:0 16px 16px;padding:16px;border-radius:22px;background:var(--navy);color:#fff;text-align:left}
+.resume strong{font:800 18px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}
+.resume small{font-size:14.5px;line-height:1.4;color:#c5d3e8}
+.resume .more{color:#fff!important}
+/* The voice and the dictation. */
+.voiceNote{flex:none;margin:8px 12px 0;padding:9px 14px;border:0;border-radius:14px;background:var(--soft,#f6f8f7);box-shadow:inset 0 0 0 1px var(--line,#061b3d1a);color:var(--ink,#061b3d)!important;font:700 14px/1.3 var(--font-contygo-body),sans-serif;text-align:center}
+button.voiceNote{cursor:pointer}
+.composer .mic{background:var(--soft,#f6f8f7);color:var(--ink,#061b3d)!important;box-shadow:inset 0 0 0 1px var(--line,#061b3d1a)}
+.composer .mic[data-on]{background:var(--green);color:var(--navy)!important;box-shadow:0 0 0 5px #25d36633;animation:hear 1.2s ease-in-out infinite}
+@keyframes hear{50%{box-shadow:0 0 0 9px #25d3661a}}
+@media(max-width:760px){
+  .side{display:none}
+  .deskTop{display:block;flex:none;padding:8px 12px;border-bottom:1px solid var(--line,#061b3d1a);background:var(--bg,#fff)}
+  .chat .panel[data-desk],.chat[data-open] .panel[data-desk]{width:auto;height:min(94dvh,860px)}
+  .contract{margin-left:-36px}
+}
+@media(prefers-reduced-motion:reduce){.composer .mic[data-on],.contract,.aside{animation:none}}
 @media(hover:hover){
   .launcher:hover{transform:translateY(-3px);box-shadow:0 30px 52px -24px #061b3dd9,0 0 0 1.5px var(--green);animation-play-state:paused}
   .launcher:hover .launcherMark{transform:rotate(-10deg) scale(1.08)}

@@ -25,6 +25,7 @@ import { DRIVERS_LICENCE, OWNER_PENDING, ROUTE_SERVICE_IDS, ROUTE_STEPS, stepOpe
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import ServiceShowcase, { TileShelf, type CatalogGroup, type Star } from "./ServiceShowcase";
 import ServiceTiers from "./ServiceTiers";
+import { AssistantInvite } from "./AssistantDoor";
 import { RouteIntro, RouteStation, StarterSheet, StepSheet } from "./RouteSheets";
 import sheets from "./RouteSheets.module.css";
 import { useFresh } from "./useFresh";
@@ -140,7 +141,7 @@ export default function RouteSteps({ seasonal, stars, open, warm, children }: Pr
         then it is the paid service, with its live price. */}
     {fresh
       ? <ol className={sheets.stations}>{ROUTE_STEPS.map((step, i) => <RouteStation key={step.id} step={step} index={i}>{step.id === "servicios"
-        ? <><StarterSheet step={step} index={i} permit={permit} itin={itin} open={open} warm={warm} /><ServiceTiers open={open} warm={warm} /></>
+        ? <><StarterSheet step={step} index={i} permit={permit} itin={itin} open={open} warm={warm} /><ServiceTiers open={open} warm={warm} /><AssistantInvite /></>
         : <StepSheet step={step} index={i} open={open} warm={warm} />}</RouteStation>)}</ol>
       : <ol className={r.stations}>{ROUTE_STEPS.map((step, i) => step.id === "servicios"
         ? <Station key={step.id} step={step} index={i} wide><ServiceShowcase seasonal={seasonal} stars={stars} groups={groups} open={open} warm={warm} />{banner}</Station>

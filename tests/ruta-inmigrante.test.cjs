@@ -150,3 +150,35 @@ test('el recorrido de la app: la cámara que eligió el dueño, sin interruptore
   // Quien pide menos movimiento, o tiene una pantalla muy baja, no se queda con la sección quieta.
   assert.ok(/@media\(max-width:899\.98px\) and \(min-height:520px\) and \(prefers-reduced-motion:no-preference\)\{[^}]*\.run\{height:/.test(css));
 });
+
+test('el asistente: su puerta donde estaban las preguntas, el contrato dentro del chat y su marca de origen', () => {
+  const fs = require('node:fs');
+  const { sanitizeAttribution } = require('../lib/contygo-api/lead.ts');
+  const { landingFaqs } = require('../lib/contygo-landing-faq.ts');
+  // La sección: el mismo sitio (menú e hilo verde), otra propuesta; las preguntas aprobadas siguen, como botones.
+  assert.ok(page.includes('id="preguntas"') && page.includes('data-thread="faq"') && page.includes('Haz tu contrato tú mismo.'));
+  // La promesa va arriba, justo tras el hero y antes de los productos; por dónde empezar y las preguntas, al final.
+  assert.ok(page.indexOf('id="contrato"') > page.indexOf('id="inicio"') && page.indexOf('id="contrato"') < page.indexOf('id="ruta"') && page.indexOf('id="preguntas"') > page.indexOf('id="plataforma"'));
+  assert.ok(!page.includes('Preguntar también') && !page.includes('Escríbele al equipo'), 'la lista que terminaba en WhatsApp ya no está');
+  for (const [question] of landingFaqs('$250', null)) assert.ok(page.includes(question.replace(/&/g, '&amp;')) || page.includes(question), question);
+  // El contrato de la escena es un ejemplo, y lo dice; el aviso de que no es asesoría legal sigue.
+  assert.ok(page.includes('>Ejemplo<') && page.includes('no es asesoría legal'));
+  // La persona sigue a un toque, en una línea.
+  assert.ok(page.includes('una persona del equipo te atiende por WhatsApp'));
+  // El botón del pie y la invitación bajo los servicios llevan al asistente.
+  assert.ok(page.includes('Haz tu contrato tú mismo') && page.includes('¿No sabes cuál es el tuyo?') && page.includes('Empezar mi contrato'));
+  // El tiempo que se promete vive en un solo sitio (lo dijo el dueño; aún sin medir).
+  const { CONTRACT_TIME } = require('../lib/agent/landing-chat-ui.ts');
+  assert.equal(CONTRACT_TIME, 'menos de 3 minutos');
+  assert.ok(page.includes(`En ${CONTRACT_TIME}`));
+  // El contrato hecho en el asistente viaja marcado, y el servidor conserva esa marca (solo claves utm_*).
+  const chat = fs.readFileSync('components/contygo/v7/LandingChat.tsx', 'utf8'), form = fs.readFileSync('components/contygo/contract/ContractCheckout.tsx', 'utf8');
+  assert.ok(chat.includes('via="asistente-web"') && form.includes('utm_via: via') && fs.readFileSync('components/contygo/rebuild/ServiceCinemaDialog.tsx', 'utf8').includes('via="ficha-web"'));
+  assert.deepEqual(sanitizeAttribution({ sourceUrl: 'https://landing.contygo.app/?x=1', utm: { utm_source: 'meta', utm_via: 'asistente-web', otra: 'no' } }), { sourceUrl: 'https://landing.contygo.app/', utm: { utm_source: 'meta', utm_via: 'asistente-web' } });
+  // Lo que queda a medias se recuerda poco tiempo y solo en el aparato; la voz y el contrato no viajan con la portada.
+  const bus = fs.readFileSync('components/contygo/v7/assistantBus.ts', 'utf8');
+  assert.ok(/RESUME_MS = 48 \* 60 \* 60 \* 1000/.test(bus) && bus.includes('localStorage') && !/fetch\(/.test(bus));
+  assert.ok(/dynamic\(\(\) => import\("\.\.\/contract\/ContractCheckout"\)/.test(chat) && /dynamic\(\(\) => import\("\.\/ChatVoice"\)/.test(chat));
+  // «Escuchar» empieza apagado.
+  assert.ok(chat.includes('const [listen, setListen] = useState(false);'));
+});

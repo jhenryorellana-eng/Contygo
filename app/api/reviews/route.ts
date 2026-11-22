@@ -10,7 +10,7 @@
    Nada se muestra hasta que el dueño lo aprueba en /admin.
    ============================================================ */
 import { NextRequest, NextResponse } from "next/server";
-import { insertReview, reviewsEnabled, uploadReviewImage } from "@/lib/reviews";
+import { insertReview, reviewsEnabled } from "@/lib/reviews";
 import { getServiceById } from "@/lib/services";
 import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { cleanJpeg, PHOTO_MAX } from "@/lib/review-photo";
@@ -63,17 +63,15 @@ export async function POST(req: NextRequest) {
   if (!Number.isFinite(rating) || rating < 1 || rating > 5) return fail("rating");
   if (comment.length < 10 || comment.length > 600) return fail("comment");
 
-  let imagePath: string | null = null;
+  let clean: Uint8Array | null = null;
   if (photo) {
     if (body.consent !== true) return fail("consent");
     if (photo.size > PHOTO_MAX) return fail("photo_size");
-    const clean = cleanJpeg(new Uint8Array(await photo.arrayBuffer()));
+    clean = cleanJpeg(new Uint8Array(await photo.arrayBuffer()));
     if (!clean) return fail("photo_type");
-    imagePath = await uploadReviewImage(clean);
-    if (!imagePath) return fail("upstream", 502);
   }
 
-  const ok = await insertReview({ name, serviceId, rating, comment, kind, place, imagePath, consent: body.consent === true });
+  const ok = await insertReview({ name, serviceId, rating, comment, kind, place, consent: body.consent === true, photo: clean });
   if (!ok) return fail("upstream", 502);
   return NextResponse.json({ ok: true });
 }

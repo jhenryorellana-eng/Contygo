@@ -4,7 +4,7 @@
    ============================================================ */
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { adminListReviews, reviewImageUrl, reviewsEnabled, type ReviewStatus } from "@/lib/reviews";
+import { adminListReviews, reviewsEnabled, type ReviewStatus } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -26,5 +26,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "upstream" }, { status: 502 });
   }
   // Cada una con la dirección de su foto, si la tiene (felicitaciones).
-  return NextResponse.json(list.map(review => ({ ...review, image_url: reviewImageUrl(review.image_path) })));
+  // (La foto no tiene dirección pública: sale por la ruta del panel.)
+  return NextResponse.json(list.map(review => ({ ...review, image_url: review.has_photo ? `/api/admin/reviews/${review.id}/photo` : null })));
 }

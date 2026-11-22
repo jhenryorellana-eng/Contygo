@@ -131,9 +131,13 @@ test('la foto de una felicitación se guarda sin sus datos ocultos, y lo que no 
   assert.ok(clean.includes('JFIF') && clean.includes('tabla') && clean.includes('imagen') && clean[0] === 0xff && clean[1] === 0xd8, 'la imagen queda entera');
   for (const bad of ['<script>alert(1)</script>', 'GIF89a', '']) assert.equal(cleanJpeg(new Uint8Array(Buffer.from(bad))), null);
   assert.equal(cleanJpeg(new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xd8]), Buffer.from([0xff, 0xe1, 0xff, 0xff]), Buffer.from('corto')]))), null, 'un segmento que miente sobre su tamaño');
-  assert.ok(PHOTO_MAX <= 1572864, 'no más de lo que admite el cajón de fotos (supabase/felicitaciones.sql)');
+  assert.ok(PHOTO_MAX <= 4_000_000, 'cabe en lo que admite una función de Vercel (4,5 MB por petición)');
   // La ruta exige el permiso antes de guardar una foto, y el formulario no deja enviar sin él.
   const fs = require('node:fs'), route = fs.readFileSync('app/api/reviews/route.ts', 'utf8'), form = fs.readFileSync('components/contygo/v7/ShareStory.tsx', 'utf8');
-  assert.ok(route.indexOf('fail("consent")') > 0 && route.indexOf('fail("consent")') < route.indexOf('uploadReviewImage(clean)'));
+  assert.ok(route.indexOf('fail("consent")') > 0 && route.indexOf('fail("consent")') < route.indexOf('insertReview('));
+  // El almacén es privado y la foto solo sale por la ruta del panel, con la sesión del dueño.
+  const store = fs.readFileSync('lib/reviews.ts', 'utf8'), photo = fs.readFileSync('app/api/admin/reviews/[id]/photo/route.ts', 'utf8');
+  assert.ok(!/access: "public"/.test(store) && /access: "private"/.test(store));
+  assert.ok(photo.indexOf('isAdminRequest(req)') > 0 && photo.indexOf('isAdminRequest(req)') < photo.indexOf('adminReviewPhoto('));
   assert.ok(/const valid = [^;]*&& consent;/.test(form) && form.includes('Tapa tus datos antes de enviar'));
 });

@@ -1,13 +1,11 @@
 /* ============================================================
    PATCH /api/admin/reviews/:id — aprueba / rechaza una reseña
-   Al cambiar el estado refresca la home (las aprobadas son públicas).
+   Las aprobadas las enseña el dueño desde su panel (/admin/felicitaciones).
    ============================================================ */
-import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
 import {
   adminSetReviewStatus,
-  invalidateApprovedMemo,
   reviewsEnabled,
   type ReviewStatus,
 } from "@/lib/reviews";
@@ -44,8 +42,5 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "upstream" }, { status: 502 });
   }
 
-  // La home muestra las aprobadas: invalida las cachés al instante.
-  invalidateApprovedMemo();
-  revalidatePath("/");
   return NextResponse.json({ ok: true });
 }

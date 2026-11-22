@@ -53,13 +53,17 @@ export default function AdminPanel() {
         const res = await fetch("/api/admin/login", { cache: "no-store" });
         if (!alive) return;
         if (res.ok) {
-          setSession((await res.json()) as SessionInfo);
-          try {
-            const saved = window.localStorage.getItem("ulp_owner_view") as View | null;
-            if (saved && VIEWS.some((v) => v.key === saved)) setView(saved);
-          } catch {
-            /* sin almacenamiento */
-          }
+          const info = (await res.json()) as SessionInfo & { crm?: boolean };
+          setSession(info);
+          // Sin la base del CRM conectada, lo que funciona son las felicitaciones: el panel abre ahí.
+          if (info.crm === false) setView("reviews");
+          else
+            try {
+              const saved = window.localStorage.getItem("ulp_owner_view") as View | null;
+              if (saved && VIEWS.some((v) => v.key === saved)) setView(saved);
+            } catch {
+              /* sin almacenamiento */
+            }
         } else setSession(null);
       } catch {
         if (alive) setSession(null);

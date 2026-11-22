@@ -48,3 +48,6 @@ next-env.d.ts
 
 # el ejemplo de variables sí se versiona
 !.env.example
+
+# felicitaciones guardadas al probar en local (lib/reviews.ts)
+.felicitaciones-local

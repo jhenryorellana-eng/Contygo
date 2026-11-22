@@ -49,7 +49,7 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
     setError(null);
     try {
       const res = await fetch("/api/admin/reviews?status=all", { cache: "no-store" });
-      if (res.status === 503) return setError("Falta conectar la base de datos (variables de Supabase).");
+      if (res.status === 503) return setError("Falta conectar el almacén de las felicitaciones.");
       if (!res.ok) return setError("No se pudo leer la base de datos. Intenta de nuevo en unos segundos.");
       setAll((await res.json()) as Review[]);
       setNow(Date.now());

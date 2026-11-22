@@ -27,7 +27,7 @@ function tooMany(ip: string): boolean {
 export async function GET(req: NextRequest) {
   const s = getSession(req);
   if (!s) return NextResponse.json({ ok: false }, { status: 401 });
-  return NextResponse.json({ ok: true, uid: s.uid, name: s.name, role: s.role, advisorId: s.advisorId });
+  return NextResponse.json({ ok: true, uid: s.uid, name: s.name, role: s.role, advisorId: s.advisorId, crm: crmEnabled });
 }
 
 export async function POST(req: NextRequest) {

@@ -1,0 +1,43 @@
+/* «Cuéntanos cómo te fue»: ver ShareStory.tsx. Una página aparte, en la tinta de la marca, con su hoja de papel.
+   Lleva sus propios colores: no depende de los de la landing. */
+.page{display:grid;justify-items:center;align-content:start;gap:22px;min-height:100dvh;padding:26px 16px 56px;background:radial-gradient(90% 40% at 100% 0,#25d36633,#0000 62%),radial-gradient(80% 40% at 0 100%,#2f6fe44d,#0000 64%),linear-gradient(160deg,#0e3a7a,#061b3d 60%);color:#061b3d;font-family:var(--font-contygo-body),sans-serif}
+.logo{display:block;width:150px}
+.logo img{display:block;width:100%;height:auto}
+.card{display:grid;gap:18px;width:100%;max-width:560px;padding:26px 20px 22px;border-radius:30px;background:#fff;box-shadow:0 40px 60px -34px #04122be6}
+.card h1{margin:0;font:800 clamp(28px,7.6vw,38px)/1.06 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}
+.lead{margin:-8px 0 0;font-size:16.5px;line-height:1.5;color:#4f5d73}
+.kinds{display:grid;gap:8px}
+.kinds button{min-height:52px;padding:8px 16px;border:0;border-radius:18px;background:#f3f6f5;box-shadow:inset 0 0 0 1.5px #061b3d26;color:#061b3d;font:800 16px/1.2 var(--font-contygo-heading),sans-serif;text-align:left;cursor:pointer;transition:background-color .25s,box-shadow .25s,color .25s}
+.kinds button[aria-pressed=true]{background:#061b3d;box-shadow:none;color:#fff}
+.field{display:grid;gap:7px}
+.label{font:800 15.5px/1.3 var(--font-contygo-heading),sans-serif}
+.label i{font-style:normal;font-weight:600;color:#5a6a80}
+.field small{font-size:13.5px;line-height:1.4;color:#5a6a80}
+.field :is(input[type=text],select,textarea){width:100%;min-height:52px;padding:12px 14px;border:0;border-radius:16px;background:#f6f8f7;box-shadow:inset 0 0 0 1.5px #061b3d26;color:#061b3d;font:600 16.5px/1.4 var(--font-contygo-body),sans-serif}
+.field textarea{resize:vertical}
+.field :is(input,select,textarea):focus-visible,.card button:focus-visible,.send:focus-visible,.pick:focus-within{outline:3px solid #087f46;outline-offset:2px}
+.stars{display:flex;gap:6px}
+.stars button{width:48px;height:48px;border:0;border-radius:14px;background:#f3f6f5;color:#061b3d33;font-size:28px;line-height:1;cursor:pointer;transition:color .2s,background-color .2s,scale .2s}
+.stars button[data-on]{background:#25d36626;color:#087f46}
+.stars button:active{scale:.92}
+/* The photo. */
+.pick{display:grid;place-items:center;min-height:54px;border-radius:18px;background:#f3f6f5;box-shadow:inset 0 0 0 1.5px #061b3d33;font:800 16px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.pick input{position:absolute;width:1px;height:1px;opacity:0}
+.editor{display:grid;gap:10px;padding:12px;border-radius:20px;background:#f3f6f5;box-shadow:inset 0 0 0 1.5px #061b3d1f}
+.editor p{margin:0;font-size:14.5px;line-height:1.45;color:#3f4d63}
+.editor strong{color:#061b3d}
+.editor canvas{display:block;width:100%;height:auto;border-radius:12px;background:#dfe5e8;touch-action:none;cursor:crosshair}
+.editor div{display:flex;gap:8px}
+.editor button{flex:1;min-height:46px;border:0;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1.5px #061b3d33;color:#061b3d;font:800 15px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.editor button:disabled{opacity:.45;cursor:default}
+.consent{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;font-size:15px;line-height:1.45;color:#3f4d63;cursor:pointer}
+.consent input{width:24px;height:24px;margin:1px 0 0;accent-color:#087f46}
+.trap{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.error{margin:0;padding:12px 14px;border-radius:14px;background:#061b3d;color:#fff;font-size:15px;font-weight:700;line-height:1.4}
+.send{display:grid;place-items:center;min-height:58px;border:0;border-radius:40px;background:#25d366;color:#061b3d;font:800 17px/1 var(--font-contygo-heading),sans-serif;text-decoration:none;cursor:pointer;transition:transform .25s,opacity .25s}
+.send:disabled{opacity:.5;cursor:default}
+.send:not(:disabled):active{transform:scale(.98)}
+.fine{margin:0;font-size:13px;line-height:1.5;color:#5a6a80}
+.done{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#25d366}
+.done svg{width:34px;height:34px;fill:none;stroke:#061b3d;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+@media(min-width:600px){.page{padding-top:44px}.card{padding:38px 36px 30px}.kinds{grid-template-columns:1fr 1fr}}

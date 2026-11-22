@@ -865,3 +865,37 @@ El dueño compuso un sonido («sonido para landing.wav»: casi 4 segundos, una s
 - **Lo que se probó y no quedó:** su acorde final, corto, al abrir cada servicio y al entrar al Club o a la agenda de Henry; y solo su subida de notas («el tututuru»), sin el final. Al probarlo: «no tiene sentido… no me gusta». Eligió volver al sonido completo, solo en ese botón.
 - **Se puede silenciar:** la primera vez que suena sale un aviso («Sonido activado · Silenciar») y en el pie de la página hay un interruptor; el silencio se recuerda. En el iPhone respeta el interruptor de silencio.
 - **Archivos** (`public/contygo/audio/marca.*`): AAC, y WAV para los navegadores que no leen AAC. Suena quien lleva `data-sound`.
+
+## Sin «Claro desde el principio. Nada escondido.» (21-11-2026)
+
+El dueño pidió quitar la sección `#respaldo` (el contrato de ejemplo con sus tres cláusulas). Después de «Tu expediente» sigue el registro de Utah y luego las preguntas.
+
+- Con ella se fue de la landing el compromiso de reembolso de `CONTYGO_COMMERCIAL_OFFER.guarantee` («Tu tiempo importa. Nuestro compromiso también.»): ya no se muestra en ninguna parte de la portada. La pregunta «¿ContyGo garantiza la aprobación de mi trámite?» sigue remitiendo al contrato.
+- «Somos consultores, no abogados» estaba ahí; el aviso sigue junto al nombre de Henry (su sección, el registro, los tramos y el pie).
+- Sus estilos (`.backing`, `.contract*`, `.clause*`) quedaron en `ContygoLanding.module.css` sin uso: se quitan junto con la página anterior.
+
+## «Tu expediente, conectado», como un recorrido (21-11-2026)
+
+El dueño pidió rediseñarla: «mucho más creativo y profesional y claro» (`PlatformTour.tsx`). Antes era un teléfono quieto junto a una lista de tres frases, sin nada que las uniera.
+
+- **El teléfono muestra una cosa a la vez, y la frase que se lee es la de esa cosa:** tus documentos (uno termina de subir), el recorrido de tu trámite (avanza) y Soporte (te escribe). La parte de la app que se mira lleva un aro verde y el resto se aparta (`AppPhone`, `focus`).
+- **Pasa solo, despacio (4,8 s cada momento),** mientras la sección está en pantalla; al tocar un momento, se queda en él. Con «reducir movimiento» no pasa solo.
+- **En un celular,** el teléfono entero no cabe junto a su explicación: se ve por una ventana, con la app ampliada para que se lea, que se desplaza hasta la parte que toca. Debajo, tres botones con su número y la frase del encendido.
+- **En pantalla ancha,** el teléfono entero a un lado y las tres frases al otro, todas a la vista; la encendida, en su hoja, con una línea que marca cuánto le queda.
+- **Las frases son las que la sección ya tenía.** La app es una ilustración con datos de ejemplo, y lo dice.
+- **El hilo verde sigue pasando por detrás del teléfono:** `data-thread="platform"` en la sección y `"phone"` en la ventana.
+
+## Felicitaciones: en el panel de Henry, para mostrarlas en vivo (21-11-2026, sin publicar)
+
+El dueño pidió primero una sección en la landing («un dashboard donde Henry pueda enseñar cuántas personas están siendo aprobadas…», «con todo e imágenes… como una sección de felicitaciones») y, al verla, la cambió de sitio: **«que no salga en la página principal, sino que esté en el dashboard de Henry y que él pueda enseñarlo cuando él quiera, ya que quiere mostrarlo en un live»**. La landing no lleva nada de esto.
+
+- **Lo que ya existía (de la web anterior, USA Latino Prime):** `/califica`, `/api/reviews` (guarda «pendiente» en Supabase, tabla `ulp_reviews`) y `/admin` (Henry aprueba o rechaza). En producción (proyecto `contygo` de Vercel) no hay ni almacén ni clave del panel: `/api/reviews` y `/api/admin/login` responden `not_configured`. De aprobaciones no había ningún dato: `clientsServed` (+500) son clientes atendidos, no aprobados.
+- **`/califica` es «Cuéntanos cómo te fue»** (`ShareStory.tsx`), con el aspecto de ContyGo: «Me aprobaron mi trámite» o «Quiero contar mi experiencia», estrellas, nombre (vale nombre e inicial), trámite, desde dónde, mensaje y una foto opcional. Lo usa el cliente con el enlace que le mande Henry («Copiar enlace para clientes», en su panel) o Henry mismo, con el permiso del cliente («Subir una felicitación»). La casilla de permiso nombra las transmisiones en vivo.
+- **La foto es lo delicado** (suele ser la de una aprobación, con número A, fecha de nacimiento y dirección). Antes de salir del teléfono se reduce (1400 px) y la persona tapa lo que quiera arrastrando el dedo; se envía ya tapada. El servidor solo admite JPEG de hasta 1,5 MB, le quita los datos ocultos (EXIF: lugar, cámara; `lib/review-photo.ts`) y la rechaza sin la casilla de permiso. Nada se muestra hasta que Henry la aprueba, y su panel le recuerda abrir la foto en grande antes.
+- **En el panel** (`/admin` → Reseñas): cada felicitación con su foto, «Aprobar» / «Rechazar» / «Quitar de la presentación», y el botón **«Presentar en vivo»**.
+- **La presentación** (`/admin/felicitaciones`, `CongratsShow.tsx`): pantalla entera en la tinta de la marca, solo con la sesión del dueño (lee `/api/admin/reviews?status=approved`; no hay lista pública). Dos modos: **«Una por una»** (portada «Aprobados, uno por uno.» con la cuenta en cifras de paletas; luego cada felicitación ocupa la pantalla, con su foto entera, el sello «Aprobado», estrellas, mensaje, nombre, trámite y lugar; pasa sola cada 9 s; flechas del teclado, barra para pausar) y **«Muro»** (todas, con el tablero por servicio). De pie (live desde el teléfono) la foto va arriba; apaisada (compartir pantalla), a un lado. Los mandos se esconden solos a los 3 s. El texto largo se compone más pequeño para que quepa.
+- **Las cifras:** las que el dueño confirme (`CONTYGO_RESULTS.verified`: quién, cuándo y con qué respaldo) o, si no, la cuenta de las aprobaciones que los propios clientes compartieron, a partir de cinco (`BOARD_FROM`), diciéndolo. La pantalla lleva siempre: «Cada caso es distinto: un resultado anterior no garantiza el tuyo. La decisión es de la autoridad.» (lo que se enseña en un live es publicidad).
+- **Sin datos inventados:** los de EJEMPLO solo salen en desarrollo, bajo una marca que lo dice, cuando aún no hay nada aprobado. Una prueba vigila que nada de esto llegue a la landing.
+- **Para encenderlo en producción:** un almacén Supabase para el proyecto `contygo` (Vercel Marketplace; deja `SUPABASE_URL` y `SUPABASE_ANON_KEY`), ejecutar `supabase/setup.sql` y `supabase/felicitaciones.sql`, y las variables `SUPABASE_ADMIN_SECRET` y `ADMIN_PASSWORD` (la clave del panel, que elige Henry).
+- **Para probar en local:** `node scripts/felicitaciones-mock.cjs` (hace de almacén, en memoria) y la landing con `SUPABASE_URL=http://<ip>:3998 SUPABASE_ANON_KEY=local SUPABASE_ADMIN_SECRET=local ADMIN_PASSWORD=prueba`.
+- **Queda:** `/admin` sigue con el aspecto de la web anterior; `components/reviews/RateForm.tsx` y `listApprovedReviews` ya no se usan; el freno a envíos repetidos vive en memoria (es un freno, no un muro); el cajón de fotos es público por dirección (nombres imposibles de adivinar), no por lista.

@@ -17,11 +17,14 @@ const CHECK = "m6 12 4 4 8-8";
 
 const STEPS = ["Contrato firmado", "Tus documentos", "Revisión del equipo", "Tu paquete listo", "Siguientes indicaciones"];
 
-export default function AppPhone() {
+/** `focus` (PlatformTour): the part of the app being shown. That part is ringed and plays its moment (the document
+ *  finishes uploading, the case moves on, Soporte writes); the rest steps back. Without it, the app is whole and comes
+ *  alive when the green thread arrives. */
+export default function AppPhone({ focus }: { focus?: "docs" | "steps" | "support" } = {}) {
   // The frame is the size container: cqw units inside measure the phone, not the window.
   return <div className={p.frame} role="img" aria-label="Ilustración de la app ContyGo: el trámite de Visa Juvenil de Ana en el paso 3 de 5, con sus documentos y un mensaje de Soporte."><div className={p.device}>
     <span className={p.buttons} aria-hidden="true" />
-    <div className={p.screen} aria-hidden="true">
+    <div className={p.screen} data-focus={focus} aria-hidden="true">
       <div className={p.status}><b>9:41</b><i className={p.island} /><span className={p.statusIcons}><i /><i /><i /><em /></span></div>
       <header className={p.bar}>
         <span className={p.logo}><Image className={p.logoLight} src="/contygo/brand/logo-light.png" alt="" width={3000} height={849} sizes="110px" /><Image className={p.logoDark} src="/contygo/brand/logo-dark.png" alt="" width={3000} height={849} sizes="110px" /></span>

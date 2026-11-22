@@ -4,7 +4,7 @@
    ============================================================ */
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { adminListReviews, reviewsEnabled, type ReviewStatus } from "@/lib/reviews";
+import { adminListReviews, reviewImageUrl, reviewsEnabled, type ReviewStatus } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -25,5 +25,6 @@ export async function GET(req: NextRequest) {
   if (list === null) {
     return NextResponse.json({ ok: false, error: "upstream" }, { status: 502 });
   }
-  return NextResponse.json(list);
+  // Cada una con la dirección de su foto, si la tiene (felicitaciones).
+  return NextResponse.json(list.map(review => ({ ...review, image_url: reviewImageUrl(review.image_path) })));
 }

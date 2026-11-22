@@ -99,3 +99,41 @@ test('cada enlace al Club y a la agenda dice desde dónde se tocó, sin perder e
     assert.ok(page.includes(via(url, medium).replace(/&/g, '&amp;')), `${link.hostname} · ${medium}`);
   }
 });
+
+test('las felicitaciones no salen en la página: las enseña el dueño desde su panel, con su sesión', () => {
+  const fs = require('node:fs');
+  const { CONTYGO_RESULTS, RESULTS_SAMPLE, REVIEWS_SAMPLE, BOARD_FROM, resultsPublic } = require('../lib/contygo-results.ts');
+  // Ni la sección ni sus datos de muestra, en la landing.
+  assert.ok(!page.includes('id="resultados"') && !page.includes('Aprobados, ') && !page.includes('de muestra'));
+  for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
+  assert.ok(!fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8').includes('CongratsShow'));
+  // No hay lista pública: la ruta de reseñas solo recibe, y la lista es del panel (pide la sesión del dueño).
+  const route = fs.readFileSync('app/api/reviews/route.ts', 'utf8'), admin = fs.readFileSync('app/api/admin/reviews/route.ts', 'utf8');
+  assert.ok(!/export async function GET/.test(route) && /export async function POST/.test(route));
+  assert.ok(admin.indexOf('isAdminRequest(req)') > 0 && admin.indexOf('isAdminRequest(req)') < admin.indexOf('adminListReviews('));
+  // La presentación lee de esa lista, dice siempre que nada está garantizado y solo usa los datos de muestra en desarrollo.
+  const show = fs.readFileSync('components/contygo/v7/CongratsShow.tsx', 'utf8');
+  assert.ok(show.includes('/api/admin/reviews?status=approved') && show.includes('un resultado anterior no garantiza el tuyo') && show.includes('La decisión es de la autoridad'));
+  assert.ok(/const sample = DEV && /.test(show) && show.includes('process.env.NODE_ENV === "development"'));
+  if (resultsPublic()) assert.ok(CONTYGO_RESULTS.verified.by && CONTYGO_RESULTS.verified.on && CONTYGO_RESULTS.verified.evidence && CONTYGO_RESULTS.updatedOn, 'cifras confirmadas: constan quién y cuándo');
+  assert.ok(RESULTS_SAMPLE.length > 0 && CONTYGO_RESULTS.rows.every(row => !RESULTS_SAMPLE.some(sample => sample === row)));
+  assert.ok(BOARD_FROM >= 5, 'una cuenta de dos o tres no es un tablero');
+  // El permiso que firma el cliente nombra los lives.
+  assert.ok(fs.readFileSync('components/contygo/v7/ShareStory.tsx', 'utf8').includes('en sus transmisiones en vivo'));
+});
+
+test('la foto de una felicitación se guarda sin sus datos ocultos, y lo que no es una foto no pasa', () => {
+  const { cleanJpeg, PHOTO_MAX } = require('../lib/review-photo.ts');
+  const segment = (marker, text) => { const body = Buffer.from(text); return Buffer.concat([Buffer.from([0xff, marker, (body.length + 2) >> 8, (body.length + 2) & 255]), body]); };
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8]), segment(0xe0, 'JFIF'), segment(0xe1, 'Exif gps 40.7608,-111.8910'), segment(0xfe, 'una nota'), segment(0xdb, 'tabla'), Buffer.from([0xff, 0xda, 0, 2]), Buffer.from('imagen'), Buffer.from([0xff, 0xd9])]);
+  const clean = Buffer.from(cleanJpeg(new Uint8Array(jpeg)));
+  assert.ok(!clean.includes('gps') && !clean.includes('una nota'), 'sin EXIF ni notas');
+  assert.ok(clean.includes('JFIF') && clean.includes('tabla') && clean.includes('imagen') && clean[0] === 0xff && clean[1] === 0xd8, 'la imagen queda entera');
+  for (const bad of ['<script>alert(1)</script>', 'GIF89a', '']) assert.equal(cleanJpeg(new Uint8Array(Buffer.from(bad))), null);
+  assert.equal(cleanJpeg(new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xd8]), Buffer.from([0xff, 0xe1, 0xff, 0xff]), Buffer.from('corto')]))), null, 'un segmento que miente sobre su tamaño');
+  assert.ok(PHOTO_MAX <= 1572864, 'no más de lo que admite el cajón de fotos (supabase/felicitaciones.sql)');
+  // La ruta exige el permiso antes de guardar una foto, y el formulario no deja enviar sin él.
+  const fs = require('node:fs'), route = fs.readFileSync('app/api/reviews/route.ts', 'utf8'), form = fs.readFileSync('components/contygo/v7/ShareStory.tsx', 'utf8');
+  assert.ok(route.indexOf('fail("consent")') > 0 && route.indexOf('fail("consent")') < route.indexOf('uploadReviewImage(clean)'));
+  assert.ok(/const valid = [^;]*&& consent;/.test(form) && form.includes('Tapa tus datos antes de enviar'));
+});

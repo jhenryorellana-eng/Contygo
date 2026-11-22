@@ -107,6 +107,18 @@
 :global([data-react=phone][data-lit=true]) .after{animation:arrive .5s 1.9s both}
 :global([data-react=phone][data-lit=true]) .bar2{animation:fold .4s 1.95s forwards}
 :global([data-react=phone][data-lit=true]) .toast{transform:none;opacity:1}
+/* El recorrido (PlatformTour): data-focus dice qué parte de la app se mira. Esa parte lleva un aro verde y hace lo
+   suyo; el resto se aparta. Al cambiar de parte, lo anterior vuelve a su estado de antes. */
+.screen[data-focus] :is(.hello,.sub,.case,.docs){transition:opacity .5s,scale .6s cubic-bezier(.2,.8,.2,1),box-shadow .5s}
+.screen[data-focus=docs] :is(.hello,.sub,.case),.screen[data-focus=steps] :is(.hello,.sub,.docs),.screen[data-focus=support] :is(.hello,.sub,.case,.docs){opacity:.3}
+.screen[data-focus=docs] .docs,.screen[data-focus=steps] .case{scale:1.04;box-shadow:0 0 0 .9cqw var(--a-green),0 7cqw 13cqw -6cqw #25d36699}
+.screen[data-focus=docs] .bar2 span{width:100%}
+.screen[data-focus=docs] .before{animation:leave .3s 1.9s both}
+.screen[data-focus=docs] .after{animation:arrive .5s 1.9s both}
+.screen[data-focus=docs] .bar2{animation:fold .4s 1.95s forwards}
+.screen[data-focus=steps] .ringValue{stroke-dashoffset:40}
+.screen[data-focus] .toast{transition:transform .7s cubic-bezier(.2,.9,.25,1.15) .25s,opacity .3s .25s,box-shadow .4s}
+.screen[data-focus=support] .toast{transform:none;opacity:1;box-shadow:0 0 0 .9cqw var(--a-green),0 6cqw 13cqw -4cqw #061b3d73}
 @keyframes liveRing{0%{transform:scale(.7);opacity:.85}100%{transform:scale(2.3);opacity:0}}
 @keyframes leave{to{opacity:0;transform:scale(.6)}}
 @keyframes arrive{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}

@@ -4,6 +4,7 @@
    /admin — Reseñas (moderación). Solo el dueño.
    Carga todas y filtra en cliente: pestañas con cifras, resumen y buscador.
    ============================================================ */
+import { CONTYGO_SERVICES } from "@/lib/contygo-catalog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Review, ReviewStatus } from "@/lib/reviews";
 import { getServiceById } from "@/lib/services";
@@ -14,14 +15,14 @@ type Tab = ReviewStatus;
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "pending", label: "Pendientes" },
-  { key: "approved", label: "Publicadas" },
+  { key: "approved", label: "Aprobadas" },
   { key: "rejected", label: "Rechazadas" },
 ];
 
 const dateFmt = new Intl.DateTimeFormat("es-US", { day: "numeric", month: "short", year: "numeric" });
 const timeFmt = new Intl.DateTimeFormat("es-US", { hour: "numeric", minute: "2-digit" });
 
-const STATUS_LABEL: Record<ReviewStatus, string> = { pending: "Pendiente", approved: "Publicada", rejected: "Rechazada" };
+const STATUS_LABEL: Record<ReviewStatus, string> = { pending: "Pendiente", approved: "Aprobada", rejected: "Rechazada" };
 
 function Stars({ rating }: { rating: number }) {
   const r = Math.max(1, Math.min(5, Math.round(rating)));
@@ -41,6 +42,7 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,7 +119,7 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
         </div>
         <div className="stat stat--approved">
           <span className="stat__n">{counts.approved}</span>
-          <span className="stat__l">Publicadas en la home</span>
+          <span className="stat__l">Aprobadas para mostrar</span>
         </div>
         <div className="stat stat--avg">
           <span className="stat__n">
@@ -126,13 +128,37 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
               ★
             </span>
           </span>
-          <span className="stat__l">Promedio publicado</span>
+          <span className="stat__l">Promedio de las aprobadas</span>
         </div>
         <div className="stat">
           <span className="stat__n">{all.length}</span>
           <span className="stat__l">Recibidas en total</span>
         </div>
       </section>
+
+      {/* Felicitaciones: mostrarlas en vivo, subir una y el enlace para pedirlas a los clientes. */}
+      <div className="admin__toolbar">
+        <a className="btn btn--primary" href="/admin/felicitaciones" target="_blank" rel="noopener noreferrer">
+          Presentar en vivo ({counts.approved})
+        </a>
+        <div className="admin__toolbar-right">
+          <a className="btn btn--ghost admin__btn-sm" href="/califica" target="_blank" rel="noopener noreferrer">
+            Subir una felicitación
+          </a>
+          <button
+            type="button"
+            className="btn btn--ghost admin__btn-sm"
+            onClick={() => {
+              void navigator.clipboard?.writeText(`${location.origin}/califica`).then(() => {
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2200);
+              });
+            }}
+          >
+            {copied ? "Enlace copiado" : "Copiar enlace para clientes"}
+          </button>
+        </div>
+      </div>
 
       <div className="admin__toolbar">
         <div className="admin__tabs" role="tablist">
@@ -172,13 +198,14 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
             : tab === "pending"
               ? "No hay reseñas por revisar. Todo al día. 🎉"
               : tab === "approved"
-                ? "Aún no has publicado ninguna reseña."
+                ? "Aún no has aprobado ninguna felicitación."
                 : "No hay reseñas rechazadas."}
         </div>
       ) : (
         <div className="admin__list">
           {items.map((r) => {
-            const svc = r.service_id ? getServiceById(r.service_id) : undefined;
+            // El servicio, por su nombre de hoy (catálogo de ContyGo) o, en las reseñas antiguas, por el de entonces.
+            const svc = r.service_id ? CONTYGO_SERVICES.find((item) => item.id === r.service_id) ?? getServiceById(r.service_id) : undefined;
             const isBusy = busy.has(r.id);
             const ago = timeAgo(r.created_at, now);
             return (
@@ -191,9 +218,18 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
                   <div className="rv__who">
                     <strong>{r.name}</strong>
                     {svc && <span className="rv__chip">{svc.name}</span>}
+                    {r.kind === "approval" && <span className="rv__chip">Trámite aprobado</span>}
+                    {r.place && <span className="rv__chip">{r.place}</span>}
                     <span className={"rv__state rv__state--" + (r.status ?? "pending")}>{STATUS_LABEL[r.status ?? "pending"]}</span>
                   </div>
                   <p className="rv__text">“{r.comment}”</p>
+                  {/* La foto de la felicitación: se mira entera antes de publicar (¿quedó algún dato sin tapar?). */}
+                  {(r as { image_url?: string | null }).image_url && (
+                    <a href={(r as { image_url?: string | null }).image_url ?? undefined} target="_blank" rel="noopener noreferrer" title="Abrir la foto en grande">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={(r as { image_url?: string | null }).image_url ?? undefined} alt={`Foto enviada por ${r.name}`} style={{ display: "block", maxWidth: 220, maxHeight: 220, marginTop: 10, borderRadius: 12 }} loading="lazy" />
+                    </a>
+                  )}
                   <div className="rv__time">
                     {Ico.calendar}
                     <span>{dateFmt.format(new Date(r.created_at))}</span>
@@ -208,12 +244,12 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
                 <div className="rv__actions">
                   {r.status !== "approved" && (
                     <button type="button" className="btn btn--primary rv__btn" disabled={isBusy} onClick={() => setStatus(r.id, "approved")}>
-                      {Ico.check} Publicar
+                      {Ico.check} Aprobar
                     </button>
                   )}
                   {r.status !== "rejected" && (
                     <button type="button" className="btn btn--ghost rv__btn rv__btn--no" disabled={isBusy} onClick={() => setStatus(r.id, "rejected")}>
-                      {Ico.close} {r.status === "approved" ? "Quitar de la home" : "Rechazar"}
+                      {Ico.close} {r.status === "approved" ? "Quitar de la presentación" : "Rechazar"}
                     </button>
                   )}
                   {r.status === "rejected" && (
@@ -228,8 +264,9 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
         </div>
       )}
       <p className="admin__hint">
-        Las horas se muestran en la zona horaria de tu dispositivo. Al publicar, la reseña aparece en la home al instante; se
-        muestran las 12 más recientes.
+        Las horas se muestran en la zona horaria de tu dispositivo. Lo que apruebas no sale en la página: lo enseñas tú con
+        «Presentar en vivo». Antes de aprobar una foto, ábrela en grande y comprueba que no se lea ningún dato del cliente
+        (número A, fecha de nacimiento, dirección, códigos). Si subes tú la felicitación de un cliente, hazlo con su permiso.
       </p>
     </>
   );

@@ -9,7 +9,6 @@ import { LANDING_FROM_CENTS, landingFaqs as faqs } from "@/lib/contygo-landing-f
 import { CONTYGO_SERVICES, VISIBLE_SERVICES, seasonOpen, type ContygoService } from "@/lib/contygo-catalog";
 import { ALLIES, OWNER_PENDING } from "@/lib/contygo-route";
 import { formatCents, fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
-import { CONTYGO_COMMERCIAL_OFFER } from "@/lib/contygo-commercial-offer";
 import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
 import { CONTENT_CATEGORY } from "@/lib/meta/events";
 import { trackBrowserWhenReady } from "@/lib/meta/pixel-client";
@@ -25,6 +24,7 @@ import { getRebuildServiceFilm } from "@/lib/contygo-rebuild-media";
 import CommunityButton from "./CommunityButton";
 import HelpWays from "./HelpWays";
 import HenryHand from "./HenryHand";
+import PlatformTour from "./PlatformTour";
 import HeroStory, { HeroCaption, HeroFlag, HeroLane } from "./HeroStory";
 import heroStyles from "./HeroStory.module.css";
 import { HERO_PARTS, useFresh, useHeroParts } from "./useFresh";
@@ -71,7 +71,6 @@ const visa = CONTYGO_SERVICES.find(item => item.id === "visa-juvenil");
 
 const paidCount = CONTYGO_SERVICES.filter(item => !item.free).length;
 const clients = isPublic(CONTYGO_CLAIMS.clientsServed) ? CONTYGO_CLAIMS.clientsServed.text : null;
-const guarantee = CONTYGO_COMMERCIAL_OFFER.guarantee;
 // The same person through the whole path, one action per step (Codex, 28-09-2026: material-de-diseno/v7-fotos):
 // understanding the video guide, reviewing the contract, sending a document from her phone.
 const journey = [
@@ -321,44 +320,18 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         <a className={s.inlineLink} href="#servicios">Elegir dónde empezar <Icon /></a>
       </section>
 
-      <section className={s.platform} id="plataforma" data-thread="platform">
+      {/* 21-11-2026: the app as a guided tour (PlatformTour); the section before it, a still phone beside a list. */}
+      {fresh ? <PlatformTour /> : <section className={s.platform} id="plataforma" data-thread="platform">
         <div className={s.platformVisual} data-anim data-reveal data-react="phone" data-react-y=".2">
           <span className={s.appAura} aria-hidden="true" />
           <div className={s.appPhone} data-thread="phone"><AppPhone /></div>
           <span className={s.realUi}>Ilustración de tu expediente en ContyGo</span>
         </div>
         <div className={s.platformCopy} data-reveal data-react="title"><span className={s.eyebrow}>Tu expediente, conectado</span><h2>La app organiza.<br /><em>El equipo<br />te acompaña.</em></h2><p>La tecnología pone orden. Las personas te ayudan a avanzar. Tu preparación tiene un lugar, desde el primer documento hasta el siguiente paso.</p><ul><li data-react="pop"><Icon kind="file" /><div><strong>Tu información, en un lugar.</strong><span>Aporta los datos y documentos que tu servicio necesita.</span></div></li><li data-react="pop"><Icon kind="path" /><div><strong>Sabes qué viene después.</strong><span>Consulta el recorrido y las indicaciones de tu preparación.</span></div></li><li data-react="pop"><Icon kind="chat" /><div><strong>Hay alguien del otro lado.</strong><span>Comunícate con el equipo desde Soporte en tu cuenta.</span></div></li></ul><a className={s.inlineLink} href="#servicios">Conocer mi servicio <Icon /></a></div>
-      </section>
+      </section>}
 
       {/* Navy ink sheet: the certificate always reads on the brand navy, in both appearances. */}
       <div className={`${s.inkSheet} ${themeStyles.surface}`} data-contygo-theme="dark" data-react="sheet" data-react-y=".25"><RegistryStage /></div>
-
-      <section className={s.backing} id="respaldo">
-        <div className={s.backingIntro} data-reveal data-react="title">
-          <span className={s.eyebrow}>Todo por escrito</span>
-          <h2>Claro desde el principio.<br /><em>Nada escondido.</em></h2>
-          <p>Antes de pagar sabes qué incluye tu servicio, cuánto cuesta y qué pasa si algo no sale a tiempo.</p>
-          <p className={s.honest}><b>Somos consultores, no abogados.</b> Preparamos tus documentos y te acompañamos; no damos asesoría legal ni representación. Decirlo claro también es cuidarte.</p>
-          {visa && <button type="button" className={s.contractCta} onClick={event => open(visa, event.currentTarget)}>Ver la guía de Visa Juvenil <span><Icon kind="play" /></span></button>}
-        </div>
-        {/* Illustration of what the person reads before paying: the same facts as the page, never a real contract. */}
-        <figure className={s.contract} data-anim data-react="contract" data-react-y=".15">
-          <article className={s.contractSheet} aria-label="Ilustración de un contrato de servicio de ContyGo">
-            <header className={s.contractHead}>
-              <span className={s.contractMark}><Image src="/contygo/v7/simbolo-oscuro.png" alt="" width={568} height={640} sizes="24px" /></span>
-              <span className={s.contractName}><small>Contrato · ejemplo</small><strong>{visa?.name ?? "Tu servicio"}</strong></span>
-              <span className={s.contractChip}>Lo lees antes de pagar</span>
-            </header>
-            <ol className={s.clauses}>
-              <li><span className={s.clauseNo}>1</span><div><h3>Precio publicado</h3><p>Honorarios {(visaFrom ?? fromPrice) ? <mark>desde {visaFrom ?? fromPrice}</mark> : <mark>publicados</mark>}, visibles antes de empezar. Las tasas del gobierno, cuando aplican, se indican aparte.</p></div></li>
-              <li><span className={s.clauseNo}>2</span><div><h3>Contrato antes de pagar</h3><p>Lees <mark>el alcance, el precio y las condiciones</mark>. Decides y firmas cuando estés listo.</p></div></li>
-              {guarantee && <li className={s.clauseGuarantee}><span className={s.clauseNo}>3</span><div><h3>{guarantee.title}</h3><p>{guarantee.description}</p><ul>{guarantee.conditions.map(item => <li key={item}>{item}</li>)}</ul></div></li>}
-            </ol>
-            <footer className={s.contractSign}><span className={s.signLine}><i data-loop aria-hidden="true" /></span><span>Tu firma, solo cuando estés listo</span></footer>
-          </article>
-          <figcaption className={s.contractNote}>Ilustración. Tu contrato completo lo lees antes de firmar.</figcaption>
-        </figure>
-      </section>
 
       <section className={s.faq} id="preguntas" data-thread="faq">
         <div className={s.faqIntro} data-reveal data-react="title"><span className={s.eyebrow}>Claridad antes de decidir</span><h2>Preguntar también<br /><em>es avanzar.</em></h2><p>Toca una pregunta y te respondemos aquí mismo. Si te queda otra, el equipo te contesta por WhatsApp.</p><a className={s.inlineLink} href="#empezar">Prefiero verlo en vídeo <Icon /></a></div>

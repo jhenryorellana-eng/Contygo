@@ -25,7 +25,7 @@ import CommunityButton from "./CommunityButton";
 import HelpWays from "./HelpWays";
 import HenryHand from "./HenryHand";
 import PlatformTour from "./PlatformTour";
-import AssistantDoor, { AssistantStart } from "./AssistantDoor";
+import AssistantDoor from "./AssistantDoor";
 import { openAssistant } from "./assistantBus";
 import { CONTRACT_TIME } from "@/lib/agent/landing-chat-ui";
 import HeroStory, { HeroCaption, HeroFlag, HeroLane } from "./HeroStory";
@@ -263,7 +263,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     <header className={s.header} data-scrolled={scrolled} data-cta={headerCta}>
       <div className={s.headerInner}>
         <a className={s.logo} href="#inicio" aria-label="ContyGo · Inicio"><Image src={logo} width={3000} height={849} alt="ContyGo" priority sizes="160px" /></a>
-        <nav aria-label="Principal"><a href="#ruta">Servicios</a>{COMMUNITY_URL && <a href={via(COMMUNITY_URL, "nav")}>Comunidad</a>}{APPOINTMENT_URL && <a href={via(APPOINTMENT_URL, "nav")}>Sesión con Henry</a>}<a href="#preguntas">Preguntas</a></nav>
+        <nav aria-label="Principal"><a href="#ruta">Servicios</a>{COMMUNITY_URL && <a href={via(COMMUNITY_URL, "nav")}>Comunidad</a>}{APPOINTMENT_URL && <a href={via(APPOINTMENT_URL, "nav")}>Sesión con Henry</a>}{fresh ? <a href="#contrato" onClick={event => { event.preventDefault(); openAssistant(); }}>Preguntas</a> : <a href="#preguntas">Preguntas</a>}</nav>
         <div className={s.headerActions}>
           <button className={s.themeToggle} type="button" onPointerEnter={preloadOtherTheme} onTouchStart={preloadOtherTheme} onFocus={preloadOtherTheme} onClick={event => { const next: Theme = theme === "light" ? "dark" : "light"; void dropTheme(event.currentTarget, next, () => flushSync(() => setTheme(next))); }} aria-label={`Activar modo ${theme === "light" ? "oscuro" : "claro"}`} aria-pressed={theme === "dark"}><span key={theme} className={s.toggleIcon}><Icon kind={theme === "light" ? "moon" : "sun"} /></span></button>
           <a className={s.login} href="https://contygo.app/entrar">Entrar <Icon /></a>
@@ -308,7 +308,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
 
       <BlackFridayBanner />
 
-      {/* The assistant's promise, right under the hero: where a visitor decides (its way in and the questions close the page). */}
+      {/* The assistant's promise, right under the hero: where a visitor decides. */}
       {fresh && <AssistantDoor />}
       <HelpWays stars={featured} />
 
@@ -338,8 +338,10 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       {/* Navy ink sheet: the certificate always reads on the brand navy, in both appearances. */}
       <div className={`${s.inkSheet} ${themeStyles.surface}`} data-contygo-theme="dark" data-react="sheet" data-react-y=".25"><RegistryStage /></div>
 
-      {/* Where «Preguntar también es avanzar» was: the assistant's door (the old list stays with the old page). */}
-      {fresh ? <AssistantStart questions={faqs(fromPrice, visaFrom).map(([question]) => question)} /> : <section className={s.faq} id="preguntas" data-thread="faq">
+      {/* Where «Preguntar también es avanzar» was. The new page had here a second way into the assistant («¿Listo? Tu
+          contrato…»); the owner had it removed on 23-11-2026: «no tiene sentido repetirlo 2 veces». Its questions are
+          answered by the assistant, which the menu's «Preguntas» now opens. The old list stays with the old page. */}
+      {!fresh && <section className={s.faq} id="preguntas" data-thread="faq">
         <div className={s.faqIntro} data-reveal data-react="title"><span className={s.eyebrow}>Claridad antes de decidir</span><h2>Preguntar también<br /><em>es avanzar.</em></h2><p>Toca una pregunta y te respondemos aquí mismo. Si te queda otra, el equipo te contesta por WhatsApp.</p><a className={s.inlineLink} href="#empezar">Prefiero verlo en vídeo <Icon /></a></div>
         <div className={s.chat} data-anim data-reveal>
           <div className={s.chatHead}><span className={s.chatAvatar}><Image src="/contygo/v7/simbolo-oscuro.png" alt="" width={568} height={640} sizes="24px" /></span><span><strong>ContyGo</strong><small><i aria-hidden="true" />Respuestas claras, en español</small></span></div>
@@ -353,14 +355,15 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
 
       <Finale onOpen={open} />
 
-      {/* The partners (brief, 13-11-2026): each one answers for its own service. With no logo yet, its initials. */}
-      <section className={s.allies} aria-labelledby="aliados-titulo">
+      {/* The partners (brief, 13-11-2026): each one answers for its own service. With no logo yet, its initials.
+          None since 23-11-2026 (the driver's licence left the page), so the strip is not drawn. */}
+      {ALLIES.length > 0 && <section className={s.allies} aria-labelledby="aliados-titulo">
         <div><h2 id="aliados-titulo" className={s.eyebrow}>Nuestros aliados</h2><p>Cada aliado presta y responde por su propio servicio.</p></div>
         <ul>{ALLIES.map(ally => <li key={ally.name}>
           <span className={s.allyMark} aria-hidden="true">{OWNER_PENDING.allyLogo ? <Image src={OWNER_PENDING.allyLogo} alt="" width={96} height={96} /> : ally.initials}</span>
           <span><strong>{ally.name}</strong><small>{ally.service}</small></span>
         </li>)}</ul>
-      </section>
+      </section>}
       <GreenThread scope={main} />
     </main>
     <footer className={s.footer}>
@@ -372,7 +375,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
     {/* Whenever the hero button is out of sight (above or still below the fold), the dock offers it. */}
     <div className={s.dock} data-show={!heroVisible && dock && !service} aria-hidden={heroVisible || !dock || Boolean(service)}>
       {fresh
-        ? <a href="#preguntas" tabIndex={!heroVisible && dock && !service ? 0 : -1} onClick={event => { event.preventDefault(); openAssistant(); }}><span><strong>Haz tu contrato tú mismo</strong><small>{fromPrice ? `En ${CONTRACT_TIME} · desde ${fromPrice}` : `En ${CONTRACT_TIME}`}</small></span><i><Icon /></i></a>
+        ? <a href="#contrato" tabIndex={!heroVisible && dock && !service ? 0 : -1} onClick={event => { event.preventDefault(); openAssistant(); }}><span><strong>Haz tu contrato tú mismo</strong><small>{fromPrice ? `En ${CONTRACT_TIME} · desde ${fromPrice}` : `En ${CONTRACT_TIME}`}</small></span><i><Icon /></i></a>
         : <a href="#servicios" tabIndex={!heroVisible && dock && !service ? 0 : -1}><span><strong>Elige tu trámite</strong><small>{fromPrice ? `Precios desde ${fromPrice}` : "Precio publicado antes de empezar"}</small></span><i><Icon /></i></a>}
     </div>
     <LandingChat hidden={Boolean(service)} raised={!heroVisible && dock && !service} onService={open} />

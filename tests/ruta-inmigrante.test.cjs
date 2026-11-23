@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { VISIBLE_SERVICES } = require('../lib/contygo-catalog.ts');
-const { ROUTE_STEPS, ROUTE_SERVICE_IDS, OWNER_PENDING, ALLIES, DRIVERS_LICENCE, stepOpen, stepServices } = require('../lib/contygo-route.ts');
+const { ROUTE_STEPS, ROUTE_SERVICE_IDS, OWNER_PENDING, ALLIES, stepOpen, stepServices } = require('../lib/contygo-route.ts');
 const { via, COMMUNITY_URL, APPOINTMENT_URL } = require('../lib/config.ts');
 const { TIERS, TIER_SERVICE_IDS, TIER_BLURBS } = require('../lib/contygo-tiers.ts');
 const ContygoLanding = require('../components/contygo/v7/ContygoLanding.tsx').default;
@@ -33,8 +33,8 @@ test('ningún servicio del sitio se queda sin tarjeta, esté en el paso que est�
 
 test('la portada dice lo del brief: la promesa, las tres formas, la ruta, los aliados y el aviso del registro', () => {
   for (const text of ['Consultor de inmigración registrado en Utah', '¿Cómo te ayudamos', 'Haz tu trámite en la app', 'ContyGo Club', 'Una conversación para ti', 'Orientación, no asesoría legal',
-    'Cinco pasos para crecer', 'Elige tu tramo', DRIVERS_LICENCE.name, DRIVERS_LICENCE.note, `Con ${DRIVERS_LICENCE.partner}`,
-    'No vendemos seguros, inversiones, préstamos ni propiedades', 'Nuestros aliados', ALLIES[0].name, 'Reg. 14304807-IC00', 'El registro no constituye un aval del Estado de Utah', 'USA LATINO PRIME LLC · Highland, Utah']) {
+    'Cinco pasos para crecer', 'Elige tu tramo',
+    'No vendemos seguros, inversiones, préstamos ni propiedades', 'Reg. 14304807-IC00', 'El registro no constituye un aval del Estado de Utah', 'USA LATINO PRIME LLC · Highland, Utah']) {
     assert.ok(page.includes(text), text);
   }
   // El titular, con las mismas palabras (cada línea es una pieza, para entrar una tras otra).
@@ -85,7 +85,18 @@ test('lo que el dueño no ha dado no se inventa', () => {
   if (OWNER_PENDING.clubSeatsLeft === null) assert.doesNotMatch(page, /Quedan \d/);
   // Sin precio ni duración de la sesión, su tarjeta solo lleva el aviso, sin nada delante (20-11-2026).
   if (OWNER_PENDING.sessionTerms === null) assert.ok(page.includes('>Orientación, no asesoría legal<'));
-  if (OWNER_PENDING.allyLogo === null) assert.ok(page.includes(`>${ALLIES[0].initials}<`), 'sin logo, sus iniciales');
+  // La licencia de conducir salió de la página (dueño, 23-11-2026), y con ella su aliado: sin aliados, no hay franja.
+  assert.ok(!/licencia de conducir|SG Services/i.test(page) && !require('node:fs').existsSync('public/contygo/v8/servicio-licencia-conducir.webp'));
+  assert.equal(page.includes('Nuestros aliados'), ALLIES.length > 0);
+  for (const ally of ALLIES) assert.ok(page.includes(ally.name) && (OWNER_PENDING.allyLogo !== null || page.includes(`>${ally.initials}<`)), ally.name);
+  // En su lugar, en la hoja del paso 1: los tres servicios más pedidos, los mismos que el asistente ofrece primero.
+  const { LANDING_NEEDS } = require('../lib/agent/landing-chat-ui.ts');
+  const tops = LANDING_NEEDS.filter(need => need.top);
+  assert.deepEqual(tops.map(need => need.label), ['Visa Juvenil', 'Apelación ante la BIA', 'Reforzamiento de asilo']);
+  const sheet = page.slice(page.indexOf('Empieza por tu permiso de trabajo'), page.indexOf('Elige tu tramo'));
+  let at = 0;
+  for (const need of tops) { const found = sheet.indexOf(`>${need.label}</strong>`, at); assert.ok(found > 0 && sheet.includes(need.hint), need.label); at = found; }
+  assert.equal((sheet.match(/Más pedido/g) || []).length, 3);
 });
 
 test('cada enlace al Club y a la agenda dice desde dónde se tocó, sin perder el origen', () => {
@@ -155,14 +166,17 @@ test('el asistente: su puerta donde estaban las preguntas, el contrato dentro de
   const fs = require('node:fs');
   const { sanitizeAttribution } = require('../lib/contygo-api/lead.ts');
   const { landingFaqs } = require('../lib/contygo-landing-faq.ts');
-  // La sección: el mismo sitio (menú e hilo verde), otra propuesta; las preguntas aprobadas siguen, como botones.
-  assert.ok(page.includes('id="preguntas"') && page.includes('data-thread="faq"') && page.includes('Haz tu contrato tú mismo.'));
-  // La promesa va arriba, justo tras el hero y antes de los productos; por dónde empezar y las preguntas, al final.
-  assert.ok(page.indexOf('id="contrato"') > page.indexOf('id="inicio"') && page.indexOf('id="contrato"') < page.indexOf('id="ruta"') && page.indexOf('id="preguntas"') > page.indexOf('id="plataforma"'));
+  // La promesa va arriba, justo tras el hero y antes de los productos, y va una sola vez: la segunda entrada del final
+  // («¿Listo? Tu contrato…», con sus trámites y las preguntas de siempre) la quitó el dueño el 23-11-2026 («no tiene
+  // sentido repetirlo 2 veces»). El menú «Preguntas» abre el asistente, que responde las preguntas aprobadas.
+  assert.ok(page.includes('Haz tu contrato tú mismo.') && page.indexOf('id="contrato"') > page.indexOf('id="inicio"') && page.indexOf('id="contrato"') < page.indexOf('id="ruta"'));
+  assert.ok(!page.includes('id="preguntas"') && !page.includes('data-thread="faq"') && !page.includes('¿Listo?') && !page.includes('Lo que más nos preguntan'));
+  assert.ok(/<a href="#contrato">Preguntas<\/a>/.test(page) && !page.includes('href="#preguntas"'), 'nada apunta a la sección que ya no está');
   assert.ok(!page.includes('Preguntar también') && !page.includes('Escríbele al equipo'), 'la lista que terminaba en WhatsApp ya no está');
-  for (const [question] of landingFaqs('$250', null)) assert.ok(page.includes(question.replace(/&/g, '&amp;')) || page.includes(question), question);
-  // El contrato de la escena es un ejemplo, y lo dice; el aviso de que no es asesoría legal sigue.
-  assert.ok(page.includes('no es asesoría legal'));
+  assert.ok(landingFaqs('$250', null).length >= 4 && fs.readFileSync('lib/agent/landing-chat.ts', 'utf8').includes('PREGUNTAS FRECUENTES (respuestas aprobadas)'), 'las preguntas de siempre las responde el asistente');
+  // Sin esa sección, el hilo verde sigue: baja por su margen hasta el cierre.
+  const thread = fs.readFileSync('components/contygo/v7/GreenThread.tsx', 'utf8');
+  assert.ok(!/!faq \|\|/.test(thread) && /else knots\.push\(knot\(lane, end - 150, DOWN\)\)/.test(thread));
   // La escena: un mundo de plastilina donde el contrato viaja por cinco estaciones (el estilo lo eligió el dueño).
   const journey = fs.readFileSync('components/contygo/v7/ContractJourney.tsx', 'utf8');
   for (const word of ['Tocas', 'Respondes', 'Se llena', 'Confirmas', 'Firmas']) assert.ok(page.includes(word), word);
@@ -185,8 +199,6 @@ test('el asistente: su puerta donde estaban las preguntas, el contrato dentro de
   // Quien pide menos movimiento, o tiene una pantalla muy baja, no se queda con la sección quieta: pasa las estaciones de lado.
   const world = fs.readFileSync('components/contygo/v7/ContractJourney.module.css', 'utf8');
   assert.ok(/@media\(min-height:520px\) and \(prefers-reduced-motion:no-preference\)\{[^}]*\.run\{height:/.test(world) && /scroll-snap-type:x mandatory/.test(world));
-  // La persona sigue a un toque, en una línea.
-  assert.ok(page.includes('una persona del equipo te atiende por WhatsApp'));
   // El botón del pie y la invitación bajo los servicios llevan al asistente.
   assert.ok(page.includes('Haz tu contrato tú mismo') && page.includes('¿No sabes cuál es el tuyo?') && page.includes('Empezar mi contrato'));
   // El tiempo que se promete vive en un solo sitio (lo dijo el dueño; aún sin medir).

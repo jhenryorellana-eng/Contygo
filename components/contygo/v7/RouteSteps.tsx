@@ -10,8 +10,8 @@
    La hoja de cada paso (su «cuadro») es tinta: el azul de la marca, con las tarjetas blancas encima. La del paso en el
    que está el hilo se alza, toma un filo verde y la cruza un brillo, una sola vez (16-11-2026: «llamativo pero
    elegante»; una ola de color, cuentas de luz y el salto de la figura se probaron ese día y el dueño los vio exagerados).
-   - Paso 1, Migratorio: la vitrina de los favoritos y dos carpetas, Trámites migratorios y Licencia de conducir
-     (de un aliado: sin guía ni contrato aquí, «Empezar» escribe al equipo).
+   - Paso 1, Migratorio: la vitrina de los favoritos y la carpeta de Trámites migratorios (hasta el 23-11-2026 había
+     otra, Licencia de conducir, de un aliado; el dueño la quitó).
    - Pasos 2 a 5: una hoja con lo que ya se puede empezar (tarjetas del catálogo) y lo que viene (etiquetas punteadas).
      Certificaciones es la cara de «Simulador ContyGo» en la landing: lo anuncia sin precio ni promesas, porque nadie
      paga antes de ver los requisitos de su estado.
@@ -21,7 +21,7 @@ import Image from "next/image";
 import { type ReactNode } from "react";
 import { COMMUNITY_URL, via, waLink } from "@/lib/config";
 import { VISIBLE_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
-import { DRIVERS_LICENCE, OWNER_PENDING, ROUTE_SERVICE_IDS, ROUTE_STEPS, stepOpen, stepServices, type RouteStep } from "@/lib/contygo-route";
+import { OWNER_PENDING, ROUTE_SERVICE_IDS, ROUTE_STEPS, stepOpen, stepServices, type RouteStep } from "@/lib/contygo-route";
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import ServiceShowcase, { TileShelf, type CatalogGroup, type Star } from "./ServiceShowcase";
 import ServiceTiers from "./ServiceTiers";
@@ -96,21 +96,9 @@ export default function RouteSteps({ seasonal, stars, open, warm, children }: Pr
   const permitFrom = permit ? fromPriceLabel(prices, permit.slug) : null;
   const free = OWNER_PENDING.freeWorkPermit;
 
-  const licence = <div className={r.licence}>
-    <div className={r.licenceTop}>
-      <ul className={r.checks}>{DRIVERS_LICENCE.includes.map(item => <li key={item}><i aria-hidden="true"><Check /></i>{item}</li>)}</ul>
-      <span className={r.licenceArt} aria-hidden="true"><Image src="/contygo/v8/servicio-licencia-conducir.webp" alt="" width={512} height={512} sizes="130px" /></span>
-    </div>
-    <p className={r.fine}>{DRIVERS_LICENCE.note}</p>
-    {itin && <button type="button" className={r.itin} onClick={event => open(itin, event.currentTarget)} onPointerEnter={() => warm(itin)} onFocus={() => warm(itin)}>¿Aún no tienes ITIN? <b>Empieza aquí</b></button>}
-    <a className={r.start} href={waLink(DRIVERS_LICENCE.message)}>Empezar <i><Arrow /></i></a>
-  </div>;
-
   const groups: CatalogGroup[] = [
     { id: "tramites-migratorios", title: "Trámites migratorios", short: "Trámites", note: "Con USALatino Prime · Consultor de inmigración registrado en Utah", tone: "azul",
       art: ["categoria-asilo", "categoria-corte", "categoria-familia"], items: migratory, foot: "Henry Orellana no es abogado y no puede dar asesoría legal." },
-    { id: "licencia-de-conducir", title: DRIVERS_LICENCE.name, short: "Licencia", note: `Con ${DRIVERS_LICENCE.partner}`, tone: "arena",
-      art: ["servicio-licencia-conducir"], items: [], badge: "Nuevo", body: licence },
   ];
 
   const banner = permit && <button type="button" className={r.banner} data-react="card" onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>

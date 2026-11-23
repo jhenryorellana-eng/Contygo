@@ -109,19 +109,7 @@
 .route .notify:active{transform:scale(.98)}
 
 
-/* ---- Paso 1: la licencia de conducir (dentro de su carpeta) y el permiso de trabajo ---- */
-.licence{display:flex;flex:1;flex-direction:column;gap:16px;padding:20px;border-radius:22px;border:1px solid var(--line);background:var(--sheet);box-shadow:var(--paper)}
-:global([data-contygo-theme=dark]) .licence{--sheet:#081c40}
-.licenceTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.checks{list-style:none;display:grid;gap:13px;margin:0;padding:0}
-.checks li{display:flex;align-items:flex-start;gap:12px;font-size:17px;font-weight:700;line-height:1.35}
-.checks i{display:grid;place-items:center;flex:none;width:24px;height:24px;margin-top:-1px;border-radius:50%;background:#25d36629;color:var(--accent)}
-.route .checks svg{width:15px;height:15px}
-.licenceArt{flex:none;width:118px}
-.licenceArt img{display:block;width:100%;height:auto;filter:drop-shadow(0 12px 12px #061b3d26)}
-.fine{font-size:14.5px;line-height:1.55;color:var(--muted)}
-.route .itin{align-self:flex-start;padding:6px 0;border:0;background:none;font:inherit;font-size:15.5px;line-height:1.4;color:var(--muted);text-align:left;cursor:pointer}
-.itin b{color:var(--ink);font-weight:750;text-decoration:underline;text-decoration-color:var(--green);text-decoration-thickness:2px;text-underline-offset:4px}
+/* ---- Paso 1: el permiso de trabajo ---- */
 .route .start{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;margin-top:auto;padding:6px 6px 6px 24px;border-radius:40px;background:var(--green);color:#061b3d;font-size:16.5px;font-weight:750;transition:transform .3s var(--unfold),box-shadow .3s;-webkit-tap-highlight-color:transparent}
 .start i{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:50%;background:#061b3d;color:#fff;transition:transform .35s var(--unfold)}
 .route .start svg{width:20px;height:20px}
@@ -152,14 +140,6 @@
   .node b{font-size:18px}
   .tag{left:0}
   .station[data-wide] .node{top:66px}
-}
-/* The licence beside the migratory folder (ServiceShowcase puts them side by side from 1240 px): its drawing heads the
-   card and takes the height that is left, so both folders end level with no hole. */
-@media(min-width:1240px){
-  .licenceTop{flex:1;flex-direction:column-reverse;align-items:stretch;gap:18px}
-  .licenceArt{display:grid;place-items:center;flex:1;width:auto;min-height:150px;border-radius:16px;background:linear-gradient(160deg,#f8f2e4,#efe4cb)}
-  :global([data-contygo-theme=dark]) .licenceArt{background:linear-gradient(160deg,#3a3526,#2b271c)}
-  .licenceArt img{width:150px}
 }
 @media(min-width:1000px){
   .station:not([data-wide]){display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);align-items:start;gap:0 56px}
@@ -209,9 +189,6 @@
   .licences li[data-first]{padding-right:14px}
   .actions{gap:8px 24px}
   .route .notify{width:100%;font-size:16px;padding-left:22px}
-  .licence{gap:14px;padding:16px;border-radius:18px}
-  .checks li{font-size:16.5px}
-  .licenceArt{width:84px}
   .route .start{min-height:54px;font-size:16px;padding-left:22px}
   .start i{width:42px;height:42px}
   .banner{grid-template-columns:auto minmax(0,1fr);gap:12px 14px;margin-top:20px;padding:12px;border-radius:22px}

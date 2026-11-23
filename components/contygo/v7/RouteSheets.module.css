@@ -122,7 +122,8 @@
 .sheet .cover{flex:none;min-height:204px}
 .body{display:grid;gap:14px;padding:0 0 14px}
 .sheet .rows{flex:none;grid-auto-rows:auto;padding-bottom:0}
-/* Step 1: under its two tickets, the partner's note and the way to the ITIN. Its tiers follow under the sheet. */
+/* Step 1: under its tickets, the way to the ITIN. Its tiers follow under the sheet. */
+.most{font-weight:800;color:var(--accent)}
 .station>div:has(>.sheet)+*{margin-top:34px}
 .fine{margin:0 14px;font-size:14px;line-height:1.5;color:var(--muted);opacity:clamp(0,calc(var(--o) * 4 - 2.6),1)}
 .sheet .fine button{display:inline;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-weight:700;text-align:left;cursor:pointer}

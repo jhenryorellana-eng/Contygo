@@ -20,10 +20,12 @@
    Conserva id="preguntas" y data-thread="faq": el menú y el hilo verde pasan por aquí.
    23-11-2026: la escena de ejemplo (una conversación inventada junto a una hoja) no gustó: «no muestra nada de lo que
    realmente es el proceso». Tras dos demostraciones en un teléfono que tampoco gustaron, el dueño eligió el estilo:
-   un mundo de plastilina donde el contrato viaja por cinco estaciones (ContractJourney), que se recorre con el scroll. */
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { waLink } from "@/lib/config";
-import { CONTRACT_TIME, LANDING_NEEDS, advisorMessage } from "@/lib/agent/landing-chat-ui";
+   un mundo de plastilina donde el contrato viaja por cinco estaciones (ContractJourney), que se recorre con el scroll.
+   23-11-2026, más tarde: la segunda mitad del final (AssistantStart: «¿Listo? Tu contrato, en menos de 3 minutos», los
+   trámites, la caja y las preguntas de siempre) se quitó. El dueño: «quita esto de la página… no tiene sentido
+   repetirlo 2 veces». Con ella se fueron id="preguntas" y data-thread="faq": el menú abre el asistente y el hilo
+   verde baja por el margen hasta el cierre (GreenThread). */
+import { CONTRACT_TIME } from "@/lib/agent/landing-chat-ui";
 import ContractJourney from "./ContractJourney";
 import { openAssistant } from "./assistantBus";
 import page from "./ContygoLanding.module.css";
@@ -31,7 +33,6 @@ import d from "./AssistantDoor.module.css";
 
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
 const Speaker = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4Zm12-1a4 4 0 0 1 0 6m2.5-9a8 8 0 0 1 0 12" /></svg>;
-const Mic = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>;
 
 export default function AssistantDoor() {
   return <section className={d.door} id="contrato" aria-labelledby="asistente-titulo">
@@ -47,46 +48,6 @@ export default function AssistantDoor() {
     </div>
     {/* The whole process, seen: a clay world the contract travels through, station by station (ContractJourney). */}
     <ContractJourney />
-  </section>;
-}
-
-/** Where to start, and the usual questions: at the end of the page, the last step before its closing. */
-export function AssistantStart({ questions }: { /** The questions people ask most (the approved ones). */ questions: string[] }) {
-  const [draft, setDraft] = useState(""), [canTalk, setCanTalk] = useState(false);
-  useEffect(() => { const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }; setCanTalk(Boolean(w.SpeechRecognition ?? w.webkitSpeechRecognition)); }, []);
-  const submit = (event: FormEvent) => { event.preventDefault(); const text = draft.replace(/\s+/g, " ").trim(); if (!text) return; setDraft(""); openAssistant({ question: text }); };
-  return <section className={d.close} id="preguntas" data-thread="faq" aria-labelledby="empezar-titulo">
-    <div className={d.intro}>
-      <span className={page.eyebrow}>Empieza aquí</span>
-      <h2 id="empezar-titulo">¿Listo?<br /><em>Tu contrato, en {CONTRACT_TIME}.</em></h2>
-    </div>
-    {/* Where to start: what you need, or in your own words. */}
-    <div className={d.start}>
-      {/* The three services people ask for most go first, larger; the rest, after. */}
-      <h3>Los más pedidos</h3>
-      <div className={d.tops}>{LANDING_NEEDS.filter(need => need.top).map(need => <button key={need.label} type="button" onClick={() => openAssistant({ need: need.label })}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <span><img src={`/contygo/v8/${need.art}.webp`} alt="" width={128} height={128} loading="lazy" /></span><strong>{need.label}</strong><small>{need.hint}</small><i aria-hidden="true"><Arrow /></i>
-      </button>)}</div>
-      <h3>Otros trámites</h3>
-      <div className={d.needs}>{LANDING_NEEDS.filter(need => !need.top).map(need => <button key={need.label} type="button" onClick={() => openAssistant({ need: need.label })}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <span><img src={`/contygo/v8/${need.art}.webp`} alt="" width={96} height={96} loading="lazy" /></span><strong>{need.label}</strong>
-      </button>)}</div>
-      <form className={d.box} onSubmit={submit}>
-        <label htmlFor="asistente-caso">O cuéntamelo con tus palabras</label>
-        <div><input id="asistente-caso" value={draft} onChange={event => setDraft(event.target.value)} maxLength={500} placeholder="El juez decidió en mi contra…" enterKeyHint="send" />
-          {canTalk && <button type="button" className={d.round} onClick={() => openAssistant({ talk: true })} aria-label="Decirlo con mi voz"><Mic /></button>}
-          <button type="submit" className={d.send} disabled={!draft.trim()} aria-label="Enviar al asistente"><Arrow /></button></div>
-      </form>
-    </div>
-
-    {/* The usual questions, in one row: the assistant answers them. */}
-    <div className={d.faqs}>
-      <h3>Lo que más nos preguntan</h3>
-      <div>{questions.map(question => <button key={question} type="button" onClick={() => openAssistant({ question })}>{question}</button>)}</div>
-      <p>Respuestas automáticas; no es asesoría legal. Si lo prefieres, <a href={waLink(advisorMessage())} target="_blank" rel="noopener noreferrer">una persona del equipo te atiende por WhatsApp</a>.</p>
-    </div>
   </section>;
 }
 

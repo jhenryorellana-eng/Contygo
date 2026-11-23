@@ -49,10 +49,14 @@ const SITE_DESCRIPTION =
   "Tu historia sigue; el siguiente paso, ContyGo. Preparamos tus documentos contigo y te acompañamos paso a paso desde una sola plataforma: elige tu trámite, mira el precio y crea tu contrato.";
 // 23-11-2026: the preview says what the page now offers (the contract, done by the person with the assistant) and shows
 // Henry as in the day hero (the owner chose the light one of three). Built from the page's own pieces (docs/compartir-whatsapp/og.cjs); again a new file name.
-const SHARE_TITLE = `ContyGo · Haz tu contrato tú mismo, en ${CONTRACT_TIME}`;
+// 23-11-2026, later the same day: the owner's line, «La app del inmigrante», with the flag, and under the three minutes
+// the two things that can be checked: Henry's registration in Utah and the clients served (lib/contygo-claims.ts;
+// «atendidos», never «aprobados»). He chose it among three (docs/compartir-whatsapp/og-app-inmigrante.cjs, «c3-sellos»); the words under it, also
+// among three: the picture gives the trust, so the text asks the reader and names the procedures.
+const SHARE_TITLE = "¿Inmigrante en Estados Unidos? Esta es tu app 🇺🇸 · ContyGo";
 const SHARE_DESCRIPTION =
-  "Tu trámite migratorio desde el celular y en español: tu asistente te acompaña paso a paso, con el precio a la vista.";
-const SHARE_IMAGE = "/og-contygo-contrato.jpg";
+  `Permiso de trabajo, asilo, visa juvenil y más, en español. Mira el precio y haz tu contrato tú mismo en ${CONTRACT_TIME}.`;
+const SHARE_IMAGE = "/og-contygo-app-inmigrante.jpg";
 
 import { SITE_URL } from "@/lib/site";
 import { CONTRACT_TIME } from "@/lib/agent/landing-chat-ui";
@@ -75,7 +79,7 @@ export const metadata: Metadata = {
         url: SHARE_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Henry Orellana muestra ContyGo en el celular: haz tu contrato tú mismo, en menos de 3 minutos",
+        alt: "Henry Orellana muestra ContyGo en el celular: la app del inmigrante, en menos de 3 minutos. Consultor de inmigración registrado en Utah; +500 clientes atendidos",
       },
     ],
   },

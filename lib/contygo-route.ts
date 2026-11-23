@@ -50,18 +50,10 @@ export const stepOpen = (step: RouteStep) => step.id === "servicios" || stepServ
 /** Every service that lives in a step other than the first: the migratory catalog leaves them out. */
 export const ROUTE_SERVICE_IDS: readonly string[] = ROUTE_STEPS.flatMap(step => step.services);
 
-/** The driver's licence (brief, 13-11-2026): a partner's service, not a migratory one. It is not in the contygo catalog,
- *  so it has no guide or contract here: «Empezar» writes to the team. */
-export const DRIVERS_LICENCE = {
-  name: "Licencia de conducir",
-  partner: "SG Services Group",
-  includes: ["Preparación para el examen, en español", "Guía para tu cita", "Talleres presenciales en Utah"],
-  note: "Licencia o tarjeta de privilegio para manejar, según tu estado. No es un trámite migratorio.",
-  message: "Hola, quiero empezar con mi licencia de conducir.",
-} as const;
-
-/** The partners (brief: «Cada aliado presta y responde por su propio servicio»). */
-export const ALLIES = [{ name: "SG Services Group", service: "Licencias de conducir", initials: "SG" }] as const;
+/** The partners (brief: «Cada aliado presta y responde por su propio servicio»). None today: the only one was the
+ *  driver's licence (SG Services Group), which the owner took off the page on 23-11-2026 («quita el servicio de
+ *  licencia de conducir»). With the list empty the page shows no partners strip. */
+export const ALLIES: readonly { name: string; service: string; initials: string }[] = [];
 
 /**
  * What the owner still has to give (brief, «Por completar antes de publicar»). While a value is null the page leaves

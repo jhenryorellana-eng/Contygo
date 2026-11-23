@@ -146,7 +146,7 @@ export default function ServiceShowcase({ seasonal, stars, groups, open, warm }:
       })}</div>
       <ThreadRail track={row} labels={stars.map(star => star.name)} />
     </div>
-    <div className={s.listHead} data-reveal><h4>Más trámites, <em>y tu licencia.</em></h4><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
+    <div className={s.listHead} data-reveal><h4>Más trámites, <em>uno por uno.</em></h4><span>Precios de honorarios publicados. Las tasas del gobierno van aparte.</span></div>
     <div className={s.folders} data-react-root data-pair={pair || undefined} data-even={even || undefined}>{groups.map((group, index) => <section key={group.id} id={`catalogo-${group.id}`} className={s.folder} data-tone={group.tone} data-badged={group.badge ? true : undefined} aria-label={group.title}>
       {/* Every folder shows all the tabs in the same order: its own in front, the others peeking behind (a tap goes there). */}
       <div className={s.tabs}>{groups.map((other, position) => other === group

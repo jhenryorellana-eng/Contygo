@@ -65,7 +65,7 @@ function route(main: HTMLElement) {
   const start = q("start"), img = start?.querySelector("img");
   const services = q("services"), platform = q("platform"), faq = q("faq"), finale = q("finale"), facts = q("facts"), phone = q("phone");
   const steps = Array.from(main.querySelectorAll<HTMLElement>('[data-thread="step"]')).map(el => offset(el, main));
-  if (!img || !services || !platform || !faq || !finale || !steps.length) return null;
+  if (!img || !services || !platform || !finale || !steps.length) return null;
   const width = main.clientWidth, mobile = width <= 760, inner = Math.min(width, 1440);
   const gutter = mobile ? 11 : (width - inner) / 2 + inner * .025;
   const left = gutter, right = width - gutter;
@@ -87,7 +87,10 @@ function route(main: HTMLElement) {
     facts ? knot(left, offset(facts, main).y + 22, DOWN) : knot(left, offset(services, main).y + (mobile ? 44 : 100), DOWN),
     knot(left, steps[0].y - (mobile ? 90 : 150), DOWN),
   );
-  const faqBox = offset(faq, main);
+  // The questions section, where the page has one (the old page): the thread crosses in front of it and runs down its
+  // other side. Where it has none (23-11-2026), the thread keeps to its margin down to where the closing begins.
+  const faqBox = faq ? offset(faq, main) : null, close = finale.closest("section");
+  const end = faqBox ? faqBox.y + faqBox.h : close ? offset(close as HTMLElement, main).y : mark.y;
   if (mobile) {
     // Phones: the thread zigzags through the journey. Each step hangs from it on alternate sides
     // (its medallion sits on the thread) and the thread crosses to the next one in the gap between them.
@@ -109,18 +112,19 @@ function route(main: HTMLElement) {
     } else knots.push(knot(right, offset(platform, main).y + 60, DOWN));
     const lane = p ? (lastRight ? left : right) : right;
     const other = lane === left ? right : left;
-    knots.push(
+    if (faqBox) knots.push(
       knot(lane, faqBox.y - 34, DOWN),
       knot(other, faqBox.y + 52, DOWN),
-      knot(other, faqBox.y + faqBox.h - 150, DOWN),
+      knot(other, end - 150, DOWN),
     );
+    else knots.push(knot(lane, end - 150, DOWN));
   } else {
     knots.push(...steps.map(step => knot(step.x + 3, step.y, RIGHT)));
     const last = steps[steps.length - 1];
     knots.push(
       knot(last.x + last.w, last.y, RIGHT),
       knot(right, offset(platform, main).y + 60, DOWN),
-      knot(right, faqBox.y + faqBox.h - 260, DOWN),
+      knot(right, end - 260, DOWN),
     );
   }
   knots.push(knot(mark.x + mark.w * CHECK_TIP.x, mark.y + mark.h * CHECK_TIP.y, CHECK));

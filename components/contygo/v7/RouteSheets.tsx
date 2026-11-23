@@ -15,8 +15,9 @@
    - StarterSheet y StepSheet: cada paso es una hoja como las de los tramos: portada de su color con su escena de
      arcilla (ruta-*.webp) y, debajo, sus servicios como boletos (los mismos de ServiceTiers, de cuyo CSS salen la
      portada y las filas). Lo que está por llegar va en boletos en contorno, sin precio ni promesa.
-     La hoja del paso 1 lleva dos boletos, «lo que viene con tu estatus»: el permiso de trabajo (era un banner) y la
-     licencia de conducir, de un aliado (era una carpeta). Sueltos al pie del paso, «están separando y estorban»
+     La hoja del paso 1 llevaba dos boletos, «lo que viene con tu estatus»: el permiso de trabajo (era un banner) y la
+     licencia de conducir, de un aliado (era una carpeta). Desde el 23-11-2026, sin la licencia: el permiso y los tres
+     servicios más pedidos, los mismos que el asistente ofrece primero. Sueltos al pie del paso, «están separando y estorban»
      (dueño, 21-11-2026); debajo de la hoja siguen los cinco tramos.
    Los efectos son los de Migratorio y van al ritmo del dedo (RouteStation los mide al hacer scroll): --d dibuja la
    línea hasta la parada, --x barre la hoja en diagonal con su filo de luz y asienta la escena, y --o abre los boletos.
@@ -26,8 +27,9 @@
 import Image from "next/image";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { COMMUNITY_URL, via, waLink } from "@/lib/config";
-import type { ContygoService } from "@/lib/contygo-catalog";
-import { DRIVERS_LICENCE, OWNER_PENDING, ROUTE_STEPS, stepOpen, stepServices, type RouteStep } from "@/lib/contygo-route";
+import { VISIBLE_SERVICES, type ContygoService } from "@/lib/contygo-catalog";
+import { OWNER_PENDING, ROUTE_STEPS, stepOpen, stepServices, type RouteStep } from "@/lib/contygo-route";
+import { LANDING_NEEDS } from "@/lib/agent/landing-chat-ui";
 import { TIER_BLURBS } from "@/lib/contygo-tiers";
 import { fromPriceLabel, useServicePrices } from "@/lib/contygo-api/prices-client";
 import { BlackFridayTag } from "./BlackFriday";
@@ -121,12 +123,14 @@ export function StepCover({ step, index }: { step: RouteStep; index: number }) {
   </div>;
 }
 
-const Chat = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 19.5 6 15.6A7.5 7.5 0 1 1 9 18.4Z" /></svg>;
+/** The services people ask for most: the assistant's first three, each with its service in the catalog. */
+const TOPS = LANDING_NEEDS.filter(need => need.top).flatMap(need => { const item = VISIBLE_SERVICES.find(service => service.id === need.ids[0]); return item ? [{ need, item }] : []; });
 
 /** Step 1: its cover and the two things that come with the status, as tickets; its tiers follow under the sheet.
  *  - The work permit, where the route starts (the owner's brief: «Empieza gratis» only once he says what the free
  *    part includes; until then it is the paid service, with its live price).
- *  - The driver's licence: a partner's service, with no guide or contract here, so its ticket writes to the team. */
+ *  - The three services people ask for most (23-11-2026: the owner took the driver's licence off the page and asked
+ *    for «los 3 servicios más vendidos, los mismos que están en el bot» in its place). */
 export function StarterSheet({ step, index, permit, itin, open, warm }: { step: RouteStep; index: number; permit?: ContygoService; itin?: ContygoService; open: (item: ContygoService, element: HTMLElement) => void; warm: (item: ContygoService) => void }) {
   const prices = useServicePrices();
   const free = OWNER_PENDING.freeWorkPermit, from = permit ? fromPriceLabel(prices, permit.slug) : null;
@@ -134,7 +138,7 @@ export function StarterSheet({ step, index, permit, itin, open, warm }: { step: 
     <article className={s.sheet} data-sheet data-tier={TONE[step.id]}>
       <StepCover step={step} index={index} />
       <div className={s.body}>
-        <div data-unfold className={`${t.rows} ${s.rows}`} style={{ "--span": 1.55, "--u": "0px" } as CSSProperties}>
+        <div data-unfold className={`${t.rows} ${s.rows}`} style={{ "--span": TOPS.length * .55 + 1, "--u": "0px" } as CSSProperties}>
           {permit && <button type="button" className={t.row} data-row style={{ "--n": 0 } as CSSProperties} onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>
             <span className={t.rowArt} data-flight-art><Image src="/contygo/v8/servicio-permiso-de-trabajo.webp" alt="" fill sizes="64px" /></span>
             <strong className={t.rowName}>{free ? "Empieza gratis: tu permiso de trabajo" : "Empieza por tu permiso de trabajo"}</strong>
@@ -143,15 +147,18 @@ export function StarterSheet({ step, index, permit, itin, open, warm }: { step: 
             <i className={t.rowGo}><Arrow /></i>
             {!free && <BlackFridayTag className={t.offer} />}
           </button>}
-          <a className={t.row} data-row data-partner style={{ "--n": 1 } as CSSProperties} href={waLink(DRIVERS_LICENCE.message)} aria-label={`Empezar con tu ${DRIVERS_LICENCE.name.toLowerCase()}, con ${DRIVERS_LICENCE.partner}`}>
-            <span className={t.rowArt}><Image src="/contygo/v8/servicio-licencia-conducir.webp" alt="" fill sizes="64px" /></span>
-            <strong className={t.rowName}>{DRIVERS_LICENCE.name}</strong>
-            <span className={t.blurb}>Con {DRIVERS_LICENCE.partner}. {DRIVERS_LICENCE.includes.join(". ")}.</span>
-            <span className={t.price}><small>Empezar</small></span>
-            <i className={t.rowGo}><Chat /></i>
-          </a>
+          {/* Where the driver's licence was: the three services people ask for most, the same three the assistant
+              offers first (LANDING_NEEDS), with its words. Each opens its service, as every ticket here. */}
+          {TOPS.map(({ need, item }, n) => { const price = fromPriceLabel(prices, item.slug); return <button key={item.id} type="button" className={t.row} data-row style={{ "--n": n + 1 } as CSSProperties} onClick={event => open(item, event.currentTarget)} onPointerEnter={() => warm(item)} onPointerDown={() => warm(item)} onFocus={() => warm(item)} aria-label={`Conocer ${need.label}, de los más pedidos${price ? `, desde ${price}` : ""}`}>
+            <span className={t.rowArt} data-flight-art><Image src={`/contygo/v8/${need.art}.webp`} alt="" fill sizes="64px" /></span>
+            <strong className={t.rowName}>{need.label}</strong>
+            <span className={t.blurb}><b className={s.most}>Más pedido</b> · {need.hint}</span>
+            {price && <span className={t.price}><small>desde</small> {price}</span>}
+            <i className={t.rowGo}><Arrow /></i>
+            <BlackFridayTag className={t.offer} />
+          </button>; })}
         </div>
-        <p className={s.fine}>{DRIVERS_LICENCE.note}{itin && <> <button type="button" onClick={event => open(itin, event.currentTarget)} onPointerEnter={() => warm(itin)} onFocus={() => warm(itin)}>¿Aún no tienes ITIN? <b>Empieza aquí</b></button></>}</p>
+        {itin && <p className={s.fine}><button type="button" onClick={event => open(itin, event.currentTarget)} onPointerEnter={() => warm(itin)} onFocus={() => warm(itin)}>¿Aún no tienes ITIN? <b>Empieza aquí</b></button></p>}
       </div>
       <i className={s.edge} aria-hidden="true" />
     </article>

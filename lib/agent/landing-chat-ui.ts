@@ -15,8 +15,14 @@ export function advisorMessage(question?: string) {
 
 /** «¿Qué servicio necesito?», without the model: what people say, and the services behind it. Where several services
  *  are stages of one road (asylum and court, the minor's case), one question about where the case stands picks them. */
-export type LandingNeed = { label: string; hint: string; art: string; ids: string[]; ask?: string; refine?: { label: string; ids: string[] }[] };
+export type LandingNeed = { label: string; hint: string; art: string; ids: string[]; ask?: string; refine?: { label: string; ids: string[] }[];
+  /** One of the services people ask for most (the owner, 22-11-2026: «los que deben de aparecer primero son Visa Juvenil,
+   *  Apelación ante la BIA y Reforzamiento de asilo, ya que son nuestros servicios más utilizados»): shown first, apart. */
+  top?: true };
 export const LANDING_NEEDS: LandingNeed[] = [
+  { label: "Visa Juvenil", hint: "Para tu hijo menor: custodia y residencia", art: "servicio-visa-juvenil", ids: ["visa-juvenil"], top: true },
+  { label: "Apelación ante la BIA", hint: "El juez decidió en tu contra", art: "servicio-apelacion", ids: ["apelacion"], top: true },
+  { label: "Reforzamiento de asilo", hint: "Ya presentaste tu I-589", art: "servicio-reforzar-asilo", ids: ["reforzar-asilo"], top: true },
   { label: "Asilo o corte de inmigración", hint: "Pedir asilo, audiencias y apelaciones", art: "categoria-asilo", ids: ["asilo", "reforzar-asilo", "preparacion-audiencia", "cambio-corte", "apelacion", "reapertura", "evaluacion-asilo"],
     ask: "¿En qué punto está tu caso?", refine: [
       { label: "Aún no pido asilo", ids: ["asilo", "evaluacion-asilo"] },
@@ -27,9 +33,8 @@ export const LANDING_NEEDS: LandingNeed[] = [
       { label: "Tengo una orden por no ir a mi audiencia", ids: ["reapertura"] },
     ] },
   { label: "Permiso de trabajo", hint: "Tu solicitud I-765", art: "servicio-permiso-de-trabajo", ids: ["permiso-de-trabajo"] },
-  { label: "Para mi hijo menor", hint: "Visa Juvenil y su residencia", art: "categoria-familia", ids: ["visa-juvenil", "i-360", "i-485"],
+  { label: "Residencia del menor", hint: "Con la orden del juez o la I-360 aprobada", art: "categoria-familia", ids: ["i-360", "i-485"],
     ask: "¿En qué etapa está el caso del menor?", refine: [
-      { label: "Empezar desde la custodia", ids: ["visa-juvenil"] },
       { label: "Ya tengo la orden del juez estatal", ids: ["i-360"] },
       { label: "Ya me aprobaron la I-360", ids: ["i-485"] },
     ] },

@@ -40,6 +40,17 @@
 
 /* ---- 3 · Por dónde empezar ---- */
 .start{position:relative;z-index:4;display:grid;gap:12px}
+/* The three most asked for: one row each on a phone, with its picture, its name and for whom. */
+.tops{display:grid;gap:8px}
+.close .tops button{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:14px;row-gap:1px;min-height:84px;padding:10px 14px 10px 10px;border:0;border-radius:26px;background:#061b3d;color:#fff;font:inherit;text-align:left;cursor:pointer;box-shadow:0 24px 34px -26px #061b3dcc;transition:translate .3s cubic-bezier(.2,.9,.25,1.08);-webkit-tap-highlight-color:transparent}
+:global([data-contygo-theme=dark]) .close .tops button{background:#123a78}
+.tops span{grid-row:1 / span 2;display:grid;place-items:center;width:64px;height:64px;border-radius:20px;background:#ffffff1a}
+.tops img{width:54px;height:54px;object-fit:contain}
+.tops strong{align-self:end;font:800 18px/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em}
+.tops small{align-self:start;font-size:14px;line-height:1.3;color:#c5d3e8}
+.tops i{grid-column:3;grid-row:1 / span 2;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#25d366;color:#061b3d}
+.tops i svg{width:18px;height:18px}
+.close h3+.tops{margin-bottom:8px}
 .needs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .close .needs button{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-height:66px;padding:8px 12px 8px 8px;border:0;border-radius:22px;background:var(--sheet);box-shadow:0 0 0 1px var(--line),var(--paper);color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:translate .3s cubic-bezier(.2,.9,.25,1.08),box-shadow .3s;-webkit-tap-highlight-color:transparent}
 .needs button:last-child:nth-child(odd){grid-column:1 / -1}
@@ -65,7 +76,7 @@
 .close .faqs button{flex:none;max-width:78%;min-height:48px;padding:9px 16px;border:0;border-radius:24px;background:var(--soft);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font:700 14.5px/1.3 var(--font-contygo-body),sans-serif;text-align:left;cursor:pointer;scroll-snap-align:start}
 .faqs p{font-size:14px;line-height:1.5;color:var(--muted)}
 .faqs a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
-@media(hover:hover){.door .primary:hover{translate:0 -2px}.primary:hover i{rotate:-35deg}.close .needs button:hover{translate:0 -2px;box-shadow:0 0 0 1.5px var(--line-strong),var(--lift)}.close .faqs button:hover{box-shadow:inset 0 0 0 1.5px var(--line-strong)}}
+@media(hover:hover){.close .tops button:hover{translate:0 -2px}.door .primary:hover{translate:0 -2px}.primary:hover i{rotate:-35deg}.close .needs button:hover{translate:0 -2px;box-shadow:0 0 0 1.5px var(--line-strong),var(--lift)}.close .faqs button:hover{box-shadow:inset 0 0 0 1.5px var(--line-strong)}}
 
 /* ---- La invitación bajo los servicios ---- */
 .invite{position:relative;z-index:4;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 14px 14px 18px;border-radius:24px;background:#061b3d;color:#fff;box-shadow:0 24px 34px -26px #061b3dcc}
@@ -80,7 +91,13 @@
 /* ---- Pantalla ancha: a un lado, la promesa; al otro, cómo funciona. Al final: por dónde empezar junto a las preguntas ---- */
 @media(min-width:900px){
   .door,.close{grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:34px 7%;padding:120px 5% 110px}
-  .door{align-items:center;padding-bottom:60px}
+  /* The promise in one band (the title on one side, its words and its buttons on the other); under it, the world, the whole width. */
+  .door{grid-template-columns:minmax(0,1fr);gap:34px;padding-bottom:60px}
+  .door>.intro{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:6px 6%;align-items:end}
+  .door>.intro>:is(span,h2){grid-column:1}
+  .door>.intro h2{grid-row:2 / span 2;margin:8px 0 0}
+  .door>.intro>p{grid-column:2;grid-row:2;align-self:end;max-width:none}
+  .door>.intro>.cta{grid-column:2;grid-row:3;margin-top:14px}
   .close{align-items:start}
   .intro{gap:18px}
   .intro h2{margin:6px 0 0}
@@ -94,6 +111,7 @@
   .line{font-size:16.5px}
   .close .intro{grid-column:1 / -1}
   .needs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tops strong{font-size:19px}
   .faqs{padding-top:0;border-top:0}
   .faqs>div{flex-wrap:wrap;margin:0;padding:0;overflow:visible}
   .close .faqs button{max-width:none}

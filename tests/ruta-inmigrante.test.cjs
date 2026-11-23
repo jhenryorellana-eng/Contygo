@@ -162,7 +162,29 @@ test('el asistente: su puerta donde estaban las preguntas, el contrato dentro de
   assert.ok(!page.includes('Preguntar también') && !page.includes('Escríbele al equipo'), 'la lista que terminaba en WhatsApp ya no está');
   for (const [question] of landingFaqs('$250', null)) assert.ok(page.includes(question.replace(/&/g, '&amp;')) || page.includes(question), question);
   // El contrato de la escena es un ejemplo, y lo dice; el aviso de que no es asesoría legal sigue.
-  assert.ok(page.includes('>Ejemplo<') && page.includes('no es asesoría legal'));
+  assert.ok(page.includes('no es asesoría legal'));
+  // La escena: un mundo de plastilina donde el contrato viaja por cinco estaciones (el estilo lo eligió el dueño).
+  const journey = fs.readFileSync('components/contygo/v7/ContractJourney.tsx', 'utf8');
+  for (const word of ['Tocas', 'Respondes', 'Se llena', 'Confirmas', 'Firmas']) assert.ok(page.includes(word), word);
+  for (const art of Array.from(journey.matchAll(/art: "(\w+)"/g), found => found[1])) assert.ok(fs.statSync(`public/contygo/v8/viaje/${art}.webp`).size > 8000, art);
+  assert.ok(page.includes('Empezar mi contrato') && !/\d:\d\d/.test(journey), 'el botón siempre a la vista; sin reloj simulado');
+  // En el teléfono de cada escena van pantallas reales del asistente, y el asistente acompaña en las frases.
+  const real = Array.from(journey.matchAll(/\["(p\d)",/g), found => found[1]);
+  assert.ok(real.length >= 8 && real.every(file => fs.statSync(`public/contygo/v8/proceso/${file}.webp`).size > 5000));
+  assert.ok((journey.match(/Tu asistente|tu asistente/g) || []).length >= 3 && page.includes('Con tu asistente'));
+  // El primer plano no se estira: la escena se dibuja a su tamaño de cerca y se encoge para verse entera; sin filtros encima.
+  const sceneCss = fs.readFileSync('components/contygo/v7/ContractJourney.module.css', 'utf8');
+  assert.ok(/\.scene\{[^}]*width:calc\(var\(--base\) \* var\(--lay\)\)/.test(sceneCss) && /--s0:calc\(1 \/ var\(--lay\)\)/.test(sceneCss), 'se encoge, no se amplía');
+  assert.ok(!/\.art\{[^}]*filter/.test(sceneCss) && !/\.shot img\{[^}]*filter/.test(sceneCss), 'ningún filtro sobre lo que la cámara acerca');
+  assert.ok(/borderRadius: `\$\{rx\}% \/ \$\{ry\}%`/.test(journey), 'cada pantalla lleva el radio medido de su teléfono');
+  // Fluidez: solo se dibujan la estación en pantalla y su vecina; el tamaño de dibujo tiene tope en píxeles reales;
+  // y nada dentro de la escena cambia de pintura con el scroll (opacidades y filtros van por estado, no por variable).
+  assert.ok(/\.stop\[data-away\]\{visibility:hidden\}/.test(sceneCss) && journey.includes('data-away') && /const most = \d+ \/ \(base \* Math\.min\(3, window\.devicePixelRatio/.test(journey));
+  for (const rule of ['.inner:after', '.glass:after', '.view:before']) { const body = sceneCss.slice(sceneCss.indexOf(rule + '{')); assert.ok(!/opacity:calc\([^)]*var\(--z\)/.test(body.slice(0, body.indexOf('}'))), rule); }
+  assert.ok(!/filter:blur\(calc\([^)]*var\(--a\)/.test(sceneCss), 'el desenfoque de lejos es fijo');
+  // Quien pide menos movimiento, o tiene una pantalla muy baja, no se queda con la sección quieta: pasa las estaciones de lado.
+  const world = fs.readFileSync('components/contygo/v7/ContractJourney.module.css', 'utf8');
+  assert.ok(/@media\(min-height:520px\) and \(prefers-reduced-motion:no-preference\)\{[^}]*\.run\{height:/.test(world) && /scroll-snap-type:x mandatory/.test(world));
   // La persona sigue a un toque, en una línea.
   assert.ok(page.includes('una persona del equipo te atiende por WhatsApp'));
   // El botón del pie y la invitación bajo los servicios llevan al asistente.

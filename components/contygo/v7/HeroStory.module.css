@@ -10,7 +10,8 @@
 /* On a phone the photo gets more room: it is the welcome. */
 @media(max-width:760px){.art.art{aspect-ratio:1.16;margin-bottom:8px}}
 /* The Black Friday plaque shares the photo: on a phone it keeps to the corner, off her face. */
-@media(max-width:760px){.art .sign{right:4px;top:2px;width:min(36%,142px)}}
+/* (Smaller on a phone since Henry is in the photo: it sits over his hair, clear of his face.) */
+@media(max-width:760px){.art .sign{right:2px;top:0;width:min(29%,114px)}}
 
 /* ---- El escenario de la pantalla: un cuadro de 1000 × 1000 que --k lleva al tamaño de la foto ---- */
 .stage{position:absolute;z-index:2;left:50%;bottom:0;width:1000px;height:1000px;transform-origin:50% 100%;transform:translateX(-50%) scale(var(--k,.4));opacity:0;pointer-events:none;transition:opacity .3s}

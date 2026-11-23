@@ -1,0 +1,114 @@
+[
+ {
+  "name": "tramite",
+  "file": "01-tramite.png",
+  "tap": [
+   43.1,
+   67.2
+  ]
+ },
+ {
+  "name": "servicio",
+  "file": "02-servicio.png",
+  "tap": [
+   54.6,
+   55.8
+  ]
+ },
+ {
+  "name": "pregunta-1",
+  "file": "03-pregunta-1.png",
+  "tap": [
+   33.5,
+   80.1
+  ]
+ },
+ {
+  "name": "pregunta-4",
+  "file": "04-pregunta-4.png",
+  "tap": [
+   33.5,
+   80
+  ]
+ },
+ {
+  "name": "pregunta-7",
+  "file": "05-pregunta-7.png",
+  "tap": [
+   51.8,
+   72.4
+  ]
+ },
+ {
+  "name": "listo",
+  "file": "06-listo.png",
+  "tap": [
+   54.6,
+   69.6
+  ]
+ },
+ {
+  "name": "nombre",
+  "file": "07-nombre.png",
+  "tap": [
+   45.6,
+   81.4
+  ]
+ },
+ {
+  "name": "contacto",
+  "file": "08-contacto.png",
+  "tap": [
+   65.3,
+   81.1
+  ]
+ },
+ {
+  "name": "personas",
+  "file": "09-personas.png",
+  "tap": [
+   65.3,
+   81.1
+  ]
+ },
+ {
+  "name": "personas",
+  "file": "10-personas.png",
+  "tap": [
+   65.3,
+   81.1
+  ]
+ },
+ {
+  "name": "revisar",
+  "file": "11-revisar.png",
+  "tap": [
+   65.3,
+   81.4
+  ]
+ },
+ {
+  "name": "codigo-vacio",
+  "file": "12-codigo-vacio.png",
+  "tap": [
+   42.6,
+   35.4
+  ]
+ },
+ {
+  "name": "codigo",
+  "file": "13-codigo.png",
+  "tap": [
+   67.9,
+   69.7
+  ]
+ },
+ {
+  "name": "firmar",
+  "file": "14-firmar.png",
+  "tap": [
+   42.6,
+   47.4
+  ]
+ }
+]

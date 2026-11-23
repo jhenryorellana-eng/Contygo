@@ -51,3 +51,8 @@ next-env.d.ts
 
 # felicitaciones guardadas al probar en local (lib/reviews.ts)
 .felicitaciones-local
+
+# originales de las fotos del hero (pesan; se guardan en el disco, no en git)
+docs/hero-henry-originales/*.png
+docs/proceso-capturas/*.png
+docs/viaje-originales/*.png

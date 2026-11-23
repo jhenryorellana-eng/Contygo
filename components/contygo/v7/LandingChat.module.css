@@ -210,10 +210,12 @@
 /* «3 min», on the node, wherever the words are not shown. */
 .minutes{position:absolute;right:-5px;top:-9px;display:none;padding:3px 8px;border-radius:12px;background:var(--green);color:var(--navy);font:800 11.5px/1.2 var(--font-contygo-heading),sans-serif;box-shadow:0 0 0 2px var(--sheet,#fff),0 6px 10px -6px #061b3d}
 .chat[data-open] .minutes{display:none!important}
-/* A light crosses the button now and then: it is seen without shouting. */
-.launcher:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(110deg,#fff0 40%,#ffffffa6 50%,#fff0 60%) 130% 0/250% 100% no-repeat;animation:sweep 6.5s 2.5s ease-in-out infinite}
-@keyframes sweep{0%,72%{background-position:130% 0}100%{background-position:-40% 0}}
-.chat:is([data-open],[data-hidden]) .launcher:after{display:none}
+/* A light crosses the button now and then: it is seen without shouting. (A strip that slides inside a clipped box:
+   it is drawn once and only moved, where a moving background was painted again in every frame.) */
+.shine{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.shine i{position:absolute;top:0;bottom:0;left:0;width:46%;background:linear-gradient(110deg,#fff0,#ffffffa6 50%,#fff0);translate:-120% 0;animation:sweep 6.5s 2.5s ease-in-out infinite}
+@keyframes sweep{0%,72%{translate:260% 0}100%{translate:-120% 0}}
+.chat:is([data-open],[data-hidden]) .shine{display:none}
 /* A green pill, the promise in words. */
 .chat:not([data-open]) .launcher{background:var(--green);box-shadow:0 26px 44px -22px #0a7a3fe6,inset 0 0 0 1.5px #ffffff73}
 .chat:not([data-open]) .launcherText strong{color:var(--navy)}
@@ -223,14 +225,45 @@
   /* On a phone the words stay beside the symbol; with the green bar at the foot (it says the same), only the symbol and «3 min». */
   .chat:not([data-raised]):not([data-open]) .launcher{flex-direction:row-reverse;gap:10px;padding:5px 5px 5px 16px;background:var(--green);box-shadow:0 22px 40px -20px #0a7a3fe6,inset 0 0 0 1.5px #ffffff73}
   .chat[data-raised]:not([data-open]) .launcher{background:transparent;box-shadow:none}
-  .chat[data-raised] .launcher:after{display:none}
+  .chat[data-raised] .shine{display:none}
   .chat:not([data-raised]):not([data-open]) .launcherText{display:flex;text-align:right}
   .chat:not([data-raised]):not([data-open]) .launcherText small{justify-content:flex-end}
   .chat:not([data-raised]):not([data-open]) .node{width:54px;height:54px;box-shadow:inset 0 0 0 2px #ffffff59,0 0 0 2px #ffffffd9}
   .chat[data-raised] .minutes{display:block}
   .chat:not([data-raised]) .teaser{display:none}
 }
-@media(prefers-reduced-motion:reduce){.launcher:after{animation:none}}
+@media(prefers-reduced-motion:reduce){.shine{display:none}}
+
+/* ---- La voz, a la vista: una barra bajo la cabecera. Al abrir el chat toma el foco y una luz la señala ---- */
+.voiceBar{position:relative;flex:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;margin:10px 12px 0;padding:9px 10px 9px 9px;border:0;border-radius:22px;background:var(--navy);color:#fff!important;text-align:left;cursor:pointer;box-shadow:0 18px 26px -20px #061b3dcc;transition:background-color .3s,box-shadow .3s;-webkit-tap-highlight-color:transparent}
+.voiceBar i{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--green);color:var(--navy)}
+.voiceBar i svg{width:24px!important;height:24px!important}
+.voiceBar span{display:grid;gap:1px;min-width:0}
+.voiceBar strong{font:800 16.5px/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em}
+.voiceBar small{font-size:13.5px;line-height:1.3;color:#c5d3e8}
+.voiceBar b{padding:9px 14px;border-radius:18px;background:var(--green);color:var(--navy);font:800 14px/1 var(--font-contygo-heading),sans-serif}
+.voiceBar[data-on]{background:var(--green);color:var(--navy)!important;box-shadow:0 18px 26px -18px #0a7a3fe6}
+.voiceBar[data-on] i{background:var(--navy);color:#fff}
+.voiceBar[data-on] small{color:#064a27}
+.voiceBar[data-on] b{background:var(--navy);color:#fff}
+/* Called to: a halo that breathes, and rings from the speaker, for the first seconds. */
+.voiceBar[data-spot]{box-shadow:0 0 0 3px var(--green),0 0 0 9px #25d36640,0 18px 26px -20px #061b3dcc;animation:voiceCall 1.5s ease-in-out infinite}
+.voiceBar[data-spot] i:before,.voiceBar[data-spot] i:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--green);animation:pulse 1.8s cubic-bezier(.2,.7,.3,1) infinite}
+.voiceBar[data-spot] i:after{animation-delay:.6s}
+@keyframes voiceCall{50%{box-shadow:0 0 0 3px var(--green),0 0 0 15px #25d3661a,0 18px 26px -20px #061b3dcc}}
+.chat .voiceBar:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+/* Folded: a small button in the header. Green while the voice is on, with a soft beat. */
+.voicePill{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:40px;padding:0 13px 0 10px;border:0;border-radius:20px;background:var(--soft,#f6f8f7);box-shadow:inset 0 0 0 1.5px var(--line-strong,#061b3d33);color:var(--ink,#061b3d)!important;font:800 13.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer;animation:rise .35s var(--unfold,ease) both;-webkit-tap-highlight-color:transparent}
+.voicePill svg{width:19px!important;height:19px!important}
+.voicePill[data-on]{background:var(--green);color:var(--navy)!important;box-shadow:0 0 0 4px #25d36633}
+/* On a phone, only its symbol: the header keeps the room for its words. */
+@media(max-width:760px){.voicePill{width:40px;padding:0;justify-content:center}.voicePill span{display:none}}
+/* The needs, in two groups: the most asked for first. */
+.needGroup{display:grid;gap:8px}
+.needGroup+.needGroup{margin-top:14px}
+.needGroup h4{margin:0 0 0 2px;font:800 13.5px/1.2 var(--font-contygo-heading),sans-serif;color:var(--muted,#4f5d73);text-align:left}
+.need[data-top]{box-shadow:0 0 0 1.5px var(--green),0 18px 26px -22px #061b3d99}
+@media(prefers-reduced-motion:reduce){.voiceBar[data-spot],.voiceBar[data-spot] i:before,.voiceBar[data-spot] i:after{animation:none}}
 
 /* ---- El contrato dentro del chat, y lo que llegó con él (22-11-2026) ---- */
 .body{flex:1;display:flex;min-height:0}

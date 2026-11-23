@@ -85,8 +85,8 @@ const journey = [
 // phone, folds into the check and leaves the image through its bottom edge, where the page thread starts.
 // `exit` is that point, measured on each file as a fraction of the image width (GreenThread reads it).
 const HERO_ART = {
-  light: { src: "/contygo/v7/hero-claro.webp", exit: .1746 },
-  dark: { src: "/contygo/v7/hero-oscuro.webp", exit: .1748 },
+  light: { src: "/contygo/v8/hero-henry-claro-1.webp", exit: .1746 },
+  dark: { src: "/contygo/v8/hero-henry-oscuro-1.webp", exit: .1754 },
 } as const;
 // First visit of the session: marked before the first paint, so the entrance never flickers.
 const INTRO = `try{var d=document.documentElement;if(!d.dataset.cgIntro){d.dataset.cgIntro=sessionStorage.getItem("contygo-intro")?"done":"play";sessionStorage.setItem("contygo-intro","1")}}catch(e){}`;
@@ -289,7 +289,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         </div>
         <div className={fresh ? `${s.heroArt} ${heroStyles.art}` : s.heroArt} data-anim data-thread="start" data-exit={HERO_ART[theme].exit} data-exit-dir="down">
           {/* 21-11-2026: the hero as a short story (HeroStory), in review on the local page; the published one, a single photo. */}
-          {fresh ? <HeroStory theme={theme} lift={on("pantalla")} /> : <Image key={theme} src={HERO_ART[theme].src} alt="Una mujer revisa su trámite en el celular; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." fill priority unoptimized sizes="(max-width:760px) 100vw, 52vw" />}
+          {fresh ? <HeroStory theme={theme} lift={on("pantalla")} /> : <Image key={theme} src={HERO_ART[theme].src} alt="Henry Orellana revisa un trámite en el celular; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." fill priority unoptimized sizes="(max-width:760px) 100vw, 52vw" />}
           {/* The official symbol, exact to the pixel, where the ribbon's curl points (after the photo: GreenThread reads the first img). */}
           {on("simbolo") && <span className={s.heroMark} data-loop aria-hidden="true"><Image src={`/contygo/v7/simbolo-${theme === "dark" ? "oscuro" : "claro"}.png`} alt="" width={568} height={640} unoptimized priority /></span>}
           {/* After the photo and the symbol: GreenThread reads this box's first img. */}

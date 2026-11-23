@@ -74,7 +74,7 @@ type Draft = Item extends infer T ? T extends Item ? Omit<T, "id"> : never : nev
 const TEASER_KEY = "contygo.chat-teaser";
 const ERROR_TEXT = "Se me cortó la conexión. Una persona del equipo te responde ahora por WhatsApp.";
 /** What the button writes beside itself on the first visit: what people come for, then the offer. */
-const TYPED = ["¿Asilo o corte?", "¿Permiso de trabajo?", "¿Visa Juvenil?", "¿Tu ITIN?", `En ${CONTRACT_TIME}`];
+const TYPED = ["¿Visa Juvenil?", "¿Apelación?", "¿Reforzar tu asilo?", "¿Permiso de trabajo?", `En ${CONTRACT_TIME}`];
 /* The button (22-11-2026): «que llame más la atención, para que el usuario que entre sepa que puede hacer su contrato
    él mismo y en menos de 3 minutos». It now says so, on a green pill. Of three looks on the local page (the pill, the
    symbol as a small contract filling itself, the promise turning around the symbol like a seal) the owner chose the
@@ -179,6 +179,11 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
   const [snap, setSnap] = useState<ContractSnapshot | null>(null);
   // «Escuchar»: the assistant reads its messages aloud. Off until the person turns it on.
   const [listen, setListen] = useState(false);
+  // The voice's bar: it takes the focus when the chat opens, once per visit, and a light calls to it for a while.
+  const voiceBar = useRef<HTMLButtonElement>(null), called = useRef(false), [spot, setSpot] = useState(false);
+  /* Once the voice is on, or the conversation has begun, the bar folds into a small button in the header (the owner:
+     «que se repliegue a un botón más pequeño y que no ocupe espacio como está ahora»). It does not unfold again. */
+  const [folded, setFolded] = useState(false), voicePill = useRef<HTMLButtonElement>(null);
   // Dictation: whether this browser has it, and whether it is listening now.
   const [canTalk, setCanTalk] = useState(false), [hearing, setHearing] = useState(false);
   const ear = useRef<Dictation | null>(null);
@@ -209,6 +214,14 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
     return () => { observer.disconnect(); window.removeEventListener("resize", check); };
   }, []);
   useEffect(() => { if (hidden) setOpen(false); }, [hidden]);
+  useEffect(() => {
+    if (!open || called.current) return;
+    called.current = true;
+    // (After the window has come in: a focus given earlier would scroll the page under it.)
+    const focus = window.setTimeout(() => { if (voiceBar.current) { voiceBar.current.focus({ preventScroll: true }); setSpot(true); } }, 650);
+    const rest = window.setTimeout(() => setSpot(false), 9000);
+    return () => { window.clearTimeout(focus); window.clearTimeout(rest); };
+  }, [open]);
   useEffect(() => { setResume(readResume<Seed, SummaryItem[]>()); setCanTalk(Boolean(dictation())); return () => ear.current?.stop(); }, []);
   // The page opens the chat (the section «Dime qué necesitas», the button at the foot, an invitation).
   useEffect(() => {
@@ -373,6 +386,14 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
     ear.current = hear; setHearing(true);
     try { hear.start(); } catch { ear.current = null; setHearing(false); }
   }
+  // The bar folds: the focus it had goes to the small button that takes its place.
+  const started = items.length > 0;
+  useEffect(() => {
+    if (folded || (!listen && !started)) return;
+    const held = document.activeElement === voiceBar.current;
+    setFolded(true); setSpot(false);
+    if (held) window.setTimeout(() => voicePill.current?.focus({ preventScroll: true }), 0);
+  }, [folded, listen, started]);
   // What the page asked for, once the chat is open.
   useEffect(() => {
     const ask = asked.current;
@@ -408,7 +429,17 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
   const contract = items.find((item): item is Extract<Item, { kind: "contract" }> => item.kind === "contract") ?? null, desk = Boolean(contract);
   const contractService = contract ? find(contract.serviceId) : undefined;
   const stage = desk ? 2 : flow ? 1 : closed ? 2 : 0;
-  const lastBotItem = items.find(item => item.id === lastBot);
+  /* What «Escuchar» reads: the assistant's last words. Before any, the welcome. */
+  const spoken = (() => {
+    for (let index = items.length - 1; index >= 0; index--) {
+      const item = items[index];
+      if (item.kind === "bot") return { text: item.text, turn: item.id };
+      if (item.kind === "refine" && !item.picked) return { text: item.need.ask ?? "", turn: item.id };
+      if (item.kind === "close") return { text: `${item.ok ? "Ya puedes crear tu contrato." : "Sigamos con una persona del equipo."} ${item.detail}`, turn: item.id };
+      if (item.kind === "needs") return { text: "¿Vemos cuál es tu trámite? Tu contrato lo llenamos aquí mismo.", turn: item.id };
+    }
+    return { text: `¿Qué trámite quieres resolver hoy? ${LANDING_GREETING}`, turn: 0 };
+  })();
   const resumeService = resume ? find(resume.serviceId) : undefined;
   const today = new Date();
   const isoDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -432,8 +463,8 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
       <header className={s.head}>
         <div className={s.identity}>
           <span className={s.avatar}><Mark /></span>
-          <span className={s.title}><strong>{desk && firstName ? `${firstName}, tu contrato` : "Asistente ContyGo"}</strong><small><i aria-hidden="true" />{desk && snap?.stage === "form" ? `Paso ${snap.stepIndex + 1} de ${snap.steps}: ${snap.stepLabel.toLowerCase()}` : desk ? "Tu contrato, aquí mismo" : `Tu contrato, en ${CONTRACT_TIME}`}</small></span>
-          {!desk && <button type="button" className={s.headButton} data-on={listen || undefined} aria-pressed={listen} onClick={() => setListen(value => !value)} aria-label={listen ? "Dejar de escuchar las respuestas" : "Escuchar las respuestas en voz alta"} title={listen ? "Dejar de escuchar" : "Escuchar las respuestas"}><Speaker on={listen} /></button>}
+          <span className={s.title}><strong>{desk && firstName ? `${firstName}, tu contrato` : "Asistente ContyGo"}</strong><small><i aria-hidden="true" />{desk && snap?.stage === "form" ? `Paso ${snap.stepIndex + 1} de ${snap.steps}: ${snap.stepLabel.toLowerCase()}` : desk ? "Tu contrato, aquí mismo" : `En ${CONTRACT_TIME}`}</small></span>
+          {!desk && folded && <button ref={voicePill} type="button" className={s.voicePill} data-on={listen || undefined} aria-pressed={listen} onClick={() => setListen(value => !value)} aria-label={listen ? "Apagar la voz" : "Escuchar las respuestas en voz alta"}><Speaker on={listen} /><span>{listen ? "Voz" : "Oír"}</span></button>}
           {items.length > 0 && <button type="button" className={s.headButton} onClick={restart} aria-label="Empezar de nuevo" title="Empezar de nuevo"><Restart /></button>}
           <button type="button" className={s.headButton} onClick={close} aria-label="Cerrar el chat"><Close /></button>
         </div>
@@ -445,7 +476,15 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
       </header>
       {/* The contract's sheet, filling itself: one line that opens on a phone, the whole sheet beside the chat on a wide screen. */}
       {desk && contractService && <div className={s.deskTop}><ContractSheet compact service={contractService.name} data={snap} /></div>}
-      {listen && !desk && open && lastBotItem?.kind === "bot" && <ChatVoice text={lastBotItem.text} turn={lastBotItem.id} />}
+      {/* The voice (22-11-2026): «el botón para que el usuario invoque a la voz del chat debe de ser muy visible, y apenas
+          el cliente entra este debe de enfocarse para que sea lo primero que active». A bar under the header, in words;
+          when the chat opens it takes the focus and a light calls to it for a few seconds. */}
+      {!desk && !folded && <button ref={voiceBar} type="button" className={s.voiceBar} data-on={listen || undefined} data-spot={spot || undefined} aria-pressed={listen} onClick={() => { setSpot(false); setListen(value => !value); }}>
+        <i aria-hidden="true"><Speaker on={listen} /></i>
+        <span><strong>{listen ? "Te lo estoy leyendo en voz alta" : "Escúchame en voz alta"}</strong><small>{listen ? "Toca para apagar la voz" : "Toca aquí y te leo cada paso"}</small></span>
+        <b aria-hidden="true">{listen ? "Apagar" : "Activar"}</b>
+      </button>}
+      {listen && !desk && open && spoken.text && <ChatVoice text={spoken.text} turn={spoken.turn} />}
       <div className={s.body}>
       <div ref={list} className={s.list} role="log" aria-live="polite">
         {!desk && <div className={s.welcome}>
@@ -459,11 +498,14 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
           </div>}
           <h3 className={s.ask}>¿Qué trámite quieres resolver hoy?</h3>
           <p className={s.greeting}>{LANDING_GREETING}</p>
-          <div className={s.needs}>{LANDING_NEEDS.map(need => <button key={need.label} type="button" className={s.need} onClick={() => chooseNeed(need)} disabled={busy || Boolean(flow)}>
-            <span className={s.tile}>{showArt && <img src={`/contygo/v8/${need.art}.webp`} alt="" width={512} height={512} draggable={false} />}</span>
-            <span className={s.needText}><strong>{need.label}</strong><small>{need.hint}</small></span>
-            <span className={s.chevron} aria-hidden="true"><Arrow /></span>
-          </button>)}</div>
+          {[{ title: "Los más pedidos", list: LANDING_NEEDS.filter(need => need.top) }, { title: "Otros trámites", list: LANDING_NEEDS.filter(need => !need.top) }].map(group => <div key={group.title} className={s.needGroup}>
+            <h4>{group.title}</h4>
+            <div className={s.needs}>{group.list.map(need => <button key={need.label} type="button" className={s.need} data-top={need.top || undefined} onClick={() => chooseNeed(need)} disabled={busy || Boolean(flow)}>
+              <span className={s.tile}>{showArt && <img src={`/contygo/v8/${need.art}.webp`} alt="" width={512} height={512} draggable={false} />}</span>
+              <span className={s.needText}><strong>{need.label}</strong><small>{need.hint}</small></span>
+              <span className={s.chevron} aria-hidden="true"><Arrow /></span>
+            </button>)}</div>
+          </div>)}
           <a className={s.person} href={waLink(advisorMessage())} target="_blank" rel="noopener noreferrer" onClick={contact}><span><WhatsApp /></span>Prefiero hablar con una persona</a>
         </div>}
         {items.length > 0 && <div className={s.track}>
@@ -552,6 +594,7 @@ export default function LandingChat({ hidden, raised, onService }: Props) {
         <Close />
       </span>
       <span className={s.launcherText} aria-hidden="true"><strong>{resume && resumeService ? "Sigue con tu contrato" : "Haz tu contrato tú mismo"}</strong><small><Clock />{resume && resumeService ? "Te falta poco" : `En ${CONTRACT_TIME}`}</small></span>
+      <span className={s.shine} aria-hidden="true"><i /></span>
       <b className={s.minutes} aria-hidden="true">{CONTRACT_TIME_SHORT}</b>
     </button>
   </div>;

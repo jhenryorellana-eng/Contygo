@@ -17,77 +17,36 @@
    empezar de tres maneras: contar el caso con sus palabras (escritas o dictadas), tocar una necesidad, o pedir que se
    lo lean en voz alta. Las preguntas de siempre siguen ahí: al tocar una, la responde el asistente, y su respuesta
    termina en el siguiente paso hacia el contrato.
-   Conserva id="preguntas" y data-thread="faq": el menú y el hilo verde pasan por aquí. */
+   Conserva id="preguntas" y data-thread="faq": el menú y el hilo verde pasan por aquí.
+   23-11-2026: la escena de ejemplo (una conversación inventada junto a una hoja) no gustó: «no muestra nada de lo que
+   realmente es el proceso». Tras dos demostraciones en un teléfono que tampoco gustaron, el dueño eligió el estilo:
+   un mundo de plastilina donde el contrato viaja por cinco estaciones (ContractJourney), que se recorre con el scroll. */
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { waLink } from "@/lib/config";
 import { CONTRACT_TIME, LANDING_NEEDS, advisorMessage } from "@/lib/agent/landing-chat-ui";
-import ContractSheet, { type SheetData } from "./ContractSheet";
+import ContractJourney from "./ContractJourney";
 import { openAssistant } from "./assistantBus";
 import page from "./ContygoLanding.module.css";
 import d from "./AssistantDoor.module.css";
 
-/* The example: a conversation of four lines, and the sheet they fill. Nobody's data. */
-const BLANK: SheetData = { stage: "form", firstName: "", lastName: "", email: "", phone: "", city: "", state: "", plan: "", caseNumber: "" };
-const SCENES: { who: "you" | "bot"; text: string; data: Partial<SheetData> }[] = [
-  { who: "you", text: "Quiero mi permiso de trabajo.", data: {} },
-  { who: "bot", text: "Es este servicio. ¿A nombre de quién va?", data: {} },
-  { who: "you", text: "Ana Pérez.", data: { firstName: "Ana", lastName: "Pérez" } },
-  { who: "bot", text: "¿Dónde te enviamos tu código?", data: { email: "ana@correo.com", phone: "(801) 555-0142" } },
-  { who: "bot", text: "¿En qué ciudad vives?", data: { city: "Salt Lake City", state: "UT" } },
-  { who: "bot", text: "Elige cómo pagar. Lo revisas todo antes.", data: { plan: "Pago único" } },
-  { who: "bot", text: "Te envié tu código. Confírmalo y firmas.", data: { stage: "done" } },
-];
-/* How it works, in three steps; each scene of the example belongs to one. */
-const STEPS = [{ title: "Dime qué necesitas", text: "Te digo cuál es tu servicio." }, { title: "Responde y se llena solo", text: "Tu contrato, dato por dato." }, { title: "Revisa y firma", text: "Con tu código, desde tu celular." }];
-const stepOf = (scene: number) => scene <= 1 ? 0 : scene < SCENES.length - 1 ? 1 : 2;
-const STEP_MS = 1900, REST_MS = 3200;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
 const Speaker = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4Zm12-1a4 4 0 0 1 0 6m2.5-9a8 8 0 0 1 0 12" /></svg>;
 const Mic = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>;
 
 export default function AssistantDoor() {
-  const [at, setAt] = useState(SCENES.length - 1);
-  const stage = useRef<HTMLDivElement>(null);
-  // The example plays while it is on screen: line by line, then it rests whole and starts again.
-  useEffect(() => {
-    const el = stage.current;
-    if (!el || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let timer = 0, seen = false, step = SCENES.length - 1;
-    const tick = () => { step = (step + 1) % SCENES.length; setAt(step); timer = window.setTimeout(tick, step === SCENES.length - 1 ? REST_MS : STEP_MS); };
-    const watch = new IntersectionObserver(entries => {
-      const now = entries[0].isIntersecting;
-      if (now === seen) return;
-      seen = now; window.clearTimeout(timer);
-      if (now) timer = window.setTimeout(tick, 700);
-    }, { threshold: .4 });
-    watch.observe(el);
-    return () => { watch.disconnect(); window.clearTimeout(timer); };
-  }, []);
-  const data = SCENES.slice(0, at + 1).reduce<SheetData>((all, scene) => ({ ...all, ...scene.data }), BLANK);
-  const lines = SCENES.slice(Math.max(0, at - 2), at + 1);
-
-  const step = stepOf(at);
   return <section className={d.door} id="contrato" aria-labelledby="asistente-titulo">
-    {/* 1 · The promise, and one way in. */}
+    {/* The promise, and one way in. */}
     <div className={d.intro}>
       <span className={page.eyebrow}>Tu contrato, en una conversación</span>
       <h2 id="asistente-titulo">Haz tu contrato tú mismo.<br /><em>En {CONTRACT_TIME}.</em></h2>
-      <p>El asistente te dice cuál es tu servicio, revisa contigo si calificas y llena tu contrato contigo. Tú lo revisas y firmas.</p>
+      <p>Así de fácil: tocas tu trámite, respondes unas preguntas y tu contrato se llena contigo. Tú lo revisas y firmas.</p>
       <div className={d.cta}>
         <button type="button" className={d.primary} onClick={() => openAssistant()}><span>Empezar mi contrato</span><i aria-hidden="true"><Arrow /></i></button>
         <button type="button" className={d.listen} onClick={() => openAssistant({ listen: true })}><i aria-hidden="true"><Speaker /></i>Prefiero que me lo lea en voz alta</button>
       </div>
     </div>
-
-    {/* 2 · How it works: three steps, lit in time with an example (marked as one). */}
-    <div ref={stage} className={d.stage} aria-label="Cómo funciona, en tres pasos" role="group">
-      <ol className={d.steps}>{STEPS.map((item, index) => <li key={item.title} data-state={index < step ? "done" : index === step ? "now" : "next"}><b aria-hidden="true">{index + 1}</b><span><strong>{item.title}</strong><small>{item.text}</small></span></li>)}</ol>
-      <div className={d.demo} aria-hidden="true">
-        <div className={d.talk}>{lines.map((line, index) => <p key={`${at}-${index}`} className={d.line} data-who={line.who} data-new={index === lines.length - 1 || undefined}>{line.text}</p>)}</div>
-        <div className={d.paper}><ContractSheet example service="Permiso de Trabajo" data={data} /></div>
-      </div>
-    </div>
-
+    {/* The whole process, seen: a clay world the contract travels through, station by station (ContractJourney). */}
+    <ContractJourney />
   </section>;
 }
 
@@ -103,14 +62,20 @@ export function AssistantStart({ questions }: { /** The questions people ask mos
     </div>
     {/* Where to start: what you need, or in your own words. */}
     <div className={d.start}>
-      <h3>Toca lo que necesitas</h3>
-      <div className={d.needs}>{LANDING_NEEDS.map(need => <button key={need.label} type="button" onClick={() => openAssistant({ need: need.label })}>
+      {/* The three services people ask for most go first, larger; the rest, after. */}
+      <h3>Los más pedidos</h3>
+      <div className={d.tops}>{LANDING_NEEDS.filter(need => need.top).map(need => <button key={need.label} type="button" onClick={() => openAssistant({ need: need.label })}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <span><img src={`/contygo/v8/${need.art}.webp`} alt="" width={128} height={128} loading="lazy" /></span><strong>{need.label}</strong><small>{need.hint}</small><i aria-hidden="true"><Arrow /></i>
+      </button>)}</div>
+      <h3>Otros trámites</h3>
+      <div className={d.needs}>{LANDING_NEEDS.filter(need => !need.top).map(need => <button key={need.label} type="button" onClick={() => openAssistant({ need: need.label })}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <span><img src={`/contygo/v8/${need.art}.webp`} alt="" width={96} height={96} loading="lazy" /></span><strong>{need.label}</strong>
       </button>)}</div>
       <form className={d.box} onSubmit={submit}>
         <label htmlFor="asistente-caso">O cuéntamelo con tus palabras</label>
-        <div><input id="asistente-caso" value={draft} onChange={event => setDraft(event.target.value)} maxLength={500} placeholder="Quiero mi permiso de trabajo…" enterKeyHint="send" />
+        <div><input id="asistente-caso" value={draft} onChange={event => setDraft(event.target.value)} maxLength={500} placeholder="El juez decidió en mi contra…" enterKeyHint="send" />
           {canTalk && <button type="button" className={d.round} onClick={() => openAssistant({ talk: true })} aria-label="Decirlo con mi voz"><Mic /></button>}
           <button type="submit" className={d.send} disabled={!draft.trim()} aria-label="Enviar al asistente"><Arrow /></button></div>
       </form>

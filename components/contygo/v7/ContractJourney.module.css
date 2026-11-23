@@ -1,0 +1,126 @@
+@property --pan{syntax:"<number>";inherits:true;initial-value:0}
+/* El viaje del contrato: ver ContractJourney.tsx. Pensado primero para el celular; la pantalla ancha, al final.
+   .run es lo que se recorre; .pin se queda quieto; .world es la hoja en tinta donde vive el mundo de plastilina.
+   El guion escribe en .track por dónde va el viaje (--along, de 0 a 4) y en cada estación a qué distancia está del
+   centro (--d: negativo si aún no llega, positivo si ya pasó). */
+.run{position:relative;z-index:4;min-width:0}
+.pin{position:relative}
+.world{position:relative;display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:560px;margin:0 -10px;border-radius:32px;background:radial-gradient(70% 40% at 50% 58%,#2f6fe459,#0000 70%),radial-gradient(90% 44% at 100% 0,#25d36638,#0000 62%),linear-gradient(160deg,#0e3a7a,#061b3d 66%);color:#f6f8f7;box-shadow:inset 0 1px 0 #ffffff29,0 34px 50px -34px #04122be6;overflow:hidden}
+.world :is(p,ol){margin:0}
+/* The world gathers to its centre: darker at the edges. */
+.world:after{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;pointer-events:none;background:radial-gradient(120% 90% at 50% 46%,#0000 46%,#020a1880 100%)}
+/* Clay dust at three depths: it drifts against the travel. */
+.motes{position:absolute;inset:0;z-index:0;pointer-events:none}
+.motes i{will-change:translate;position:absolute;border-radius:50%;background:#25d366;opacity:.5;filter:blur(1px);translate:calc(var(--along) * var(--speed) * -70px) calc(var(--along) * var(--speed) * 6px)}
+.motes i[data-kind="1"]{background:#5b8ff2;opacity:.45;filter:blur(3px)}
+.motes i[data-kind="2"]{background:#f1dcc0;opacity:.35;filter:blur(5px)}
+.world button{-webkit-tap-highlight-color:transparent}
+.world button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+/* ---- Arriba: de qué va, y por dónde va ---- */
+.head{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px 0}
+.head>span{font:800 13.5px/1.2 var(--font-contygo-heading),sans-serif;letter-spacing:.02em;color:#c5d3e8}
+.dots{list-style:none;display:flex;gap:6px;padding:0}
+.dots button{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:50%;background:#ffffff1a;box-shadow:inset 0 0 0 1.5px #ffffff59;color:#fff;font:800 13px/1 var(--font-contygo-heading),sans-serif;cursor:pointer;transition:background-color .35s,color .35s,box-shadow .35s,scale .35s cubic-bezier(.2,.9,.25,1.3)}
+.dots button:is([data-state=done],[data-state=now]){background:#25d366;color:#061b3d;box-shadow:none}
+.dots button[data-state=now]{scale:1.2;box-shadow:0 0 0 5px #25d36640}
+
+/* ---- El mundo: cinco estaciones en fila. Con el dedo mandando, la fila se desliza; si no, se pasa de lado ---- */
+.track{--along:0;position:relative;display:flex;min-height:0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+.track::-webkit-scrollbar{display:none}
+.track[data-driven]{overflow:hidden;scroll-snap-type:none}
+.stop{--d:0;--z:0;position:relative;flex:0 0 100%;display:grid;grid-template-rows:minmax(0,1fr) auto;justify-items:center;align-items:end;gap:4px;min-width:0;padding:0 0 2px;scroll-snap-align:center}
+.track[data-driven] .stop{translate:calc(var(--along) * -100%) 0}
+/* A station that is neither the one on screen nor its neighbour is not drawn. */
+.stop[data-away]{visibility:hidden}
+/* Its number, enormous, behind: it passes more slowly than the scene (depth). */
+.number{will-change:translate,opacity;position:absolute;left:50%;top:2%;z-index:0;font:800 min(62vw,300px)/.8 var(--font-contygo-heading),sans-serif;letter-spacing:-.06em;color:#0000;-webkit-text-stroke:2px #ffffff26;translate:calc(-50% + var(--d) * -46%) 0;opacity:calc(1 - max(var(--d),var(--d) * -1) * .7);user-select:none;pointer-events:none}
+/* The scene: it arrives turning a little and growing, and leaves the other way. */
+/* The window on the scene: what the camera sees. It measures itself (cq units): the scene's size comes from it. */
+.view{--cap:470px;--base:min(100cqh,94cqw,var(--cap));position:relative;z-index:1;align-self:stretch;justify-self:stretch;min-height:0;perspective:1100px;container-type:size}
+.track[data-driven] .view{overflow:hidden;-webkit-mask-image:linear-gradient(#0000,#000 7%,#000 94%,#0000),linear-gradient(90deg,#0000,#000 9%,#000 91%,#0000);-webkit-mask-composite:source-in;mask-image:linear-gradient(#0000,#000 7%,#000 94%,#0000),linear-gradient(90deg,#0000,#000 9%,#000 91%,#0000);mask-composite:intersect}
+/* A pool of light on the floor, under the scene. */
+.view:before{content:"";position:absolute;left:50%;top:72%;width:86%;height:34%;translate:-50% -50%;border-radius:50%;background:radial-gradient(closest-side,#5b8ff24d,#5b8ff200);opacity:1;transition:opacity .35s;pointer-events:none}
+.stop[data-near] .view:before{opacity:.3}
+/* The scene. It is laid out at the size of its close-up (--zf times what fits) and SHRUNK to be seen whole, so nothing
+   is ever stretched: sharp in every browser. --s0: how small it is when whole. Its origin is the centre of the phone's
+   screen (--ox, --oy): whole, the scene's middle sits in the middle of the window; close, that screen does.
+   Travelling (--d), it turns on its axis, falls back and goes out of focus. */
+.scene{--a:max(var(--d),var(--d) * -1);--lay:var(--zf);--s0:calc(1 / var(--lay));position:absolute;left:50%;top:50%;display:block;width:calc(var(--base) * var(--lay));aspect-ratio:1;transform-origin:var(--ox) var(--oy);
+  translate:calc((var(--ox) + (50% - var(--ox)) * var(--s0) * (1 - var(--z))) * -1 - var(--d) * 10% * var(--s0)) calc((var(--oy) + (50% - var(--oy)) * var(--s0) * (1 - var(--z))) * -1 + var(--a) * 5% * var(--s0) + var(--pan) * 1% * var(--zf) / var(--lay));
+  scale:calc((1 - var(--a) * .22) * (var(--s0) + (var(--zf) / var(--lay) - var(--s0)) * var(--z)));
+  transform:rotateY(calc(var(--d) * -34deg)) translateZ(calc(var(--a) * -120px));will-change:transform,translate,scale}
+/* Out of focus while it is far from its station. A fixed amount, with its own short change: a blur that followed
+   the scroll would be drawn again in every frame. */
+.scene{transition:filter .3s,--pan .75s cubic-bezier(.3,.7,.2,1)}
+.stop[data-far] .scene{filter:blur(calc(2.6px * var(--lay))) brightness(.86)}
+/* What the camera follows (--pan, set on the scene): with the window on the phone, the scene slides so that where
+   the person taps is in view. It is a registered number, so it can change smoothly without a layer of its own. */
+.inner{position:absolute;inset:0;display:block}
+.art{display:block;width:100%;height:100%;object-fit:contain}
+/* From each base's green path, a dotted one to the next station. */
+.stop:not(:last-child) .inner:after{content:"";position:absolute;left:95%;top:73%;width:46%;height:0;border-top:calc(9px * var(--lay)) dotted #25d366;border-radius:5px;opacity:.9;transition:opacity .3s}
+.stop[data-near] .inner:after{opacity:0}
+/* The phone's screen: the assistant's real screens, in the exact box of the clay screen (its corners are measured). */
+.screen{position:absolute;background:#fff;overflow:hidden}
+.shot{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.shot[data-on]{opacity:1}
+.shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+/* Its glass: a light across one corner and a veil that keeps the white from burning; thinner as the camera comes in. */
+.glass{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(125deg,#ffffff2b,#fff0 20%),#061b3d;background-blend-mode:normal;opacity:1}
+.glass{background:linear-gradient(125deg,#ffffff2b,#fff0 20%)}
+.glass:after{content:"";position:absolute;inset:0;background:#061b3d;opacity:.16;transition:opacity .35s}
+.stop[data-near] .glass:after{opacity:.06}
+.tap{position:absolute;left:var(--tx);top:var(--ty);z-index:4;width:26%;aspect-ratio:1;border-radius:50%;translate:-50% -50%;background:#25d36647;box-shadow:0 0 0 2px #25d366,0 0 14px 3px #25d36680;opacity:0;animation:tap 1.5s ease-out both}
+@keyframes tap{0%,52%{opacity:0;scale:1.7}66%{opacity:1;scale:1}80%{opacity:1;scale:.72}100%{opacity:0;scale:1.25}}
+.copy{position:relative;z-index:2;display:grid;align-content:start;gap:4px;width:100%;min-height:96px;padding:0 18px 2px;text-align:center;translate:calc(var(--d) * -34%) 0;opacity:calc(1 - max(var(--d),var(--d) * -1) * 1.6);will-change:translate,opacity}
+.copy strong{font:800 clamp(24px,7.3vw,44px)/1.05 var(--font-contygo-heading),sans-serif;letter-spacing:-.045em;color:#fff;white-space:nowrap}
+.copy em{font-style:normal;color:#25d366}
+.copy span{font-size:15.5px;line-height:1.38;color:#c5d3e8;text-wrap:balance}
+/* ---- Al pie: el botón, siempre a la vista ---- */
+/* (On a phone its right end stays clear of the assistant's floating button.) */
+.foot{position:relative;z-index:3;display:grid;justify-items:start;gap:7px;padding:10px 88px 14px 16px}
+.foot small{padding-left:8px}
+.world .go{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:420px;min-height:58px;padding:6px 6px 6px 24px;border:0;border-radius:40px;background:#25d366;color:#061b3d;font:800 17.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer;box-shadow:0 22px 30px -20px #000;transition:scale .3s cubic-bezier(.2,.9,.25,1.2),box-shadow .3s}
+.go i{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#061b3d;color:#fff}
+.go svg{width:21px;height:21px}
+.go:active{scale:.98}
+/* At the last station it calls. */
+.world .go[data-ready]{animation:ready 1.6s ease-in-out infinite}
+@keyframes ready{50%{box-shadow:0 0 0 9px #25d36638,0 22px 30px -20px #000}}
+.foot small{font-size:12px;font-weight:700;letter-spacing:.04em;color:#a9b8ca}
+
+/* ---- El dedo manda: la sección se queda quieta mientras el scroll lleva el viaje ---- */
+@media(min-height:520px) and (prefers-reduced-motion:no-preference){
+  .run{height:400svh}
+  .pin{position:sticky;top:var(--pin-top,72px)}
+  .world{height:calc(100svh - var(--pin-top,72px) - 90px)}
+}
+@media(max-width:899.98px) and (min-height:520px) and (prefers-reduced-motion:no-preference){
+  .world .go{display:none}
+  .foot{justify-items:center;padding:2px 16px 12px}
+  .foot small{padding:0}
+}
+
+/* ---- Pantalla ancha: el mundo ocupa todo el ancho. La escena, grande, a un lado; al otro, el número, la palabra y su frase ---- */
+@media(min-width:900px){
+  .world{margin:0;border-radius:46px}
+  .head{position:absolute;left:0;right:0;top:0;padding:28px 38px 0}
+  .head>span{font-size:15px}
+  .dots{gap:9px}
+  .dots button{width:38px;height:38px;font-size:15px}
+  .track{grid-row:1 / -1}
+  .stop{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-items:center;justify-items:stretch;gap:0 3%;padding:0 6% 0 3%}
+  .view{grid-column:1;grid-row:1;height:100%}
+  .view{--cap:640px;--base:min(92cqh,94cqw,var(--cap))}
+  .copy{grid-column:2;grid-row:1;gap:16px;padding:0 0 96px;text-align:left;translate:calc(var(--d) * -22%) 0}
+  .copy strong{display:grid;font-size:clamp(54px,5.6vw,92px);line-height:.96;letter-spacing:-.05em}
+  .copy span{max-width:19em;font-size:clamp(18px,1.5vw,22px);line-height:1.45}
+  .number{left:74%;top:50%;font-size:min(40vw,560px);translate:calc(-50% + var(--d) * -30%) -50%;-webkit-text-stroke:2px #ffffff1f}
+  .foot{position:absolute;left:auto;right:6%;bottom:40px;width:min(38%,440px);justify-items:start;padding:0}
+  .foot small{padding-left:6px}
+  .world .go{max-width:none;min-height:66px;font-size:19px}
+  .go i{width:52px;height:52px}
+}
+@media(min-width:900px) and (min-height:520px) and (prefers-reduced-motion:no-preference){.world{height:min(720px,calc(100svh - var(--pin-top,72px) - 36px))}}
+@media(prefers-reduced-motion:reduce){.world .go[data-ready]{animation:none}.dots button{transition:none}.tap{display:none}.shot,.scene,.inner:after,.glass:after,.view:before{transition:none}}

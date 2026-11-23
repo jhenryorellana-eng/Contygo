@@ -25,7 +25,13 @@
    - HeroFlag: la bandera de Estados Unidos, flameando, junto al titular («añádele una bandera americana flameando»).
      Se dibuja en un lienzo: la bandera exacta (13 franjas, 50 estrellas) y, columna a columna, la onda de la tela con
      su luz y su sombra, como el satén de la cinta. Se detiene fuera de pantalla y con «reducir movimiento».
-   Con «reducir movimiento» no hay secuencia: queda la última foto, con la pantalla ya abierta. */
+   Con «reducir movimiento» no hay secuencia: queda la última foto, con la pantalla ya abierta.
+   Henry en lugar de la modelo (22-11-2026). El dueño: «quiero cambiar la figura de la chica por Henry en el hero, con
+   las mismas poses, pero viste a Henry de tal forma que combine su ropa tanto con el modo noche y modo día». Las seis
+   fotos (tres poses, dos temas) se hicieron con Codex a partir de las anteriores y de tres retratos suyos de estudio
+   (motor-contygo/referencias/henry): blazer verde bosque sobre camisa blanca, que se despega del fondo blanco y del
+   azul marino. La cinta quedó en su sitio (sale por el mismo punto) y la pantalla se volvió a medir
+   (scratchpad/henryframes.cjs). Las fotos de la modelo siguen en public/contygo (v7/hero-*.webp, v8/hero-*-2/3.webp). */
 import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import h from "./HeroStory.module.css";
@@ -37,14 +43,14 @@ type Frame = { src: string; /** How long it stays, in ms. */ hold: number; /** T
 /** `exit`: where the ribbon leaves the image through its bottom edge, as a fraction of its width (GreenThread). */
 export const HERO_STORY: Record<Theme, { exit: number; frames: readonly Frame[] }> = {
   light: { exit: .1746, frames: [
-    { src: "/contygo/v7/hero-claro.webp", hold: 2300 },
-    { src: "/contygo/v8/hero-claro-2.webp", hold: 1100 },
-    { src: "/contygo/v8/hero-claro-3.webp", hold: 5600, screen: [[264.8, 414.2], [448.6, 414.2], [450.7, 813.3], [265.4, 813.3]] },
+    { src: "/contygo/v8/hero-henry-claro-1.webp", hold: 2300 },
+    { src: "/contygo/v8/hero-henry-claro-2.webp", hold: 1100 },
+    { src: "/contygo/v8/hero-henry-claro-3.webp", hold: 5600, screen: [[263, 413.3], [450.8, 413.3], [450.8, 815.8], [264, 815.8]] },
   ] },
-  dark: { exit: .1748, frames: [
-    { src: "/contygo/v7/hero-oscuro.webp", hold: 2300 },
-    { src: "/contygo/v8/hero-oscuro-2.webp", hold: 1100 },
-    { src: "/contygo/v8/hero-oscuro-3.webp", hold: 5600, screen: [[243.2, 361.3], [462.1, 361.3], [464.4, 844.7], [243.2, 844.7]] },
+  dark: { exit: .1754, frames: [
+    { src: "/contygo/v8/hero-henry-oscuro-1.webp", hold: 2300 },
+    { src: "/contygo/v8/hero-henry-oscuro-2.webp", hold: 1100 },
+    { src: "/contygo/v8/hero-henry-oscuro-3.webp", hold: 5600, screen: [[240.8, 360], [464.7, 360], [467.5, 847.5], [240.8, 847.5]] },
   ] },
 };
 
@@ -153,7 +159,7 @@ export default function HeroStory({ theme, lift = true }: { theme: Theme; /** Wh
   const shown = still && ready ? last : at, screen = frames[last].screen;
   return <>
     {frames.map((frame, i) => <Image key={frame.src} className={h.frame} data-on={shown === i ? "" : undefined} data-step={i} src={frame.src} fill unoptimized priority={i === 0} loading={i === 0 ? undefined : "lazy"} sizes="(max-width:760px) 100vw, 52vw"
-      alt={i === 0 ? "Una mujer mira su trámite en el celular, levanta la mirada y muestra a la cámara la pantalla con la app de ContyGo; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." : ""} aria-hidden={i === 0 ? undefined : true} />)}
+      alt={i === 0 ? "Henry Orellana mira un trámite en el celular, levanta la mirada y muestra a la cámara la pantalla con la app de ContyGo; de la pantalla sale una cinta verde que sube hasta el símbolo de ContyGo." : ""} aria-hidden={i === 0 ? undefined : true} />)}
     <div ref={stage} className={h.stage} data-on={shown === last && ready ? "" : undefined} aria-hidden="true">
       {screen && <div key={`${theme}-${round}`} className={h.screen} data-out={out ? "" : undefined} style={{ width: SCREEN_W, height: SCREEN_H, transform: onto(out ? lifted(screen) : screen, SCREEN_W, SCREEN_H) }}><HeroScreen /></div>}
     </div>

@@ -49,7 +49,7 @@ export const REVIEWS_SAMPLE: PublicReview[] = [
 
 /** The scoreboard of the live show: what the case counter holds (lib/case-counter.ts), per service and in total. */
 export type ScoreRow = { serviceId: string; label: string; created: number; pending: number; won: number };
-export type Score = { totals: { created: number; pending: number; won: number }; rows: ScoreRow[]; updatedAt: string | null; updatedBy: string | null };
+export type Score = { totals: { created: number; pending: number; won: number }; rows: ScoreRow[]; updatedAt: string | null; updatedBy: string | null; /** The counter's figures are an example: shown with that word. */ example?: boolean };
 /** An example scoreboard, for «Ver ejemplos» only: made-up figures, shown under the notice that says so. */
 export const SCORE_SAMPLE: Score = (() => {
   const rows: ScoreRow[] = [

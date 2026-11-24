@@ -36,7 +36,8 @@ export async function PUT(req: NextRequest) {
   try { body = await req.json(); } catch { return json({ ok: false, error: "bad_json" }, 400); }
   if (!body || typeof body !== "object" || Array.isArray(body) || typeof (body as { rows?: unknown }).rows !== "object") return json({ ok: false, error: "invalid_rows" }, 400);
   try {
-    const counter = await saveCounter((body as { rows: unknown }).rows, (body as { by?: unknown }).by ?? (who === "owner" ? "Henry" : ""));
+    // Only the owner can save figures as an example; whatever the keeper saves is the record.
+    const counter = await saveCounter((body as { rows: unknown }).rows, (body as { by?: unknown }).by ?? (who === "owner" ? "Henry" : ""), new Date(), who === "owner" && (body as { example?: unknown }).example === true);
     return json({ ok: true, counter, totals: counterTotals(counter.rows) });
   } catch { return json({ ok: false, error: "upstream" }, 502); }
 }

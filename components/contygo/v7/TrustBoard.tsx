@@ -105,7 +105,7 @@ export default function TrustBoard() {
   const { score, stories } = data, totals = score?.totals ?? null;
   const asOf = score?.updatedAt ? new Date(score.updatedAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }) : null;
   const go = <button ref={button} type="button" className={b.open} onClick={() => setOpen(true)}>{stories.length ? "Ver los casos, uno por uno" : "Ver el marcador por servicio"}<Arrow /></button>;
-  const fine = <p className={b.fine}>{asOf ? `Cifras del registro de ContyGo al ${asOf}. ` : ""}{FINE}</p>;
+  const fine = <p className={b.fine}>{score?.example ? "Estas cifras son de ejemplo, mientras se carga el registro de ContyGo. " : asOf ? `Cifras del registro de ContyGo al ${asOf}. ` : ""}{FINE}</p>;
   const minor = totals && <ul className={b.minor}><li><b><Count to={totals.created} on={seen} /></b>casos creados</li><li><b><Count to={totals.pending} on={seen} /></b>en proceso</li></ul>;
 
   return (
@@ -118,6 +118,7 @@ export default function TrustBoard() {
         {data.example && <p className={b.demo}><b>Modo ejemplo.</b> Cifras e historias de muestra, para ver cómo queda. El público no ve esta sección hasta que el contador tenga cifras reales.</p>}
         <h2 id="casos-titulo">Los casos de ContyGo, <em>con Henry al frente.</em></h2>
         {totals ? <p className={b.giant}><b><Count to={totals.won} on={seen} /></b><span>casos ganados</span></p> : <p>Clientes de ContyGo que ya recibieron su respuesta, contado por ellos.</p>}
+        {score?.example && !data.example && <p className={b.mock}>Cifras de ejemplo</p>}
         {minor}
         {go}{fine}
         {DEV && <p className={b.pick}>Foto de Henry (solo en local): {PHOTOS.map(item => <button key={item.key} type="button" aria-pressed={photo === item.key} onClick={() => setPhoto(item.key)}>{item.label}</button>)}</p>}

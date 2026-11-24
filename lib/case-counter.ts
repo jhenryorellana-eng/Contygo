@@ -17,7 +17,9 @@ import { isAdminRequest, safeEqual } from "./admin-auth";
 import { reviewsEnabled, storeRead, storeWrite } from "./reviews";
 
 export type CaseRow = { created: number; pending: number; won: number };
-export type CaseCounter = { updatedAt: string | null; updatedBy: string | null; rows: Record<string, CaseRow>; log: { at: string; by: string }[] };
+/** `example`: the figures are a demonstration, not the record (24-11-2026: the owner asked for the counter to be filled «para
+    ejemplo», to present the system). Wherever they show, they say so; saving the real ones removes the mark. */
+export type CaseCounter = { updatedAt: string | null; updatedBy: string | null; rows: Record<string, CaseRow>; log: { at: string; by: string }[]; example?: boolean };
 
 const FILE = "contador/casos.json";
 export const MAX_CASES = 99_999;
@@ -43,15 +45,15 @@ export async function loadCounter(): Promise<CaseCounter> {
   if (!bytes) return empty();
   try {
     const stored = JSON.parse(Buffer.from(bytes).toString("utf8")) as Partial<CaseCounter>;
-    return { updatedAt: typeof stored.updatedAt === "string" ? stored.updatedAt : null, updatedBy: typeof stored.updatedBy === "string" ? stored.updatedBy : null, rows: cleanRows(stored.rows), log: Array.isArray(stored.log) ? stored.log.filter(entry => entry && typeof entry.at === "string" && typeof entry.by === "string").slice(-30) : [] };
+    return { ...(stored.example === true ? { example: true } : {}), updatedAt: typeof stored.updatedAt === "string" ? stored.updatedAt : null, updatedBy: typeof stored.updatedBy === "string" ? stored.updatedBy : null, rows: cleanRows(stored.rows), log: Array.isArray(stored.log) ? stored.log.filter(entry => entry && typeof entry.at === "string" && typeof entry.by === "string").slice(-30) : [] };
   } catch { return empty(); }
 }
 
 /** Saves the figures with who and when; the last thirty saves stay on record. */
-export async function saveCounter(rows: unknown, by: unknown, now = new Date()): Promise<CaseCounter> {
+export async function saveCounter(rows: unknown, by: unknown, now = new Date(), example = false): Promise<CaseCounter> {
   const who = (typeof by === "string" ? by.replace(/\s+/g, " ").trim().slice(0, 40) : "") || "Sin nombre";
   const before = await loadCounter(), at = now.toISOString();
-  const next: CaseCounter = { updatedAt: at, updatedBy: who, rows: cleanRows(rows), log: [...before.log, { at, by: who }].slice(-30) };
+  const next: CaseCounter = { ...(example ? { example: true } : {}), updatedAt: at, updatedBy: who, rows: cleanRows(rows), log: [...before.log, { at, by: example ? `${who} (ejemplo)` : who }].slice(-30) };
   await storeWrite(FILE, JSON.stringify(next), "application/json");
   return next;
 }

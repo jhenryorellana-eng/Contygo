@@ -56,3 +56,5 @@
   .save{grid-template-columns:minmax(0,320px) auto 1fr;align-items:end;padding:13px max(28px,calc((100vw - 980px) / 2))}
   .save p{grid-column:auto;align-self:center}
 }
+.mock{margin:14px 0 0!important;max-width:none!important;padding:11px 14px;border-radius:14px;background:#fff;color:#061b3d!important;font-size:14.5px!important;box-shadow:0 0 0 3px #25d366}
+.mock b{color:#061b3d!important}

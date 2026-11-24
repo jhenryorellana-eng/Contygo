@@ -10,7 +10,7 @@ import s from "./CaseCounterEditor.module.css";
 
 type Row = { created: number; pending: number; won: number };
 type Field = keyof Row;
-type Data = { services: { id: string; name: string }[]; counter: { updatedAt: string | null; updatedBy: string | null; rows: Record<string, Row> }; who: "owner" | "keeper" };
+type Data = { services: { id: string; name: string }[]; counter: { example?: boolean; updatedAt: string | null; updatedBy: string | null; rows: Record<string, Row> }; who: "owner" | "keeper" };
 const FIELDS: { key: Field; label: string; hint: string }[] = [
   { key: "created", label: "Creados", hint: "Todos los casos abiertos de este servicio" },
   { key: "pending", label: "Pendientes", hint: "En proceso, todavía sin respuesta" },
@@ -47,7 +47,8 @@ export default function CaseCounterEditor() {
   }, [load]);
 
   const totals = useMemo(() => Object.values(rows).reduce((sum, row) => ({ created: sum.created + row.created, pending: sum.pending + row.pending, won: sum.won + row.won }), { created: 0, pending: 0, won: 0 }), [rows]);
-  const changed = useMemo(() => data ? JSON.stringify(rows) !== JSON.stringify(data.counter.rows) : false, [rows, data]);
+  // Example figures count as unsaved work: saving them as they are makes them the record.
+  const changed = useMemo(() => data ? data.counter.example === true || JSON.stringify(rows) !== JSON.stringify(data.counter.rows) : false, [rows, data]);
   const set = (id: string, field: Field, value: number) => { setSaving("idle"); setRows(all => ({ ...all, [id]: { ...all[id], [field]: Math.min(MAX, Math.max(0, Math.round(Number.isFinite(value) ? value : 0))) } })); };
 
   async function save() {
@@ -79,6 +80,7 @@ export default function CaseCounterEditor() {
         <Image className={s.logo} src="/contygo/brand/logo-dark.png" alt="ContyGo" width={170} height={48} priority />
         <h1>Contador de casos</h1>
         <p>{last ? <>Última actualización: <b>{last}</b>, por <b>{data.counter.updatedBy}</b>.</> : "Todavía no se ha guardado ninguna cifra."} Lo que guardes aquí es lo que Henry enseña en vivo.</p>
+        {data.counter.example && <p className={s.mock}><b>Estas cifras son de EJEMPLO.</b> En la página salen marcadas como «Cifras de ejemplo». Pon las reales y toca «Guardar cambios»: la marca se quita sola.</p>}
         <div className={s.totals}>
           {FIELDS.map(field => <div key={field.key} data-kind={field.key}><span>{totals[field.key].toLocaleString("en-US")}</span><b>{field.label}</b></div>)}
         </div>

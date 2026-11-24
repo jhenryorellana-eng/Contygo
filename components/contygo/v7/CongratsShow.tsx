@@ -26,7 +26,7 @@ const FINE = "Cada caso es distinto: un resultado anterior no garantiza el tuyo.
 type Row = { name: string; service_id: string | null; rating: number; comment: string; kind?: string; place?: string | null; image_url?: string | null };
 /** The three figures of the scoreboard, as the audience of a live reads them. */
 const TRIO = [{ key: "created", label: "Casos creados" }, { key: "pending", label: "En proceso" }, { key: "won", label: "Ganados" }] as const;
-type Counted = { services: { id: string; name: string }[]; counter: { updatedAt: string | null; updatedBy: string | null; rows: Record<string, { created: number; pending: number; won: number }> }; totals: Score["totals"] };
+type Counted = { services: { id: string; name: string }[]; counter: { example?: boolean; updatedAt: string | null; updatedBy: string | null; rows: Record<string, { created: number; pending: number; won: number }> }; totals: Score["totals"] };
 const Star = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" /></svg>;
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-8" /></svg>;
 
@@ -61,7 +61,7 @@ export function ScoreTrio({ totals, style }: { totals: Score["totals"]; style?: 
 }
 
 /** What the page gives the public (GET /api/felicitaciones): the scoreboard and the stories approved to be shown there. */
-export type PublicShow = { /** The owner's preview: examples, marked as such. */ example?: boolean; score: { totals: Score["totals"]; rows: Score["rows"]; updatedAt: string | null } | null; stories: (Row & { id: string })[] };
+export type PublicShow = { /** The owner's preview: examples, marked as such. */ example?: boolean; score: { example?: boolean; totals: Score["totals"]; rows: Score["rows"]; updatedAt: string | null } | null; stories: (Row & { id: string })[] };
 const toStory = (row: Row): PublicReview => ({ name: row.name, serviceId: row.service_id, service: CONTYGO_SERVICES.find(item => item.id === row.service_id)?.name ?? null, rating: row.rating, comment: row.comment, kind: row.kind === "approval" ? "approval" : "review", place: row.place ?? null, image: row.image_url ?? null });
 
 /** `variant="public"` (24-11-2026) is the same show opened from the landing, for a visitor: it reads only what the page
@@ -98,7 +98,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
       setState("ready");
       // The case counter (lib/case-counter.ts), kept up to date by the person in charge: the scoreboard of the show.
       const counted = await fetch("/api/admin/cases", { cache: "no-store" }).then(reply => reply.ok ? reply.json() as Promise<Counted> : null).catch(() => null);
-      if (counted) setScore({ totals: counted.totals, updatedAt: counted.counter.updatedAt, updatedBy: counted.counter.updatedBy,
+      if (counted) setScore({ example: counted.counter.example === true, totals: counted.totals, updatedAt: counted.counter.updatedAt, updatedBy: counted.counter.updatedBy,
         rows: counted.services.map(service => ({ serviceId: service.id, label: service.name, ...counted.counter.rows[service.id] })).filter(row => row.created > 0 || row.pending > 0 || row.won > 0).sort((x, y) => y.created - x.created) });
     } catch { setState("error"); }
   }, [open, preview]);
@@ -111,6 +111,8 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
   // The scoreboard: the counter's figures once it has any; in example mode, the example's.
   const board: Score | null = sample ? SCORE_SAMPLE : score && score.totals.created + score.totals.pending + score.totals.won > 0 ? score : null;
   const asOf = board?.updatedAt ? new Date(board.updatedAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }) : null;
+  // Example figures in the counter (the owner filled it to present the system): the board says so wherever it shows.
+  const mock = !sample && board?.example === true;
   const real = resultsPublic();
   const rows = useMemo(() => {
     if (real) return CONTYGO_RESULTS.rows.filter(row => row.approved > 0);
@@ -206,13 +208,13 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
           {story ? <Story review={story} big example={sample || demo} /> : at === 1 && board ? <div className={c.board}>
             <h1>El marcador, <em>servicio por servicio.</em></h1>
             {table(7)}
-            {asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}
+            {mock ? <p className={c.mock}>Cifras de ejemplo</p> : asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}
             {start}
           </div> : <div className={c.cover}>
             <h1>Aprobados, <em>uno por uno.</em></h1>
             <p>Clientes de ContyGo que ya recibieron su aprobación, contado por ellos.</p>
             {board ? trio : total > 0 && <div className={c.total}><Flaps value={total} pad={String(total).length} /><span>{counts}</span></div>}
-            {asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}
+            {mock ? <p className={c.mock}>Cifras de ejemplo</p> : asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}
             {open ? start : qr}
           </div>}
         </div>
@@ -229,7 +231,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
           <h1>Aprobados, <em>uno por uno.</em></h1>
           <p>Clientes de ContyGo que ya recibieron su aprobación, contado por ellos.</p>
         </div>
-        {board && <div className={c.panel}>{trio}{table(14)}{asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}</div>}
+        {board && <div className={c.panel}>{trio}{table(14)}{mock ? <p className={c.mock}>Cifras de ejemplo</p> : asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}</div>}
         {!board && rows.length > 0 && <div className={c.panel}>
           <div className={c.total}><Flaps value={total} pad={String(total).length} /><span>{counts}</span></div>
           <ul className={c.rows}>{rows.map(row => <li key={row.label}>

@@ -5,7 +5,7 @@
    Las cifras viven en lib/case-counter.ts; se editan en /contador. */
 import { useCallback, useEffect, useState } from "react";
 
-type Counter = { totals: { created: number; pending: number; won: number }; counter: { updatedAt: string | null; updatedBy: string | null }; editUrl?: string; previewUrl?: string };
+type Counter = { totals: { created: number; pending: number; won: number }; counter: { example?: boolean; updatedAt: string | null; updatedBy: string | null }; editUrl?: string; previewUrl?: string };
 const when = (iso: string | null) => iso ? new Date(iso).toLocaleString("es", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }) : null;
 
 export default function CaseCounterCard() {
@@ -36,7 +36,7 @@ export default function CaseCounterCard() {
         <div>
           <h3 style={{ margin: 0, fontSize: 19 }}>Contador de casos</h3>
           <p className="admin__hint" style={{ textAlign: "left", margin: "3px 0 0" }}>
-            {state === "loading" ? "Cargando…" : state === "off" ? "Falta conectar el almacén del panel." : state === "error" ? "No se pudo leer el contador." : last ? `Actualizado el ${last}, por ${data?.counter.updatedBy}.` : "Todavía no se ha guardado ninguna cifra."}
+            {state === "loading" ? "Cargando…" : state === "off" ? "Falta conectar el almacén del panel." : state === "error" ? "No se pudo leer el contador." : data?.counter.example ? "Cifras de EJEMPLO: en la página salen marcadas así hasta que se guarden las reales." : last ? `Actualizado el ${last}, por ${data?.counter.updatedBy}.` : "Todavía no se ha guardado ninguna cifra."}
           </p>
         </div>
         <div className="admin__toolbar-right">

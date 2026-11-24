@@ -23,6 +23,7 @@
 .open:hover svg{translate:4px 0}
 .open:focus-visible{outline:3px solid #fff;outline-offset:4px}
 .fine{margin:0;max-width:46em;color:#a9b8ca!important;font:500 clamp(12px,1.5vw,14px)/1.4 var(--font-contygo-body),sans-serif!important}
+.mock{width:fit-content;padding:7px 16px!important;border-radius:40px;background:#fff;color:#061b3d!important;font:800 15px/1.2 var(--font-contygo-heading),sans-serif!important;box-shadow:0 0 0 3px #25d366}
 .demo{padding:10px 14px;border-radius:14px;background:#fff;color:#061b3d!important;font:700 13.5px/1.35 var(--font-contygo-body),sans-serif!important;box-shadow:0 0 0 2px #25d366}
 .demo b{font-weight:800}
 /* The choice of photograph, on the local page only */

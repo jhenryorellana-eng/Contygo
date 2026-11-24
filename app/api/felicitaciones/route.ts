@@ -13,7 +13,7 @@ import { publicReviews, reviewsEnabled } from "@/lib/reviews";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { ok: true; /** Only in the owner's preview: figures and stories of example. */ example?: true; score: { totals: { created: number; pending: number; won: number }; rows: { serviceId: string; label: string; created: number; pending: number; won: number }[]; updatedAt: string | null } | null; stories: { id: string; name: string; service_id: string | null; rating: number; comment: string; kind: "review" | "approval"; place: string | null; image_url: string | null }[] };
+type Body = { ok: true; /** Only in the owner's preview: figures and stories of example. */ example?: true; score: { /** The counter holds example figures: the page says so beside them. */ example?: true; totals: { created: number; pending: number; won: number }; rows: { serviceId: string; label: string; created: number; pending: number; won: number }[]; updatedAt: string | null } | null; stories: { id: string; name: string; service_id: string | null; rating: number; comment: string; kind: "review" | "approval"; place: string | null; image_url: string | null }[] };
 let cached: { at: number; body: Body } | null = null;
 const FRESH_MS = 60_000;
 
@@ -22,7 +22,7 @@ async function build(): Promise<Body> {
   if (counterEnabled) {
     try {
       const counter = await loadCounter(), totals = counterTotals(counter.rows);
-      if (totals.created + totals.pending + totals.won > 0) score = { totals, updatedAt: counter.updatedAt,
+      if (totals.created + totals.pending + totals.won > 0) score = { ...(counter.example ? { example: true as const } : {}), totals, updatedAt: counter.updatedAt,
         rows: COUNTER_SERVICES.map(service => ({ serviceId: service.id, label: service.name, ...counter.rows[service.id] })).filter(row => row.created + row.pending + row.won > 0).sort((a, b) => b.created - a.created) };
     } catch { /* without the counter the page shows the stories alone */ }
   }

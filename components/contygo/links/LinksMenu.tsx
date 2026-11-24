@@ -11,6 +11,7 @@ import Image from "next/image";
 import { EXTRAS_SEEN_ON, LINK_SECTIONS, type LinkItem, type LinkPlan } from "@/lib/contygo-links";
 import { useServicePrices, type PriceMap } from "@/lib/contygo-api/prices-client";
 import { copyText } from "./copy";
+import Brain3D from "./Brain3D";
 import TeamChat, { ServiceAsk } from "./TeamChat";
 import s from "./LinksMenu.module.css";
 
@@ -152,7 +153,7 @@ export default function LinksMenu() {
       <header className={s.cover}>
         <div className={s.wrap}>
           <Image className={s.logo} src="/contygo/brand/logo-dark.png" alt="ContyGo" width={170} height={40} priority />
-          <Image className={s.hero} src="/contygo/v8/producto-servicios.webp" alt="" width={220} height={220} priority />
+          <Brain3D className={s.hero} />
           <h1>Carta de servicios</h1>
           <p>El precio, el link y lo que incluye cada servicio, listos para enviar al cliente.</p>
           <span className={s.seen}>{Icon.seen}Precios al día</span>
@@ -175,7 +176,7 @@ export default function LinksMenu() {
         <div className={s.wrap}>
           <button type="button" className={s.band} onClick={() => setChat(true)}>
             <Image src="/contygo/v8/producto-henry.webp" alt="" width={56} height={56} />
-            <span><b>¿Tu cliente tiene una duda?</b>Pregúntale al asistente: costos, pagos, documentos y proceso.</span>
+            <span><b>¿Tu cliente tiene una duda?</b>Pregúntale al Cerebro: costos, pagos, documentos, cortes y edades por estado.</span>
             <i>Preguntar</i>
           </button>
           <p className={s.rule}>Precios en dólares. Son los <b>honorarios de ContyGo</b>: las tasas del gobierno se pagan aparte.</p>

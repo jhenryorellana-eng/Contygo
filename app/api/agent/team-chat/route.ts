@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 }
 
 /** A step of the work, as it happens: what the screen animates while the answer is on its way. */
-type Step = { kind: "prices"; ok: boolean } | { kind: "brain"; states: string[]; county?: string } | { kind: "sheet"; service: string } | { kind: "writing" } | { kind: "official"; sites: string[] };
+type Step = { kind: "prices"; ok: boolean } | { kind: "brain"; states: string[]; codes: string[]; county?: string } | { kind: "sheet"; service: string } | { kind: "writing" } | { kind: "official"; sites: string[] };
 
 async function answerFor({ question, history, focusId }: { question: string; history: ReturnType<typeof readTeamHistory>; focusId?: string }, emit: (step: Step) => void) {
   let remotes: CatalogService[] = [];
@@ -94,14 +94,14 @@ async function answerFor({ question, history, focusId }: { question: string; his
   if (agentEnabled) {
     try {
       let brain = juvenile ? brainFor(places) : null;
-      if (brain) emit({ kind: "brain", states: names(brain.states) });
+      if (brain) emit({ kind: "brain", states: names(brain.states), codes: brain.states });
       emit({ kind: "writing" });
       let parsed = await generate(brain);
       // The model placed the question in a state whose sheet it did not have (a city, a county): one more round, with it.
       const lookup = juvenile ? readTeamLookup(parsed) : null;
       if (lookup && brainState(lookup.state) && (!brain?.states.includes(lookup.state) || lookup.county)) {
         brain = brainFor(places, lookup);
-        emit({ kind: "brain", states: names([lookup.state]), ...(lookup.county ? { county: lookup.county } : {}) });
+        emit({ kind: "brain", states: names([lookup.state]), codes: [lookup.state], ...(lookup.county ? { county: lookup.county } : {}) });
         emit({ kind: "writing" });
         parsed = await generate(brain);
       }

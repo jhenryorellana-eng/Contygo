@@ -13,11 +13,12 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { LINK_SECTIONS } from "@/lib/contygo-links";
 import { copyText } from "./copy";
+import Brain3D, { type BrainMode } from "./Brain3D";
 import s from "./TeamChat.module.css";
 
 type Source = { site: string; url: string };
 type Used = { brain?: string[]; prices?: boolean };
-type Step = { kind: "prices"; ok: boolean } | { kind: "brain"; states: string[]; county?: string } | { kind: "sheet"; service: string } | { kind: "writing" } | { kind: "official"; sites: string[] };
+type Step = { kind: "prices"; ok: boolean } | { kind: "brain"; states: string[]; codes?: string[]; county?: string } | { kind: "sheet"; service: string } | { kind: "writing" } | { kind: "official"; sites: string[] };
 type Turn = { q: string; a?: string; covered?: boolean; serviceIds?: string[]; sources?: Source[]; used?: Used; failed?: string };
 type Asked = Pick<Turn, "a" | "covered" | "serviceIds" | "sources" | "used" | "failed">;
 
@@ -43,15 +44,14 @@ const CopyIcon = <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.3" aria-hid
 const Done = <svg viewBox="0 0 24 24" {...stroke} strokeWidth="3" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>;
 const Out = <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.6" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9" /></svg>;
 
-/** The brain as a small constellation: its links light up one after another while the assistant works. */
-function Brain({ still }: { still?: boolean }) {
+/** The brain's mark, still: the answer's header. The live one, while searching, is the 3D brain (Brain3D). */
+function BrainMark() {
   const nodes: [number, number][] = [[24, 8], [9, 17], [39, 17], [24, 24], [11, 35], [37, 35], [24, 41]];
   const links: [number, number][] = [[0, 1], [0, 2], [1, 3], [2, 3], [1, 4], [2, 5], [3, 4], [3, 5], [4, 6], [5, 6], [0, 3], [3, 6]];
   return (
-    <svg className={s.brain} data-still={still || undefined} viewBox="0 0 48 48" aria-hidden="true">
-      <circle className={s.halo} cx="24" cy="24" r="22" />
-      {links.map(([from, to], index) => <line key={index} className={s.link} style={{ animationDelay: `${index * 0.14}s` }} x1={nodes[from][0]} y1={nodes[from][1]} x2={nodes[to][0]} y2={nodes[to][1]} />)}
-      {nodes.map(([x, y], index) => <circle key={index} className={s.node} style={{ animationDelay: `${index * 0.2}s` }} cx={x} cy={y} r={index === 3 ? 3.6 : 2.6} />)}
+    <svg className={s.mark} viewBox="0 0 48 48" aria-hidden="true">
+      {links.map(([from, to], index) => <line key={index} x1={nodes[from][0]} y1={nodes[from][1]} x2={nodes[to][0]} y2={nodes[to][1]} />)}
+      {nodes.map(([x, y], index) => <circle key={index} cx={x} cy={y} r={index === 3 ? 3.6 : 2.6} />)}
     </svg>
   );
 }
@@ -79,13 +79,18 @@ function Thinking({ steps }: { steps: Step[] }) {
   }, [shown, steps.length]);
   const current = shown >= 0 ? steps[shown] : null, trail = shown > 0 ? steps.slice(0, shown) : [];
   const label = stepText(current);
+  // What the 3D brain does follows the step on screen: it scans, lands on the state found, hurries while writing.
+  const found = steps.slice(0, shown + 1).reduce<string[]>((codes, step) => step.kind === "brain" && step.codes?.length ? step.codes : codes, []);
+  const mode: BrainMode = { codes: found, phase: current?.kind === "writing" ? "write" : current?.kind === "official" ? "official" : "scan" };
   return (
     <div className={s.thinking} role="status">
-      <Brain />
+      <Brain3D className={s.brain3d} mode={mode} />
       <div className={s.thinkingText}>
+        <span className={s.eyebrow}>El Cerebro de ContyGo</span>
         <b key={label.now} className={s.now}>{label.now}</b>
-        {trail.length > 0 && <ul className={s.trail}>{trail.filter(step => !(step.kind === "prices" && !step.ok) && step.kind !== "writing").map((step, index) => <li key={index}>{Done}{stepText(step).done}</li>)}</ul>}
+        <ul className={s.trail}>{trail.filter(step => !(step.kind === "prices" && !step.ok) && step.kind !== "writing").map((step, index) => <li key={index}>{Done}{stepText(step).done}</li>)}</ul>
       </div>
+      <i className={s.scanline} aria-hidden="true" />
     </div>
   );
 }
@@ -152,7 +157,7 @@ function Answer({ turn, onJump }: { turn: Turn; onJump: (key: string) => void })
   return (
     <article className={s.answer} data-unsure={unsure || undefined} data-official={turn.sources ? true : undefined}>
       <header className={s.answerHead}>
-        <Brain still />
+        <BrainMark />
         <b>Asistente ContyGo</b>
         <span className={s.badges}>
           {brain && <i data-kind="brain">Cerebro{brain.length ? ` · ${brain.join(" y ")}` : " · 50 estados"}</i>}

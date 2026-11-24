@@ -1,130 +1,148 @@
-/* The team's assistant on /links: a pill in the corner that opens a sheet (phone) or a panel (desk). Brand colours only. */
-.launcher,.panel{--navy:#061b3d;--green:#25d366;--green-ink:#0a7a3a;--blue:#2f6fe4;--paper:#f3f7f4;--muted:#56637a;--line:#d5dfe8;--head:var(--font-contygo-heading),system-ui,sans-serif;--text:var(--font-contygo-body),system-ui,-apple-system,"Segoe UI",sans-serif}
-.launcher{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;display:inline-flex;align-items:center;gap:9px;min-height:58px;padding:0 22px 0 17px;border:3px solid #fff;border-radius:40px;background:var(--green);color:var(--navy);font:800 17px/1 var(--head);box-shadow:0 14px 30px #061b3d66;cursor:pointer}
+/* The team's assistant on /links, at night like the page: a round light in the corner that opens a sheet (phone) or a
+   panel (desk) of dark glass. While it works, the 3D brain takes the stage; the answer arrives as a card of glass that a
+   line of light crosses once. Brand colours only. */
+.launcher,.panel,.own{--navy:#061b3d;--deep:#030d20;--green:#25d366;--mint:#8dffb5;--blue:#2f6fe4;--sky:#8fb6ff;--muted:#a9bcd8;--glass:#ffffff0d;--edge:#ffffff24;--head:var(--font-contygo-heading),system-ui,sans-serif;--text:var(--font-contygo-body),system-ui,-apple-system,"Segoe UI",sans-serif}
+.launcher{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;display:inline-flex;align-items:center;justify-content:center;gap:9px;width:62px;min-height:62px;padding:0;border:0;border-radius:40px;background:var(--green);color:var(--navy);font:800 17px/1 var(--head);box-shadow:0 0 0 3px #030d20,0 0 0 5px #25d36680,0 14px 40px #25d36680;cursor:pointer;transition:background .2s,box-shadow .2s,translate .2s}
+.launcher:after{content:"";position:absolute;inset:-5px;border-radius:inherit;box-shadow:0 0 0 0 #25d36699;animation:call 2.6s ease-out infinite}
+@keyframes call{70%,100%{box-shadow:0 0 0 18px #25d36600}}
 .launcher svg{width:26px;height:26px}
 .launcher span{display:none}
-.launcher{width:62px;min-height:62px;padding:0;justify-content:center}
-.launcher:hover{background:#1fc45d}
+.launcher:hover{background:var(--mint);translate:0 -2px}
 .launcher[data-hidden]{display:none}
-.launcher:focus-visible,.panel :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-.shade{position:fixed;inset:0;z-index:29;background:#061b3d73}
+.launcher:focus-visible,.panel :focus-visible,.own :focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+.shade{position:fixed;inset:0;z-index:29;background:#010813b3;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:dim .25s ease-out both}
+@keyframes dim{from{opacity:0}}
 
-.panel{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;flex-direction:column;height:min(88dvh,720px);border-radius:24px 24px 0 0;background:var(--paper);color:var(--navy);font:16px/1.45 var(--text);box-shadow:0 -12px 40px #061b3d4d;overflow:hidden;animation:rise .22s ease-out}
-@keyframes rise{from{translate:0 24px;opacity:0}}
-.head{flex:none;display:flex;align-items:center;gap:11px;padding:12px 12px 12px 14px;background:linear-gradient(160deg,#0b2d63,var(--navy) 70%);color:#fff}
-.head img{width:48px;height:48px;flex:none}
+.panel{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;flex-direction:column;height:min(90dvh,760px);border-radius:26px 26px 0 0;background:radial-gradient(90% 46% at 100% 0,#1c56b080,#0000 70%),radial-gradient(70% 40% at 0 100%,#25d3661f,#0000 70%),linear-gradient(180deg,#081f47,var(--deep) 60%);color:#fff;font:16px/1.45 var(--text);box-shadow:0 -1px 0 #ffffff40 inset,0 0 0 1px var(--edge),0 -24px 70px #000a;overflow:hidden;animation:rise .38s cubic-bezier(.2,.85,.2,1) both}
+@keyframes rise{from{translate:0 46px;opacity:0;scale:.97}}
+.head{flex:none;display:flex;align-items:center;gap:11px;padding:13px 12px 13px 14px;border-bottom:1px solid var(--edge);background:#ffffff0a}
+.head img{width:48px;height:48px;flex:none;filter:drop-shadow(0 8px 12px #0009)}
 .head div{flex:1;min-width:0}
-.head h2{margin:0;font:800 19px/1.1 var(--head);letter-spacing:-.02em}
-.head p{margin:2px 0 0;color:#c9d6ea;font-size:13.5px;line-height:1.25}
-.close{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#ffffff1f;color:#fff;cursor:pointer}
+.head h2{margin:0;font:800 19px/1.1 var(--head);letter-spacing:-.02em;color:#fff}
+.head p{margin:2px 0 0;color:var(--muted);font-size:13.5px;line-height:1.25}
+.close{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#ffffff1f;color:#fff;cursor:pointer;transition:background .2s,rotate .25s}
 .close svg{width:20px;height:20px}
-.close:hover{background:#ffffff33}
+.close:hover{background:#ffffff3d;rotate:90deg}
 
-.talk{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 14px 6px}
+.talk{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 14px 6px;scrollbar-width:thin;scrollbar-color:#ffffff40 #0000}
 .start p{margin:0 2px 12px;color:var(--muted);font-size:15px;line-height:1.4}
 .start ul{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.start button{width:100%;padding:12px 14px;border-radius:15px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--navy);font:700 15px/1.3 var(--text);text-align:left;cursor:pointer}
-.start button:hover{box-shadow:inset 0 0 0 2px var(--navy)}
-.turn{display:grid;gap:8px;margin-bottom:14px}
-.asked{justify-self:end;max-width:86%;margin:0;padding:10px 14px;border-radius:18px 18px 4px 18px;background:var(--navy);color:#fff;font-size:15.5px;line-height:1.35;overflow-wrap:anywhere}
-/* The answer: a card that says what it leaned on, laid out to be read at a glance */
-.answer{justify-self:stretch;min-width:0;border-radius:20px 20px 20px 6px;background:#fff;box-shadow:0 10px 26px #061b3d1a,inset 0 0 0 1.5px #dfe7ef;overflow:hidden;animation:arrive .42s cubic-bezier(.2,.8,.2,1) both}
-@keyframes arrive{from{opacity:0;translate:0 12px;scale:.985}}
-.answer[data-unsure]{box-shadow:0 10px 26px #061b3d1a,inset 0 0 0 2px var(--navy)}
-.answer[data-official]{box-shadow:0 10px 26px #061b3d1a,inset 0 0 0 2px var(--blue)}
-.answerHead{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;padding:9px 12px;background:linear-gradient(120deg,#0b2d63,var(--navy) 75%);color:#fff}
-.answerHead .brain{width:26px;height:26px}
-.answerHead b{font:800 14px/1 var(--head);letter-spacing:-.01em}
-.badges{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
-.badges i{padding:4px 9px;border-radius:40px;font:800 11.5px/1.1 var(--head);font-style:normal;white-space:nowrap}
-.badges i[data-kind="brain"]{background:var(--green);color:var(--navy)}
-.badges i[data-kind="official"]{background:#dbe8ff;color:#143f9c}
-.badges i[data-kind="prices"]{background:#ffffff24;color:#fff;box-shadow:inset 0 0 0 1px #ffffff59}
-.badges i[data-kind="unsure"]{background:#fff;color:var(--navy)}
-.answerBody{padding:13px 14px 4px}
-.answerBody p,.answerBody ul{margin:0 0 9px;font-size:15.5px;line-height:1.46;overflow-wrap:anywhere;animation:line .4s ease-out both}
-@keyframes line{from{opacity:0;translate:0 6px}}
-.answerBody .lead{font-size:16.5px;font-weight:700;line-height:1.4;color:var(--navy)}
-.answerBody ul{padding:0;list-style:none}
-.answerBody li{position:relative;padding:7px 10px 7px 30px;border-radius:11px;background:var(--paper)}
-.answerBody li+li{margin-top:5px}
-.answerBody li:before{content:"";position:absolute;left:11px;top:13px;width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px #25d36633}
-.money{padding:1px 6px;border-radius:7px;background:#e3f8ea;color:#075a2a;font:800 1em/1.2 var(--head);white-space:nowrap}
-.law{padding:1px 7px;border-radius:7px;background:#eaf1fd;color:#143f9c;font-weight:700;font-size:.9em}
-.inlineLink{color:#1c4fb8!important;font-weight:700;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
-.official,.unsure{margin:0 14px 9px;padding:9px 11px;border-radius:11px;font-size:13.5px;line-height:1.35}
-.official{background:#eaf1fd;color:#143f9c}
-.unsure{background:var(--paper);color:var(--navy);font-weight:800}
-.official b{font-weight:800}
-.sources{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 14px 9px}
-.sources span{color:var(--muted);font:800 12px/1 var(--head)}
-.sources a{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 10px;border-radius:40px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--navy)!important;font:800 12.5px/1 var(--head);text-decoration:none}
-.sources a:hover{box-shadow:inset 0 0 0 1.5px var(--navy)}
-.sources svg{width:12px;height:12px}
-.after{display:flex;flex-wrap:wrap;gap:7px;padding:2px 14px 13px}
-.copy,.jump{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 13px;border-radius:40px;font:800 13.5px/1 var(--head);white-space:nowrap;cursor:pointer}
-.copy{background:var(--green);color:var(--navy)}
-.copy svg{width:16px;height:16px}
-.copy:hover{background:#1fc45d}
-.copy[data-state="done"]{background:var(--navy);color:#fff}
-.jump{background:#fff;box-shadow:inset 0 0 0 2px var(--navy);color:var(--navy)}
-.jump:hover{background:#eaf1f8}
-.failed{margin:0;padding:10px 14px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 2px var(--navy);font-size:14.5px;font-weight:700}
-.failed button{color:var(--blue);font:800 14.5px/1.3 var(--text);text-decoration:underline;cursor:pointer}
-/* The work in progress: the brain's constellation lights up and each real step is named as it happens */
-.thinking{display:flex;align-items:center;gap:13px;margin:0 0 12px;padding:13px 15px;border-radius:20px 20px 20px 6px;background:radial-gradient(120% 140% at 0 0,#14407f,#0000 60%),linear-gradient(140deg,#0b2d63,var(--navy) 70%);color:#fff;box-shadow:0 12px 28px #061b3d40;overflow:hidden;animation:arrive .35s ease-out both}
-.thinkingText{min-width:0}
-.now{display:block;font:800 15.5px/1.25 var(--head);letter-spacing:-.01em;background:linear-gradient(100deg,#fff 30%,#8dffb5 50%,#fff 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;color:#0000;animation:step .3s ease-out both,shine 1.9s linear infinite}
-@keyframes step{from{opacity:0;translate:0 7px}}
-@keyframes shine{to{background-position:-250% 0}}
-.trail{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0;padding:0;list-style:none}
-.trail li{display:inline-flex;align-items:center;gap:4px;padding:4px 9px 4px 6px;border-radius:40px;background:#ffffff1f;color:#d7e3f5;font:800 11.5px/1.1 var(--head);white-space:nowrap;animation:step .3s ease-out both}
-.trail svg{width:12px;height:12px;color:var(--green)}
-.brain{flex:none;width:52px;height:52px;overflow:visible}
-.halo{fill:none;stroke:#25d36640;stroke-width:1.2;stroke-dasharray:5 7;transform-origin:24px 24px;animation:turn 9s linear infinite}
-.link{stroke:#6ea2ff;stroke-width:1.3;stroke-linecap:round;opacity:.22;animation:spark 1.7s ease-in-out infinite}
-.node{fill:var(--green);transform-box:fill-box;transform-origin:center;animation:beat 1.4s ease-in-out infinite}
-@keyframes turn{to{rotate:360deg}}
-@keyframes spark{45%{opacity:1;stroke:#8dffb5}}
-@keyframes beat{50%{scale:1.45;fill:#8dffb5}}
-.brain[data-still] .halo,.brain[data-still] .link,.brain[data-still] .node{animation:none}
-.brain[data-still] .link{opacity:.6}
+.start li{animation:line .4s ease-out both}
+.start li:nth-child(2){animation-delay:.06s}.start li:nth-child(3){animation-delay:.12s}.start li:nth-child(4){animation-delay:.18s}
+.start button{width:100%;padding:13px 14px;border-radius:16px;background:var(--glass);box-shadow:inset 0 0 0 1px var(--edge);color:#e9f0fb;font:700 15px/1.3 var(--text);text-align:left;cursor:pointer;transition:background .2s,box-shadow .2s,translate .2s}
+.start button:hover{background:#25d3661f;box-shadow:inset 0 0 0 1px var(--green),0 0 26px #25d36633;translate:2px 0}
+.turn{display:grid;gap:9px;margin-bottom:14px}
+.asked{justify-self:end;max-width:86%;margin:0;padding:10px 14px;border-radius:18px 18px 4px 18px;background:linear-gradient(140deg,#2f6fe4,#1c4fb8);color:#fff;font-size:15.5px;line-height:1.35;overflow-wrap:anywhere;box-shadow:0 10px 26px #2f6fe44d;animation:sent .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sent{from{opacity:0;translate:14px 8px;scale:.94}}
 
-.write{flex:none;display:flex;align-items:flex-end;gap:8px;padding:8px 12px 4px}
-.write textarea{flex:1;min-width:0;min-height:50px;max-height:120px;padding:13px 15px;border:2px solid var(--navy);border-radius:17px;background:#fff;color:var(--navy);font:600 16px/1.3 var(--text);resize:none;field-sizing:content}
-.write textarea::placeholder{color:#7b879a}
-.write button{flex:none;display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:var(--green);color:var(--navy);cursor:pointer}
+/* The answer: glass that says what it leaned on. It opens from where the brain was, and a line of light crosses it once */
+.answer{position:relative;justify-self:stretch;min-width:0;border-radius:22px 22px 22px 6px;background:linear-gradient(165deg,#ffffff1c,#ffffff0a 55%);box-shadow:inset 0 0 0 1px #ffffff33,inset 0 1px 0 #ffffff4d,0 18px 44px #0007;overflow:hidden;animation:unfold .6s cubic-bezier(.2,.85,.2,1) both}
+@keyframes unfold{from{opacity:0;clip-path:inset(0 0 100% 0 round 22px);translate:0 -6px}to{clip-path:inset(0 0 0 0 round 22px)}}
+.answer:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,#0000 35%,#8dffb559 50%,#0000 65%) -120% 0/55% 100% no-repeat;animation:glint 1.1s .25s ease-out both}
+@keyframes glint{to{background-position:260% 0}}
+.answer[data-unsure]{box-shadow:inset 0 0 0 1.5px #ffffff8c,0 18px 44px #0007}
+.answer[data-official]{box-shadow:inset 0 0 0 1.5px var(--sky),0 18px 44px #0007,0 0 40px #2f6fe440}
+.answerHead{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;padding:10px 12px;border-bottom:1px solid #ffffff1f;background:#0000002e}
+.mark{flex:none;width:26px;height:26px}
+.mark line{stroke:var(--sky);stroke-width:1.4;stroke-linecap:round;opacity:.7}
+.mark circle{fill:var(--mint)}
+.answerHead b{font:800 14px/1 var(--head);letter-spacing:-.01em;color:#fff}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+.badges i{padding:4px 9px;border-radius:40px;font:800 11.5px/1.1 var(--head);font-style:normal;white-space:nowrap;animation:pop .35s .5s cubic-bezier(.2,1.4,.3,1) both}
+@keyframes pop{from{opacity:0;scale:.6}}
+.badges i[data-kind="brain"]{background:var(--green);color:var(--navy);box-shadow:0 0 18px #25d36680}
+.badges i[data-kind="official"]{background:#dbe8ff;color:#143f9c}
+.badges i[data-kind="prices"]{background:#ffffff1f;color:#fff;box-shadow:inset 0 0 0 1px #ffffff59}
+.badges i[data-kind="unsure"]{background:#fff;color:var(--navy)}
+.answerBody{padding:14px 14px 4px}
+.answerBody p,.answerBody ul{margin:0 0 10px;color:#e3ecf9;font-size:15.5px;line-height:1.48;overflow-wrap:anywhere;animation:focus .55s .18s ease-out both}
+@keyframes focus{from{opacity:0;filter:blur(7px);translate:0 8px}}
+@keyframes line{from{opacity:0;translate:0 8px}}
+.answerBody .lead{font:800 17.5px/1.36 var(--head);letter-spacing:-.015em;color:#fff}
+.answerBody ul{padding:0;list-style:none}
+.answerBody li{position:relative;padding:9px 11px 9px 31px;border-radius:13px;background:#0000002e;box-shadow:inset 0 0 0 1px #ffffff14}
+.answerBody li+li{margin-top:6px}
+.answerBody li:before{content:"";position:absolute;left:12px;top:15px;width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px #25d36633,0 0 12px var(--green)}
+.money{padding:1px 7px;border-radius:8px;background:#25d36633;color:var(--mint);font:800 1em/1.2 var(--head);white-space:nowrap;box-shadow:inset 0 0 0 1px #25d36666}
+.law{padding:1px 7px;border-radius:8px;background:#2f6fe440;color:#cfe0ff;font-weight:700;font-size:.9em;box-shadow:inset 0 0 0 1px #8fb6ff59}
+.inlineLink{color:var(--sky)!important;font-weight:700;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.official,.unsure{margin:0 14px 10px;padding:10px 12px;border-radius:13px;font-size:13.5px;line-height:1.35}
+.official{background:#2f6fe433;color:#dbe8ff;box-shadow:inset 0 0 0 1px #8fb6ff59}
+.unsure{background:#ffffff14;color:#fff;font-weight:800;box-shadow:inset 0 0 0 1px #ffffff40}
+.official b{font-weight:800;color:#fff}
+.sources{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 14px 10px}
+.sources span{color:var(--muted);font:800 12px/1 var(--head)}
+.sources a{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 10px;border-radius:40px;background:var(--glass);box-shadow:inset 0 0 0 1px var(--edge);color:#e9f0fb!important;font:800 12.5px/1 var(--head);text-decoration:none;transition:box-shadow .2s,background .2s}
+.sources a:hover{background:#2f6fe433;box-shadow:inset 0 0 0 1px var(--sky)}
+.sources svg{width:12px;height:12px}
+.after{display:flex;flex-wrap:wrap;gap:7px;padding:2px 14px 14px}
+.copy,.jump{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:0;border-radius:40px;font:800 13.5px/1 var(--head);white-space:nowrap;cursor:pointer;transition:background .18s,box-shadow .18s,color .18s}
+.copy{background:var(--green);color:var(--navy);box-shadow:0 8px 24px #25d36659}
+.copy svg{width:16px;height:16px}
+.copy:hover{background:var(--mint)}
+.copy[data-state="done"]{background:#fff;color:var(--navy);box-shadow:0 0 0 4px #25d36659}
+.jump{background:#ffffff14;box-shadow:inset 0 0 0 1.5px #ffffff59;color:#fff}
+.jump:hover{background:#ffffff29;box-shadow:inset 0 0 0 1.5px #fff}
+.failed{margin:0;padding:11px 14px;border-radius:14px;background:#ffffff14;box-shadow:inset 0 0 0 1.5px #ffffff73;color:#fff;font-size:14.5px;font-weight:700}
+.failed button{color:var(--mint);font:800 14.5px/1.3 var(--text);text-decoration:underline;cursor:pointer}
+
+/* The search: the 3D brain on its stage, each real step named as it happens, a line of light scanning the card */
+.thinking{position:relative;display:grid;grid-template-columns:118px minmax(0,1fr);align-items:center;gap:6px;min-height:132px;margin:0 0 12px;padding:8px 14px 8px 4px;border-radius:22px 22px 22px 6px;background:radial-gradient(70% 120% at 16% 50%,#14407fb3,#0000 70%),linear-gradient(140deg,#0a2a5e,#041530 75%);color:#fff;box-shadow:inset 0 0 0 1px #8fb6ff59,inset 0 1px 0 #ffffff40,0 18px 44px #0008,0 0 50px #2f6fe433;overflow:hidden;animation:stage .45s cubic-bezier(.2,.85,.2,1) both}
+@keyframes stage{from{opacity:0;scale:.92;translate:0 12px}}
+.brain3d{width:118px;height:118px}
+.thinkingText{min-width:0}
+.eyebrow{display:block;margin-bottom:4px;color:var(--sky);font:800 11.5px/1 var(--head);letter-spacing:.02em}
+.now{display:block;font:800 17px/1.22 var(--head);letter-spacing:-.015em;background:linear-gradient(100deg,#fff 30%,var(--mint) 50%,#fff 70%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;color:#0000;animation:step .42s cubic-bezier(.2,.85,.2,1) both,shine 1.8s linear infinite}
+@keyframes step{from{opacity:0;filter:blur(6px);translate:0 12px}}
+@keyframes shine{to{background-position:-250% 0}}
+.trail{display:flex;flex-wrap:wrap;gap:5px;min-height:23px;margin:9px 0 0;padding:0;list-style:none}
+.trail li{display:inline-flex;align-items:center;gap:4px;padding:4px 9px 4px 6px;border-radius:40px;background:#ffffff1f;color:#d7e3f5;font:800 11.5px/1.1 var(--head);white-space:nowrap;animation:pop .35s cubic-bezier(.2,1.4,.3,1) both}
+.trail svg{width:12px;height:12px;color:var(--green)}
+.scanline{position:absolute;inset:0 auto 0 0;width:38%;pointer-events:none;background:linear-gradient(90deg,#0000,#8dffb51f 60%,#8dffb566 98%,#0000);animation:scan 2.2s cubic-bezier(.4,0,.3,1) infinite}
+@keyframes scan{from{translate:-110% 0}to{translate:290% 0}}
+
+.write{flex:none;display:flex;align-items:flex-end;gap:8px;padding:9px 12px 4px;border-top:1px solid #ffffff14}
+.write textarea{flex:1;min-width:0;min-height:52px;max-height:120px;padding:14px 15px;border:1.5px solid var(--edge);border-radius:18px;background:#ffffff14;color:#fff;font:600 16px/1.3 var(--text);resize:none;field-sizing:content;transition:border-color .2s,box-shadow .2s,background .2s}
+.write textarea::placeholder{color:#93a7c6}
+.write textarea:focus{outline:0;border-color:var(--mint);background:#ffffff1f;box-shadow:0 0 0 4px #25d36633,0 0 30px #25d36633}
+.write button{flex:none;display:grid;place-items:center;width:52px;height:52px;border:0;border-radius:50%;background:var(--green);color:var(--navy);cursor:pointer;box-shadow:0 8px 26px #25d36666;transition:background .2s,box-shadow .2s,scale .15s}
+.write button:hover{background:var(--mint)}
+.write button:active{scale:.94}
 .write button svg{width:22px;height:22px}
-.write button:disabled{background:#d5dfe8;color:#7b879a;cursor:default}
-.fine{flex:none;margin:0;padding:4px 16px calc(10px + env(safe-area-inset-bottom));color:var(--muted);font-size:12px;line-height:1.3;text-align:center}
+.write button:disabled{background:#ffffff1f;color:#7f93b4;box-shadow:none;cursor:default}
+.fine{flex:none;margin:0;padding:5px 16px calc(10px + env(safe-area-inset-bottom));color:#8499ba;font-size:12px;line-height:1.3;text-align:center}
 
 /* The assistant on a service's own row */
-.own{grid-column:1/-1;margin-top:10px;padding:8px;border-radius:16px;background:#e9f6ee;box-shadow:inset 0 0 0 1.5px #bfe6cd}
-.ownForm{display:flex;align-items:center;gap:7px;padding-left:6px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 2px var(--navy)}
-.ownForm:focus-within{box-shadow:inset 0 0 0 2px var(--navy),0 0 0 3px #2f6fe459}
-.ownIcon{flex:none;display:grid;place-items:center;width:26px;height:26px;color:var(--green-ink)}
+.own{grid-column:1/-1;margin-top:11px;padding:8px;border-radius:17px;background:#25d36614;box-shadow:inset 0 0 0 1px #25d36659}
+.ownForm{display:flex;align-items:center;gap:7px;padding-left:8px;border-radius:12px;background:#0000003d;box-shadow:inset 0 0 0 1.5px #ffffff38;transition:box-shadow .2s,background .2s}
+.ownForm:focus-within{background:#00000059;box-shadow:inset 0 0 0 1.5px var(--mint),0 0 0 4px #25d36626,0 0 30px #25d36633}
+.ownIcon{flex:none;display:grid;place-items:center;width:26px;height:26px;color:var(--mint)}
 .ownIcon svg{width:22px;height:22px}
-.ownForm input{flex:1;min-width:0;height:46px;padding:0 2px;border:0;background:none;color:var(--navy);font:700 16px/1 var(--text);outline:none}
-.ownForm input::placeholder{color:#62708a;font-weight:600}
-.ownForm button{flex:none;display:grid;place-items:center;width:38px;height:38px;margin-right:4px;border-radius:50%;background:var(--green);color:var(--navy);cursor:pointer}
+.ownForm input{flex:1;min-width:0;height:46px;padding:0 2px;border:0;background:none;color:#fff;font:700 16px/1 var(--text);outline:none}
+.ownForm input::placeholder{color:#93a7c6;font-weight:600}
+.ownForm button{flex:none;display:grid;place-items:center;width:38px;height:38px;margin-right:4px;border:0;border-radius:50%;background:var(--green);color:var(--navy);cursor:pointer;transition:background .2s,scale .15s}
+.ownForm button:hover{background:var(--mint)}
+.ownForm button:active{scale:.92}
 .ownForm button svg{width:19px;height:19px}
-.ownForm button:disabled{background:#d5dfe8;color:#7b879a;cursor:default}
+.ownForm button:disabled{background:#ffffff1f;color:#7f93b4;cursor:default}
 .quick{display:flex;gap:6px;margin:8px -8px 0;padding:0 8px 1px;overflow-x:auto;scrollbar-width:none}
 .quick::-webkit-scrollbar{display:none}
-.quick button{flex:none;padding:8px 12px;border-radius:40px;background:#fff;box-shadow:inset 0 0 0 1.5px #bfe6cd;color:var(--navy);font:800 13px/1 var(--head);white-space:nowrap;cursor:pointer}
-.quick button:hover{box-shadow:inset 0 0 0 1.5px var(--navy)}
+.quick button{flex:none;padding:8px 12px;border:0;border-radius:40px;background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff38;color:#e6eefb;font:800 13px/1 var(--head);white-space:nowrap;cursor:pointer;transition:background .2s,box-shadow .2s}
+.quick button:hover{background:#25d36626;box-shadow:inset 0 0 0 1px var(--green)}
 .quick button:disabled{opacity:.5;cursor:default}
-.ownTalk{margin-top:10px}
+.ownTalk{margin-top:11px}
 .ownTalk .turn:last-child{margin-bottom:2px}
 .ownTalk .thinking{margin-bottom:2px}
 .ownTalk .asked{max-width:92%}
 
 @media (min-width:760px){
-  .launcher{right:24px;bottom:24px;width:auto;min-height:58px;padding:0 22px 0 17px}
+  .launcher{right:24px;bottom:24px;width:auto;min-height:58px;padding:0 24px 0 18px}
   .launcher span{display:inline}
   .shade{display:none}
-  .panel{left:auto;right:24px;bottom:24px;width:420px;height:min(640px,calc(100dvh - 48px));border-radius:24px;box-shadow:0 20px 60px #061b3d59}
+  .panel{left:auto;right:24px;bottom:24px;width:440px;height:min(680px,calc(100dvh - 48px));border-radius:26px;box-shadow:inset 0 0 0 1px #ffffff40,0 30px 90px #000c,0 0 80px #2f6fe440}
   .fine{padding-bottom:12px}
+  .thinking{grid-template-columns:128px minmax(0,1fr)}
+  .brain3d{width:128px;height:128px}
 }
-@media (prefers-reduced-motion:reduce){.panel,.answer,.answerBody p,.answerBody ul,.thinking,.now,.trail li,.halo,.link,.node{animation:none}.now{background:none;color:#fff}.link{opacity:.6}}
-@media print{.launcher,.panel,.shade{display:none!important}}
+@media (prefers-reduced-motion:reduce){.panel,.shade,.answer,.answer:after,.answerBody p,.answerBody ul,.badges i,.thinking,.now,.trail li,.scanline,.asked,.start li,.launcher:after{animation:none}.now{background:none;color:#fff}.scanline{display:none}}
+@media print{.launcher,.panel,.shade,.own{display:none!important}}

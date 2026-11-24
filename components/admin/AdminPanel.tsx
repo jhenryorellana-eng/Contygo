@@ -11,6 +11,7 @@ import CrmPanel from "./CrmPanel";
 import LeadsPanel from "./LeadsPanel";
 import LoginForm from "./LoginForm";
 import OwnerOverview from "./OwnerOverview";
+import CaseCounterCard from "./CaseCounterCard";
 import ReviewsPanel from "./ReviewsPanel";
 import TeamPanel from "./TeamPanel";
 
@@ -27,7 +28,7 @@ const VIEWS: { key: View; label: string }[] = [
   { key: "overview", label: "Resumen" },
   { key: "crm", label: "Contactos" },
   { key: "leads", label: "Leads y asesoras" },
-  { key: "reviews", label: "Reseñas" },
+  { key: "reviews", label: "Casos y reseñas" },
   { key: "team", label: "Equipo" },
   { key: "account", label: "Mi cuenta" },
 ];
@@ -36,7 +37,7 @@ const TITLES: Record<View, string> = {
   overview: "Resumen del negocio",
   crm: "Contactos",
   leads: "Leads y asesoras",
-  reviews: "Reseñas de clientes",
+  reviews: "Casos y reseñas de clientes",
   team: "Equipo y accesos",
   account: "Mi cuenta",
 };
@@ -101,7 +102,10 @@ export default function AdminPanel() {
         userPlaceholder="henry"
         onLogin={(s) => {
           setSession(s);
-          setView("overview");
+          // Como al cargar con la sesión ya abierta: sin la base del CRM, el panel abre donde sí hay algo que hacer
+          // (el contador de casos y las felicitaciones). El 24-11-2026 el dueño entró, cayó en un «Resumen» vacío y no
+          // encontró el contador.
+          setView((s as SessionInfo & { crm?: boolean }).crm === false ? "reviews" : "overview");
         }}
       />
     );
@@ -148,7 +152,26 @@ export default function AdminPanel() {
         </div>
       </header>
 
-      {view === "overview" && <OwnerOverview onGo={(v) => go(v)} />}
+      {/* El contador de casos y la presentación en vivo, también en el Resumen: lo primero que se ve al entrar. */}
+      {view === "overview" && (
+        <>
+          <CaseCounterCard />
+          <div className="admin__toolbar">
+            <a className="btn btn--primary" href="/admin/felicitaciones" target="_blank" rel="noopener noreferrer">
+              Presentar en vivo
+            </a>
+            <a className="btn btn--ghost" href="/admin/felicitaciones?ejemplos=1" target="_blank" rel="noopener noreferrer">
+              Ver ejemplos
+            </a>
+            <div className="admin__toolbar-right">
+              <button type="button" className="btn btn--ghost admin__btn-sm" onClick={() => go("reviews")}>
+                Aprobar historias de clientes
+              </button>
+            </div>
+          </div>
+          <OwnerOverview onGo={(v) => go(v)} />
+        </>
+      )}
       {view === "crm" && <CrmPanel session={session} />}
       {view === "leads" && <LeadsPanel />}
       {view === "reviews" && <ReviewsPanel onPending={onPending} />}

@@ -277,8 +277,8 @@ export default function OwnerOverview({ onGo }: { onGo: (v: Go) => void }) {
               <span>Reparto por turnos, números de WhatsApp, pausas.</span>
             </button>
             <button type="button" className="ov__link" onClick={() => onGo("reviews")}>
-              <b>Reseñas</b>
-              <span>Aprobar lo que se publica en la home.</span>
+              <b>Casos y reseñas</b>
+              <span>El contador de casos, las historias de clientes y la presentación en vivo.</span>
             </button>
             <button type="button" className="ov__link" onClick={() => onGo("team")}>
               <b>Equipo</b>

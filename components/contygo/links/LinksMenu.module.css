@@ -29,6 +29,13 @@
 .chips::-webkit-scrollbar{display:none}
 .chips a{flex:none;padding:8px 14px;border-radius:40px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--line);font:800 14px/1 var(--head);text-decoration:none;white-space:nowrap}
 .chips a:hover{box-shadow:inset 0 0 0 1.5px var(--navy)}
+/* The assistant, announced at the top */
+.band{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;margin-top:6px;padding:12px 14px 12px 10px;border-radius:20px;background:linear-gradient(140deg,#0b2d63,var(--navy) 70%);color:#fff;font:15px/1.3 var(--text);text-align:left;box-shadow:0 12px 26px #061b3d33;cursor:pointer}
+.band img{width:56px;height:56px}
+.band span{color:#c9d6ea;font-size:14px}
+.band b{display:block;margin-bottom:2px;color:#fff;font:800 17px/1.15 var(--head);letter-spacing:-.02em}
+.band i{padding:10px 14px;border-radius:40px;background:var(--green);color:var(--navy);font:800 14px/1 var(--head);font-style:normal;white-space:nowrap}
+.band:hover i{background:#1fc45d}
 .rule{margin:12px 2px 0;color:var(--muted);font-size:14px;line-height:1.35}
 .rule b{color:var(--navy)}
 
@@ -105,6 +112,9 @@
   .hero{right:14px;top:-4px;width:170px}
   .tools .wrap{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:16px;align-items:center}
   .chips{margin:0;padding:0;flex-wrap:wrap}
+  .band{margin-top:10px;padding:14px 18px 14px 14px;gap:16px}
+  .band span{font-size:15.5px}
+  .band b{font-size:19px}
   .rule{margin-top:14px;font-size:15px}
   .course{margin-top:30px;scroll-margin-top:92px}
   .course h2{font-size:30px}
@@ -121,7 +131,7 @@
 @media (prefers-reduced-motion:reduce){.act,.more svg{transition:none}.pending{animation:none}}
 @media print{
   .page,.sheet{background:#fff}
-  .tools,.acts,.hero,.wait,.more,.all{display:none!important}
+  .tools,.acts,.hero,.wait,.more,.all,.band{display:none!important}
   .cover{padding:12px 0 14px;background:#fff;color:var(--navy)}
   .cover h1{margin:8px 0 2px;font-size:30px}
   .cover p{color:var(--muted);font-size:12.5px}

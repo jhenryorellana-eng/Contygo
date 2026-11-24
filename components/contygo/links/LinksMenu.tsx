@@ -3,14 +3,15 @@
 /* The team's menu (/links), made for whoever answers clients all day: a short header so the list starts on the first
    screen, the search at hand, and each service in a compact row — its clay picture, its live price, one line, and
    three actions always in sight (the message for the client's chat, straight to WhatsApp, or the link alone). What a
-   client asks next (who it is for, what it includes) opens under the row. Prices come from the platform as on the rest
+   client asks next (who it is for, what it includes) opens under the row, and each row has the assistant's own box:
+   a question written there is about that service (components/contygo/links/TeamChat.tsx). Prices come from the platform as on the rest
    of the site (useServicePrices): while they load or if they fail, no price is shown, never an old one. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { EXTRAS_SEEN_ON, LINK_SECTIONS, type LinkItem, type LinkPlan } from "@/lib/contygo-links";
 import { useServicePrices, type PriceMap } from "@/lib/contygo-api/prices-client";
 import { copyText } from "./copy";
-import TeamChat from "./TeamChat";
+import TeamChat, { ServiceAsk } from "./TeamChat";
 import s from "./LinksMenu.module.css";
 
 const money = (dollars: number) => "$" + dollars.toLocaleString("en-US");
@@ -62,7 +63,7 @@ function Copy({ text, label, icon, kind, className }: { text: () => string; labe
   );
 }
 
-function Dish({ item, prices, flash }: { item: LinkItem; prices: PriceMap | null; flash: boolean }) {
+function Dish({ item, prices, flash, onJump }: { item: LinkItem; prices: PriceMap | null; flash: boolean; onJump: (key: string) => void }) {
   const [open, setOpen] = useState(false);
   const plans = plansOf(item, prices);
   const text = () => message(item, plans);
@@ -106,6 +107,7 @@ function Dish({ item, prices, flash }: { item: LinkItem; prices: PriceMap | null
         <a className={`${s.act} ${s.wa}`} href={`https://wa.me/?text=${encodeURIComponent(text())}`} target="_blank" rel="noopener noreferrer">{Icon.whatsapp}<span>WhatsApp</span></a>
         <Copy text={() => `https://${item.url}`} label="Link" icon={Icon.link} />
       </div>
+      {item.slug && <ServiceAsk serviceId={item.key} name={item.name} onJump={onJump} />}
     </article>
   );
 }
@@ -116,6 +118,7 @@ export default function LinksMenu() {
   const [stuck, setStuck] = useState(false);
   const [late, setLate] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [chat, setChat] = useState(false);
   const tools = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
 
@@ -170,6 +173,11 @@ export default function LinksMenu() {
         </div>
 
         <div className={s.wrap}>
+          <button type="button" className={s.band} onClick={() => setChat(true)}>
+            <Image src="/contygo/v8/producto-henry.webp" alt="" width={56} height={56} />
+            <span><b>¿Tu cliente tiene una duda?</b>Pregúntale al asistente: costos, pagos, documentos y proceso.</span>
+            <i>Preguntar</i>
+          </button>
           <p className={s.rule}>Precios en dólares. Son los <b>honorarios de ContyGo</b>: las tasas del gobierno se pagan aparte.</p>
           {!prices && late && <p className={s.wait} role="status"><b>Los precios no cargaron.</b>Revisa tu internet y recarga la página. Los links sí funcionan.</p>}
 
@@ -177,7 +185,7 @@ export default function LinksMenu() {
             <section className={s.course} id={section.id} key={section.id}>
               <h2>{section.title}</h2>
               <p>{section.note}</p>
-              <div className={s.list}>{section.items.map(item => <Dish key={item.key} item={item} prices={prices} flash={flash === item.key} />)}</div>
+              <div className={s.list}>{section.items.map(item => <Dish key={item.key} item={item} prices={prices} flash={flash === item.key} onJump={jump} />)}</div>
             </section>
           ))}
 
@@ -189,14 +197,14 @@ export default function LinksMenu() {
               <li>Los precios de los servicios se leen de la plataforma cada vez que abres esta página: <b>siempre son los de hoy</b>.</li>
               <li>Los del Club y de la asesoría con Henry son los que mostraban sus páginas el {EXTRAS_SEEN_ON}.</li>
               <li>«Copiar mensaje» copia el nombre, el precio y el link; «WhatsApp» abre el mismo mensaje para elegir el chat.</li>
-              <li>El asistente responde con lo que ContyGo tiene escrito de cada servicio. Si no tiene un dato, lo dice: confírmalo antes de responder.</li>
+              <li>El asistente responde con lo que ContyGo tiene escrito de cada servicio; en la fila de un servicio, responde sobre ese servicio. Si no tiene un dato, lo dice: confírmalo antes de responder.</li>
               <li>Henry Orellana es consultor de inmigración registrado en Utah. <b>No es abogado</b> y no da asesoría legal.</li>
             </ul>
             <Copy className={s.all} text={everything} label="Copiar toda la carta" icon={Icon.copy} />
           </footer>
         </div>
       </main>
-      <TeamChat onJump={jump} />
+      <TeamChat open={chat} onOpen={setChat} onJump={jump} />
     </div>
   );
 }

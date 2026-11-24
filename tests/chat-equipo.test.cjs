@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { VISIBLE_SERVICES } = require('../lib/contygo-catalog.ts');
-const { TEAM_CHAT_RULES, teamKnowledge, readTeamReply, readTeamHistory, localTeamReply } = require('../lib/agent/team-chat.ts');
+const { TEAM_CHAT_RULES, teamKnowledge, teamFocusRule, isTeamService, readTeamReply, readTeamHistory, localTeamReply } = require('../lib/agent/team-chat.ts');
 
 const plan = (name, priceCents, extra = {}) => ({ id: name, name: { es: name, en: name }, priceCents, installmentOptions: [], extraPartyPriceCents: 0, ...extra });
 const remote = (slug, plans) => ({ id: slug, slug, name: { es: slug, en: slug }, plans, eligibilityQuestions: [], partyRoles: [] });
@@ -52,6 +52,22 @@ test('sin la IA, la pregunta que nombra un servicio recibe su ficha con el preci
   assert.doesNotMatch(localTeamReply('que es el cambio de corte', []).reply, /\$/);
   assert.deepEqual(localTeamReply('quiero reforzar mi asilo', LIVE).serviceIds, ['reforzar-asilo']);
   assert.equal(localTeamReply('hola, una duda', LIVE), null);
+});
+
+test('desde la fila de un servicio se alimenta de ese producto: su ficha entera, y los demás en una línea', () => {
+  const focused = teamKnowledge(LIVE, 'permiso-de-trabajo');
+  assert.match(focused, /EL SERVICIO DE LA PREGUNTA:\n### Permiso de Trabajo \(I-765\) \(id: permiso-de-trabajo\)/);
+  assert.match(focused, /Paquete «Estándar»: \$150\. Formas de pago: Pago único de \$150/);
+  assert.equal((focused.match(/^### /gm) || []).length, 1);
+  assert.match(focused, /- Declaración de Impuestos \(id: impuestos\)\..* Honorarios desde \$100\./);
+  assert.ok(focused.length < teamKnowledge(LIVE).length / 2);
+  assert.match(teamFocusRule('permiso-de-trabajo'), /responde sobre ESE servicio aunque no lo nombre/);
+  assert.equal(teamFocusRule('inventado'), '');
+  assert.equal(isTeamService('permiso-de-trabajo'), true);
+  assert.equal(isTeamService('loteria-dv-2027'), false);
+  // Sin la IA, una pregunta que no nombra el servicio recibe la ficha del de su fila.
+  assert.deepEqual(localTeamReply('cuanto cuesta?', LIVE, 'permiso-de-trabajo').serviceIds, ['permiso-de-trabajo']);
+  assert.deepEqual(localTeamReply('y el itin?', LIVE, 'permiso-de-trabajo').serviceIds, ['itin']);
 });
 
 test('la ruta tiene techo por IP, pide mismo origen y no registra la pregunta', () => {

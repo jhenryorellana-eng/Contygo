@@ -168,6 +168,18 @@ test('el cerebro elige qué fichas van al modelo: la tabla, y el estado y el con
   assert.doesNotMatch(withBrain, /Edad y estado \(revisado por ContyGo/);
 });
 
+test('«Escuchar»: lo que se lee en voz alta es la respuesta sin enlaces, fuentes ni corchetes', () => {
+  const { spoken } = require('../components/contygo/links/TeamChat.tsx');
+  const text = spoken('En Texas llega hasta antes de los 18 [Tex. Fam. Code § 101.003(a)].\n- Tasa de la corte: $350\n- Exención disponible\nLink para el cliente: https://landing.contygo.app/visa-juvenil\nFuente: https://statutes.capitol.texas.gov/?tab=1&code=FA');
+  assert.equal(text, 'En Texas llega hasta antes de los 18 (Tex. Fam. Code sección 101.003(a)) . Tasa de la corte: $350. Exención disponible.');
+  assert.doesNotMatch(text, /https?:|Fuente|\[|§/);
+  assert.equal(spoken('x'.repeat(3000)).length <= 1900, true);
+  // La voz es la de la landing: la misma ruta, que acepta hasta 2.000 caracteres y tiene su techo por IP.
+  const chat = fs.readFileSync(path.join(__dirname, '../components/contygo/links/TeamChat.tsx'), 'utf8');
+  assert.match(chat, /fetch\("\/api\/agent\/visa-speech"/);
+  assert.match(chat, /void context\.resume\(\)/);
+});
+
 test('la ruta tiene techo por IP, pide mismo origen y no registra la pregunta', () => {
   const route = fs.readFileSync(path.join(__dirname, '../app/api/agent/team-chat/route.ts'), 'utf8');
   assert.match(route, /isSameOriginIntakeRequest\(req\)/);

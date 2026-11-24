@@ -8,7 +8,7 @@
    While it works, the screen shows each step as the server really takes it («Buscando en el Cerebro: Texas»,
    «Leyendo la página oficial: uscis.gov»): the route sends them as lines. The answer arrives laid out — the lead, the
    lists, the amounts and the laws marked, its sources as links — and says what it leaned on. It can be copied as plain
-   text for the client's chat. Nothing is kept: closing the page forgets it all. */
+   text for the client's chat, or listened to («Escuchar», with the landing's own voice). Nothing is kept: closing the page forgets it all. */
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { LINK_SECTIONS } from "@/lib/contygo-links";
@@ -150,6 +150,64 @@ function CopyAnswer({ text }: { text: string }) {
   );
 }
 
+/** What is read aloud: the answer without its links, source lines or brackets, with lists as sentences. The voice route takes 2,000 characters. */
+export function spoken(reply: string) {
+  return reply
+    .replace(/\s*Fuentes?(?: \([^)]*\))?:\s*(?:https?:\/\/\S+[ ,]*)+/gi, " ")
+    .replace(/(?:Link para el cliente|Enlace[^:\n]{0,40}):\s*https?:\/\/\S+/gi, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/\[([^\]]{3,140})\]/g, " ($1) ").replace(/§+/g, " sección ")
+    .split("\n").map(line => line.replace(/^[-•·]\s+/, "").trim()).filter(Boolean).map(line => /[.:;!?]$/.test(line) ? line : `${line}.`).join(" ")
+    .replace(/\s+/g, " ").trim().slice(0, 1900);
+}
+
+/** One voice at a time, through one audio context opened by the tap: what an iPhone needs to play after the wait. */
+let audio: AudioContext | null = null;
+let stopCurrent: (() => void) | null = null;
+const Speaker = <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.3" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.500V5.500L7.500 9.500z" /><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18.300 6.500a8 8 0 0 1 0 11" /></svg>;
+
+/** «Escuchar»: the answer read aloud with the landing's own voice (POST /api/agent/visa-speech). Tapping again stops it. */
+function Listen({ text }: { text: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "playing" | "failed">("idle");
+  const buffer = useRef<AudioBuffer | null>(null), alive = useRef(true), mine = useRef<(() => void) | null>(null);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; mine.current?.(); }; }, []);
+
+  const play = (context: AudioContext, sound: AudioBuffer) => {
+    const source = context.createBufferSource(); source.buffer = sound; source.connect(context.destination);
+    const stop = () => { source.onended = null; try { source.stop(); } catch { /* not started or already over */ } if (stopCurrent === stop) stopCurrent = null; mine.current = null; if (alive.current) setState("idle"); };
+    source.onended = stop; stopCurrent = stop; mine.current = stop;
+    source.start(); setState("playing");
+  };
+  const toggle = async () => {
+    if (state === "playing" || state === "loading") { mine.current?.(); mine.current = null; setState("idle"); return; }
+    stopCurrent?.();
+    try {
+      const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Context) throw new Error("no_audio");
+      audio ??= new Context(); const context = audio;
+      void context.resume(); // inside the tap: the permission to sound lasts for what comes after the wait
+      if (buffer.current) { play(context, buffer.current); return; }
+      setState("loading");
+      let cancelled = false; mine.current = () => { cancelled = true; };
+      const response = await fetch("/api/agent/visa-speech", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: spoken(text) }) });
+      if (!response.ok) throw new Error("speech");
+      const sound = await context.decodeAudioData(await response.arrayBuffer());
+      buffer.current = sound;
+      if (cancelled || !alive.current) return;
+      stopCurrent?.(); play(context, sound);
+    } catch {
+      mine.current = null;
+      if (alive.current) { setState("failed"); window.setTimeout(() => { if (alive.current) setState(value => value === "failed" ? "idle" : value); }, 2200); }
+    }
+  };
+  return (
+    <button type="button" className={s.listen} data-state={state} aria-pressed={state === "playing"} onClick={toggle}>
+      {state === "playing" || state === "loading" ? <span className={s.bars} aria-hidden="true"><i /><i /><i /><i /></span> : Speaker}
+      <span aria-live="polite">{state === "playing" ? "Detener" : state === "loading" ? "Preparando la voz" : state === "failed" ? "No se pudo" : "Escuchar"}</span>
+    </button>
+  );
+}
+
 function Answer({ turn, onJump }: { turn: Turn; onJump: (key: string) => void }) {
   const text = turn.a ?? "", { blocks, links } = layout(text);
   const unsure = turn.covered === false && !turn.sources;
@@ -181,6 +239,7 @@ function Answer({ turn, onJump }: { turn: Turn; onJump: (key: string) => void })
       )}
       <div className={s.after}>
         <CopyAnswer text={text} />
+        <Listen text={text} />
         {(turn.serviceIds ?? []).filter(id => NAMES.has(id)).map(id => <button key={id} type="button" className={s.jump} onClick={() => onJump(id)}>Ver {NAMES.get(id)}</button>)}
       </div>
     </article>

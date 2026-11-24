@@ -81,6 +81,16 @@
 .copy svg{width:16px;height:16px}
 .copy:hover{background:var(--mint)}
 .copy[data-state="done"]{background:#fff;color:var(--navy);box-shadow:0 0 0 4px #25d36659}
+.listen{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px 0 11px;border:0;border-radius:40px;background:#2f6fe440;box-shadow:inset 0 0 0 1.5px var(--sky);color:#fff;font:800 13.5px/1 var(--head);white-space:nowrap;cursor:pointer;transition:background .18s,box-shadow .18s}
+.listen svg{width:18px;height:18px;color:var(--sky)}
+.listen:hover{background:#2f6fe473}
+.listen[data-state="playing"]{background:#25d36633;box-shadow:inset 0 0 0 1.5px var(--mint),0 0 26px #25d36659}
+.listen[data-state="loading"]{box-shadow:inset 0 0 0 1.5px #ffffff73}
+.bars{display:inline-flex;align-items:center;gap:2.5px;width:18px;height:16px}
+.bars i{flex:1;height:100%;border-radius:2px;background:var(--mint);transform-origin:center;animation:voice .9s ease-in-out infinite}
+.bars i:nth-child(2){animation-delay:-.6s}.bars i:nth-child(3){animation-delay:-.3s}.bars i:nth-child(4){animation-delay:-.75s}
+.listen[data-state="loading"] .bars i{background:#c7d6ee;animation-duration:1.5s}
+@keyframes voice{0%,100%{scale:1 .25}50%{scale:1 1}}
 .jump{background:#ffffff14;box-shadow:inset 0 0 0 1.5px #ffffff59;color:#fff}
 .jump:hover{background:#ffffff29;box-shadow:inset 0 0 0 1.5px #fff}
 .failed{margin:0;padding:11px 14px;border-radius:14px;background:#ffffff14;box-shadow:inset 0 0 0 1.5px #ffffff73;color:#fff;font-size:14.5px;font-weight:700}
@@ -144,5 +154,5 @@
   .thinking{grid-template-columns:128px minmax(0,1fr)}
   .brain3d{width:128px;height:128px}
 }
-@media (prefers-reduced-motion:reduce){.panel,.shade,.answer,.answer:after,.answerBody p,.answerBody ul,.badges i,.thinking,.now,.trail li,.scanline,.asked,.start li,.launcher:after{animation:none}.now{background:none;color:#fff}.scanline{display:none}}
+@media (prefers-reduced-motion:reduce){.panel,.shade,.answer,.answer:after,.answerBody p,.answerBody ul,.badges i,.thinking,.now,.trail li,.scanline,.asked,.start li,.launcher:after,.bars i{animation:none}.now{background:none;color:#fff}.scanline{display:none}}
 @media print{.launcher,.panel,.shade,.own{display:none!important}}

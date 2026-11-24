@@ -10,7 +10,8 @@
    ============================================================ */
 import { useEffect, useState } from "react";
 import Script from "next/script";
-import { CONSENT_EVENT, CONSENT_STORAGE_KEY, PIXEL_ID, REQUIRE_CONSENT } from "@/lib/meta/events";
+import { usePathname } from "next/navigation";
+import { CONSENT_EVENT, CONSENT_STORAGE_KEY, PIXEL_ID, REQUIRE_CONSENT, isInternalPath } from "@/lib/meta/events";
 
 function storedConsent(): boolean {
   try {
@@ -22,6 +23,7 @@ function storedConsent(): boolean {
 
 export function MetaPixel() {
   const [enabled, setEnabled] = useState(false);
+  const internal = isInternalPath(usePathname());
 
   useEffect(() => {
     if (!PIXEL_ID) return;
@@ -34,7 +36,7 @@ export function MetaPixel() {
     return () => window.removeEventListener(CONSENT_EVENT, onGrant);
   }, []);
 
-  if (!PIXEL_ID || !enabled) return null;
+  if (!PIXEL_ID || !enabled || internal) return null;
 
   return (
     <Script id="meta-pixel-base" strategy="afterInteractive">

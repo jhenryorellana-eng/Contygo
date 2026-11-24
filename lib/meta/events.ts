@@ -51,3 +51,7 @@ export function isStandardEvent(name: MetaEventName): boolean {
 
 /** Categoría de contenido común para los servicios migratorios. */
 export const CONTENT_CATEGORY = "immigration_service";
+
+/** The team's own pages (the panel, the services card, the case counter): no advertising pixel there, and so no consent
+    to ask — its banner would only cover the tools (24-11-2026: it sat on top of the counter's «Guardar»). */
+export const isInternalPath = (pathname: string | null | undefined) => /^\/(admin|equipo|links|contador)(\/|$)/.test(pathname ?? "");

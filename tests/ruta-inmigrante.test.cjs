@@ -81,7 +81,7 @@ test('las certificaciones solo se anuncian: las cuatro licencias, los cuatro pas
 });
 
 test('lo que el dueño no ha dado no se inventa', () => {
-  if (OWNER_PENDING.freeWorkPermit === null) { assert.doesNotMatch(page, /Empieza gratis|Empezar gratis/); assert.ok(page.includes('Empieza por tu permiso de trabajo')); }
+  if (OWNER_PENDING.freeWorkPermit === null) { assert.doesNotMatch(page, /Empieza gratis|Empezar gratis|empieza gratis/); assert.ok(page.includes('Permiso de trabajo</strong>')); }
   if (OWNER_PENDING.clubSeatsLeft === null) assert.doesNotMatch(page, /Quedan \d/);
   // Sin precio ni duración de la sesión, su tarjeta solo lleva el aviso, sin nada delante (20-11-2026).
   if (OWNER_PENDING.sessionTerms === null) assert.ok(page.includes('>Orientación, no asesoría legal<'));
@@ -89,14 +89,20 @@ test('lo que el dueño no ha dado no se inventa', () => {
   assert.ok(!/licencia de conducir|SG Services/i.test(page) && !require('node:fs').existsSync('public/contygo/v8/servicio-licencia-conducir.webp'));
   assert.equal(page.includes('Nuestros aliados'), ALLIES.length > 0);
   for (const ally of ALLIES) assert.ok(page.includes(ally.name) && (OWNER_PENDING.allyLogo !== null || page.includes(`>${ally.initials}<`)), ally.name);
-  // En su lugar, en la hoja del paso 1: los tres servicios más pedidos, los mismos que el asistente ofrece primero.
+  // En la hoja del paso 1, los servicios estrella en el orden del dueño (24-11-2026): Visa Juvenil, Apelación ante la BIA,
+  // Reforzamiento de asilo y el permiso de trabajo, bajo su letrero «Los más vendidos» y cada uno con su estrella.
+  // Los tres primeros son los mismos que el asistente ofrece primero.
   const { LANDING_NEEDS } = require('../lib/agent/landing-chat-ui.ts');
   const tops = LANDING_NEEDS.filter(need => need.top);
   assert.deepEqual(tops.map(need => need.label), ['Visa Juvenil', 'Apelación ante la BIA', 'Reforzamiento de asilo']);
-  const sheet = page.slice(page.indexOf('Empieza por tu permiso de trabajo'), page.indexOf('Elige tu tramo'));
+  const sheet = page.slice(page.indexOf('Los más vendidos'), page.indexOf('Elige tu tramo'));
+  assert.ok(sheet.startsWith('Los más vendidos') && sheet.includes('Nuestros cuatro servicios estrella'));
   let at = 0;
-  for (const need of tops) { const found = sheet.indexOf(`>${need.label}</strong>`, at); assert.ok(found > 0 && sheet.includes(need.hint), need.label); at = found; }
+  for (const label of [...tops.map(need => need.label), 'Permiso de trabajo']) { const found = sheet.indexOf(`${label}</strong>`, at); assert.ok(found > at, label); at = found; }
+  for (const need of tops) assert.ok(sheet.includes(need.hint), need.label);
   assert.equal((sheet.match(/Más pedido/g) || []).length, 3);
+  assert.equal((sheet.match(/Servicio estrella/g) || []).length, 4);
+  assert.equal((sheet.match(/data-star="/g) || []).length, 4);
 });
 
 test('cada enlace al Club y a la agenda dice desde dónde se tocó, sin perder el origen', () => {
@@ -111,23 +117,37 @@ test('cada enlace al Club y a la agenda dice desde dónde se tocó, sin perder e
   }
 });
 
-test('las felicitaciones no salen en la página: las enseña el dueño desde su panel, con su sesión', () => {
+test('los casos en la página: solo el contador y las historias aprobadas con permiso; el panel sigue siendo del dueño', () => {
+  // 22-11-2026: «que no salga en la página principal, sino en el dashboard de Henry». 24-11-2026, el dueño lo cambia: «la
+  // idea es que el contador aparezca ahí para que los clientes cuando ingresen puedan ver nuestros casos ganados… y un
+  // botón donde les abra el mismo "presentar en vivo" que le sale a Henry».
   const fs = require('node:fs');
   const { CONTYGO_RESULTS, RESULTS_SAMPLE, REVIEWS_SAMPLE, BOARD_FROM, resultsPublic } = require('../lib/contygo-results.ts');
-  // Ni la sección ni sus datos de muestra, en la landing.
-  assert.ok(!page.includes('id="resultados"') && !page.includes('Aprobados, ') && !page.includes('de muestra'));
+  // Sin cifras ni historias la sección no existe (así se dibuja en el servidor): ni un cero ni un dato de muestra.
+  assert.ok(!page.includes('id="casos"') && !page.includes('Aprobados, ') && !page.includes('de muestra'));
   for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
-  assert.ok(!fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8').includes('CongratsShow'));
-  // No hay lista pública: la ruta de reseñas solo recibe, y la lista es del panel (pide la sesión del dueño).
+  const landing = fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8'), board = fs.readFileSync('components/contygo/v7/TrustBoard.tsx', 'utf8');
+  assert.ok(landing.includes('{fresh && <TrustBoard />}'));
+  assert.ok(board.includes('fetch("/api/felicitaciones")') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
+  assert.ok(board.includes('<CongratsShow variant="public"') && !/SAMPLE/.test(board), 'la presentación pública nunca trae ejemplos');
+  // Henry al frente (el dueño lo eligió entre cuatro maneras): su foto, su nombre y su título tal como es.
+  assert.ok(board.includes('Consultor de inmigración registrado en Utah') && fs.existsSync('public/contygo/casos/henry-cruzados.webp'));
+  // La lista pública es otra ruta, de solo lectura: lo aprobado por el dueño y con el permiso de su autor, y el contador.
   const route = fs.readFileSync('app/api/reviews/route.ts', 'utf8'), admin = fs.readFileSync('app/api/admin/reviews/route.ts', 'utf8');
   assert.ok(!/export async function GET/.test(route) && /export async function POST/.test(route));
   assert.ok(admin.indexOf('isAdminRequest(req)') > 0 && admin.indexOf('isAdminRequest(req)') < admin.indexOf('adminListReviews('));
+  const open = fs.readFileSync('app/api/felicitaciones/route.ts', 'utf8'), photo = fs.readFileSync('app/api/felicitaciones/[id]/foto/route.ts', 'utf8'), reviews = fs.readFileSync('lib/reviews.ts', 'utf8');
+  assert.ok(/export async function GET/.test(open) && !/export async function (POST|PUT|DELETE)/.test(open));
+  assert.ok(open.includes('publicReviews()') && !open.includes('updatedBy') && !/SAMPLE/.test(open));
+  assert.ok(photo.includes('publicReviewPhoto(params.id)'));
+  assert.ok(reviews.includes('review.status === "approved" && review.consent === true'));
+  assert.ok(fs.readFileSync('components/contygo/v7/ShareStory.tsx', 'utf8').includes('su página'), 'el permiso que firma el cliente nombra la página');
   // La presentación lee de esa lista y dice siempre que nada está garantizado. Los datos de muestra solo salen dentro del
   // panel, cuando el dueño los pide («Ver ejemplos», 24-11-2026) o en desarrollo, bajo un aviso de que no son clientes
   // reales y con cada historia y cada foto marcada como ejemplo; nunca mezclados con las reales.
   const show = fs.readFileSync('components/contygo/v7/CongratsShow.tsx', 'utf8');
   assert.ok(show.includes('/api/admin/reviews?status=approved') && show.includes('un resultado anterior no garantiza el tuyo') && show.includes('La decisión es de la autoridad'));
-  assert.ok(show.includes('const sample = state !== "loading" && state !== "signin" && (example || (DEV && approved.length === 0));') && show.includes('process.env.NODE_ENV === "development"'));
+  assert.ok(show.includes('const sample = !open && state !== "loading" && state !== "signin" && (example || (DEV && approved.length === 0));') && show.includes('process.env.NODE_ENV === "development"'), 'los ejemplos, nunca en la variante pública');
   assert.ok(show.includes('const stories = sample ? REVIEWS_SAMPLE : approved;'), 'los ejemplos sustituyen a las reales, no se mezclan');
   assert.ok(show.includes('no son clientes reales') && show.includes('example={sample}'));
   for (const review of REVIEWS_SAMPLE) if (review.image) { assert.match(review.image, /^\/contygo\/ejemplos\//, review.name); assert.ok(fs.existsSync('public' + review.image), review.image); }

@@ -1,0 +1,38 @@
+/* The cases, on the landing: Henry in front, and beside him the cases won, large (the owner chose this among four).
+   Brand colours only. On a phone the green thread runs down the left edge of the page: the board leaves it its lane. */
+.board{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);width:min(100% - 28px,1180px);margin:clamp(18px,4vw,44px) auto;border-radius:clamp(28px,4.4vw,44px);background:#010d33;color:#fff;box-shadow:inset 0 0 0 1px #ffffff24,0 30px 70px -30px #061b3d;overflow:hidden}
+.portrait{position:relative;aspect-ratio:1/1.08;overflow:hidden}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;animation:enter .7s cubic-bezier(.2,.85,.2,1) both}
+@keyframes enter{from{opacity:0;scale:1.04}}
+.portrait:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0000 58%,#010d33 96%);pointer-events:none}
+.name{position:absolute;z-index:1;left:16px;top:16px;display:grid;gap:1px;margin:0;padding:8px 14px 9px;border-radius:16px;background:#010d33cc;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px #ffffff40;color:#c5d3e8;font:700 12.5px/1.25 var(--font-contygo-body),sans-serif;text-align:left}
+.name b{color:#fff;font:800 15.5px/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.01em}
+.copy{position:relative;display:grid;justify-items:start;gap:14px;margin-top:-58px;padding:0 20px 24px;text-align:left}
+.copy h2{margin:0;font:800 clamp(28px,7vw,54px)/.98 var(--font-contygo-heading),sans-serif;letter-spacing:-.045em;color:#fff;text-wrap:balance}
+.copy em{font-style:normal;color:#25d366}
+.copy p{margin:0;max-width:32em;color:#c5d3e8;font:500 clamp(15.5px,2.1vw,20px)/1.42 var(--font-contygo-body),sans-serif}
+.giant{display:grid;gap:0;max-width:none!important}
+.giant b{font:800 clamp(96px,30vw,210px)/.86 var(--font-contygo-heading),sans-serif;letter-spacing:-.06em;color:#25d366;text-shadow:0 0 60px #25d36666;font-variant-numeric:tabular-nums}
+.giant span{font:800 clamp(20px,5vw,34px)/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em;color:#fff}
+.minor{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+.minor li{display:inline-flex;align-items:baseline;gap:8px;padding:9px 16px;border-radius:40px;background:#ffffff14;box-shadow:inset 0 0 0 1px #ffffff40;color:#c5d3e8;font:700 15px/1.1 var(--font-contygo-body),sans-serif}
+.minor b{color:#fff;font:800 22px/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.open{display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 24px;border:0;border-radius:60px;background:#25d366;color:#061b3d;font:800 clamp(16px,2.2vw,19px)/1 var(--font-contygo-heading),sans-serif;cursor:pointer;box-shadow:0 0 0 5px #25d36633,0 16px 36px #25d36673;transition:background .2s,translate .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+.open svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:translate .2s}
+.open:hover{background:#8dffb5;translate:0 -2px;box-shadow:0 0 0 7px #25d36633,0 20px 44px #25d36699}
+.open:hover svg{translate:4px 0}
+.open:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.fine{margin:0;max-width:46em;color:#a9b8ca!important;font:500 clamp(12px,1.5vw,14px)/1.4 var(--font-contygo-body),sans-serif!important}
+/* The choice of photograph, on the local page only */
+.pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:9px 12px;border-radius:16px;background:#ffffff14;color:#c9d7ee!important;font:700 12.5px/1.3 var(--font-contygo-body),sans-serif!important}
+.pick button{padding:8px 12px;border:0;border-radius:40px;background:#ffffff1f;color:#fff;font:800 12.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
+.pick button[aria-pressed=true]{background:#25d366;color:#061b3d}
+@media (max-width:759px){.board{width:auto;margin-left:40px;margin-right:12px}.open{min-height:54px;padding:0 20px}}
+@media (min-width:860px){
+  .board{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);align-items:stretch}
+  .portrait{aspect-ratio:auto;min-height:560px}
+  .portrait:after{background:linear-gradient(90deg,#0000 62%,#010d33 98%)}
+  .name{left:22px;top:22px}
+  .copy{margin:0;padding:48px 48px 40px 16px;align-content:center;gap:18px}
+}
+@media (prefers-reduced-motion:reduce){.open,.open svg{transition:none}.portrait img{animation:none}}

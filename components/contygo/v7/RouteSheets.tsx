@@ -126,6 +126,9 @@ export function StepCover({ step, index }: { step: RouteStep; index: number }) {
 /** The services people ask for most: the assistant's first three, each with its service in the catalog. */
 const TOPS = LANDING_NEEDS.filter(need => need.top).flatMap(need => { const item = VISIBLE_SERVICES.find(service => service.id === need.ids[0]); return item ? [{ need, item }] : []; });
 
+const Star = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" /></svg>;
+const StarTag = () => <em className={s.star}><Star />Servicio estrella</em>;
+
 /** Step 1: its cover and the two things that come with the status, as tickets; its tiers follow under the sheet.
  *  - The work permit, where the route starts (the owner's brief: «Empieza gratis» only once he says what the free
  *    part includes; until then it is the paid service, with its live price).
@@ -138,25 +141,28 @@ export function StarterSheet({ step, index, permit, itin, open, warm }: { step: 
     <article className={s.sheet} data-sheet data-tier={TONE[step.id]}>
       <StepCover step={step} index={index} />
       <div className={s.body}>
-        <div data-unfold className={`${t.rows} ${s.rows}`} style={{ "--span": TOPS.length * .55 + 1, "--u": "0px" } as CSSProperties}>
-          {permit && <button type="button" className={t.row} data-row style={{ "--n": 0 } as CSSProperties} onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>
-            <span className={t.rowArt} data-flight-art><Image src="/contygo/v8/servicio-permiso-de-trabajo.webp" alt="" fill sizes="64px" /></span>
-            <strong className={t.rowName}>{free ? "Empieza gratis: tu permiso de trabajo" : "Empieza por tu permiso de trabajo"}</strong>
-            <span className={t.blurb}>{free ?? "Si tu asilo lleva 150 días o más en trámite, prepara tu I-765 desde la app."}</span>
-            {free ? <span className={t.price}>Gratis</span> : from && <span className={t.price}><small>desde</small> {from}</span>}
-            <i className={t.rowGo}><Arrow /></i>
-            {!free && <BlackFridayTag className={t.offer} />}
-          </button>}
-          {/* Where the driver's licence was: the three services people ask for most, the same three the assistant
-              offers first (LANDING_NEEDS), with its words. Each opens its service, as every ticket here. */}
-          {TOPS.map(({ need, item }, n) => { const price = fromPriceLabel(prices, item.slug); return <button key={item.id} type="button" className={t.row} data-row style={{ "--n": n + 1 } as CSSProperties} onClick={event => open(item, event.currentTarget)} onPointerEnter={() => warm(item)} onPointerDown={() => warm(item)} onFocus={() => warm(item)} aria-label={`Conocer ${need.label}, de los más pedidos${price ? `, desde ${price}` : ""}`}>
-            <span className={t.rowArt} data-flight-art><Image src={`/contygo/v8/${need.art}.webp`} alt="" fill sizes="64px" /></span>
-            <strong className={t.rowName}>{need.label}</strong>
-            <span className={t.blurb}><b className={s.most}>Más pedido</b> · {need.hint}</span>
-            {price && <span className={t.price}><small>desde</small> {price}</span>}
-            <i className={t.rowGo}><Arrow /></i>
+        {/* What opens the list: the owner asked for «los más vendidos, o algo así que llame la atención». */}
+        <h3 className={s.best}><i aria-hidden="true"><Star /></i><span><b>Los más vendidos</b><small>Nuestros cuatro servicios estrella</small></span><em>Top 4</em></h3>
+        {/* The star services, in the owner's order (24-11-2026): Visa Juvenil, Apelación ante la BIA, Reforzamiento de asilo
+            and the work permit. They wear their own ticket — night blue, the price on a green stub, a star — so they
+            stand out from every other ticket of the route. The first three are the assistant's too (LANDING_NEEDS). */}
+        <div data-unfold data-stars className={`${t.rows} ${s.rows}`} style={{ "--span": TOPS.length * .55 + 1, "--u": "0px" } as CSSProperties}>
+          {TOPS.map(({ need, item }, n) => { const price = fromPriceLabel(prices, item.slug); return <button key={item.id} type="button" className={t.row} data-row data-star={n + 1} style={{ "--n": n } as CSSProperties} onClick={event => open(item, event.currentTarget)} onPointerEnter={() => warm(item)} onPointerDown={() => warm(item)} onFocus={() => warm(item)}>
+            <span className={`${t.rowArt} ${s.sArt}`} data-flight-art><Image src={`/contygo/v8/${need.art}.webp`} alt="" fill sizes="88px" /></span>
+            <strong className={`${t.rowName} ${s.sName}`}><StarTag />{need.label}</strong>
+            <span className={`${t.blurb} ${s.sBlurb}`}><b className={s.most}>Más pedido</b> · {need.hint}</span>
+            {price && <span className={`${t.price} ${s.sPrice}`}><small>desde</small> {price}</span>}
+            <i className={`${t.rowGo} ${s.sGo}`}><Arrow /></i>
             <BlackFridayTag className={t.offer} />
           </button>; })}
+          {permit && <button type="button" className={t.row} data-row data-star={TOPS.length + 1} style={{ "--n": TOPS.length } as CSSProperties} onClick={event => open(permit, event.currentTarget)} onPointerEnter={() => warm(permit)} onPointerDown={() => warm(permit)} onFocus={() => warm(permit)}>
+            <span className={`${t.rowArt} ${s.sArt}`} data-flight-art><Image src="/contygo/v8/servicio-permiso-de-trabajo.webp" alt="" fill sizes="88px" /></span>
+            <strong className={`${t.rowName} ${s.sName}`}><StarTag />{free ? "Permiso de trabajo: empieza gratis" : "Permiso de trabajo"}</strong>
+            <span className={`${t.blurb} ${s.sBlurb}`}>{free ?? "Si tu asilo lleva 150 días o más en trámite, prepara tu I-765 desde la app."}</span>
+            {free ? <span className={`${t.price} ${s.sPrice}`}>Gratis</span> : from && <span className={`${t.price} ${s.sPrice}`}><small>desde</small> {from}</span>}
+            <i className={`${t.rowGo} ${s.sGo}`}><Arrow /></i>
+            {!free && <BlackFridayTag className={t.offer} />}
+          </button>}
         </div>
         {itin && <p className={s.fine}><button type="button" onClick={event => open(itin, event.currentTarget)} onPointerEnter={() => warm(itin)} onFocus={() => warm(itin)}>¿Aún no tienes ITIN? <b>Empieza aquí</b></button></p>}
       </div>

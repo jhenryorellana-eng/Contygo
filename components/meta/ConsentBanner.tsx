@@ -8,7 +8,8 @@
    Estilo inline con el color del tema (#2563c4) para no depender de globals.css.
    ============================================================ */
 import { useEffect, useRef, useState } from "react";
-import { CONSENT_EVENT, CONSENT_STORAGE_KEY, REQUIRE_CONSENT } from "@/lib/meta/events";
+import { usePathname } from "next/navigation";
+import { CONSENT_EVENT, CONSENT_STORAGE_KEY, REQUIRE_CONSENT, isInternalPath } from "@/lib/meta/events";
 
 const STORAGE_KEY = CONSENT_STORAGE_KEY; // 'granted' | 'denied'
 const COOKIE_MAX_AGE = 15552000; // 180 días
@@ -36,6 +37,7 @@ function deny() {
 export function ConsentBanner() {
   const [visible, setVisible] = useState(false);
   const handledOnLoad = useRef(false);
+  const internal = isInternalPath(usePathname());
 
   useEffect(() => {
     if (!REQUIRE_CONSENT || handledOnLoad.current) return;
@@ -54,7 +56,7 @@ export function ConsentBanner() {
     }
   }, []);
 
-  if (!REQUIRE_CONSENT || !visible) return null;
+  if (!REQUIRE_CONSENT || !visible || internal) return null;
 
   return (
     <div

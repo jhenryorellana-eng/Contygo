@@ -10,6 +10,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { trackBrowser } from "@/lib/meta/pixel-client";
+import { isInternalPath } from "@/lib/meta/events";
 
 export function PixelRouteTracker() {
   const pathname = usePathname();
@@ -20,7 +21,7 @@ export function PixelRouteTracker() {
       first.current = false;
       return;
     }
-    trackBrowser("PageView");
+    if (!isInternalPath(pathname)) trackBrowser("PageView");
   }, [pathname]);
 
   return null;

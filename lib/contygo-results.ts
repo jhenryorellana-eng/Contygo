@@ -47,5 +47,21 @@ export const REVIEWS_SAMPLE: PublicReview[] = [
   { name: "Miguel T.", service: "Apelación (BIA)", serviceId: "apelacion", rating: 4, kind: "review", place: "Nueva Jersey", comment: "El juez decidió en mi contra y tenía pocos días. Prepararon el paquete a tiempo y me explicaron qué seguía. Todavía espero respuesta, pero no me quedé sin apelar." },
 ];
 
+/** The scoreboard of the live show: what the case counter holds (lib/case-counter.ts), per service and in total. */
+export type ScoreRow = { serviceId: string; label: string; created: number; pending: number; won: number };
+export type Score = { totals: { created: number; pending: number; won: number }; rows: ScoreRow[]; updatedAt: string | null; updatedBy: string | null };
+/** An example scoreboard, for «Ver ejemplos» only: made-up figures, shown under the notice that says so. */
+export const SCORE_SAMPLE: Score = (() => {
+  const rows: ScoreRow[] = [
+    { serviceId: "permiso-de-trabajo", label: "Permiso de Trabajo (I-765)", created: 212, pending: 64, won: 141 },
+    { serviceId: "visa-juvenil", label: "Visa Juvenil Premium", created: 58, pending: 31, won: 22 },
+    { serviceId: "cambio-corte", label: "Cambio de Corte", created: 47, pending: 9, won: 36 },
+    { serviceId: "asilo", label: "Asilo Político", created: 39, pending: 30, won: 4 },
+    { serviceId: "itin", label: "Número ITIN", created: 26, pending: 5, won: 21 },
+    { serviceId: "i-485", label: "Ajuste de Estatus I-485 (SIJ)", created: 21, pending: 12, won: 9 },
+  ];
+  return { rows, totals: rows.reduce((sum, row) => ({ created: sum.created + row.created, pending: sum.pending + row.pending, won: sum.won + row.won }), { created: 0, pending: 0, won: 0 }), updatedAt: null, updatedBy: null };
+})();
+
 /** From this many shared approvals on, the board shows their count. */
 export const BOARD_FROM = 5;

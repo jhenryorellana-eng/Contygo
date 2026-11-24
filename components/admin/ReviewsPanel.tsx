@@ -10,6 +10,7 @@ import type { Review, ReviewStatus } from "@/lib/reviews";
 import { getServiceById } from "@/lib/services";
 import { Ico } from "../icons";
 import { timeAgo } from "./fmt";
+import CaseCounterCard from "./CaseCounterCard";
 
 type Tab = ReviewStatus;
 
@@ -112,6 +113,9 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
 
   return (
     <>
+      {/* El contador de casos: lo lleva el encargado (su link se copia aquí) y sale en la presentación en vivo. */}
+      <CaseCounterCard />
+
       <section className="admin__stats" aria-label="Resumen">
         <div className={"stat stat--pending" + (counts.pending > 0 ? " stat--alert" : "")}>
           <span className="stat__n">{counts.pending}</span>

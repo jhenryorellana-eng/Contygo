@@ -26,6 +26,7 @@ import HelpWays from "./HelpWays";
 import HenryHand from "./HenryHand";
 import PlatformTour from "./PlatformTour";
 import AssistantDoor from "./AssistantDoor";
+import TrustBoard from "./TrustBoard";
 import { openAssistant } from "./assistantBus";
 import { CONTRACT_TIME } from "@/lib/agent/landing-chat-ui";
 import HeroStory, { HeroCaption, HeroFlag, HeroLane } from "./HeroStory";
@@ -305,6 +306,9 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
         {clients && <div data-react="count"><strong data-value={clients.split(" ")[0]}>{clients.split(" ")[0]}</strong><span>{clients.split(" ").slice(1).join(" ")}</span></div>}
         <div data-react="count"><strong data-value="100%">100%</strong><span>en español, desde tu celular</span></div>
       </section>}
+
+      {/* The cases, where a visitor arrives: the scoreboard and the way into the stories (only when there are figures or stories). */}
+      {fresh && <TrustBoard />}
 
       <BlackFridayBanner />
 

@@ -74,6 +74,8 @@ async function read(file: string): Promise<Uint8Array | null> {
     return null;
   }
 }
+/** The same private store, for what else the panel keeps beside the stories (lib/case-counter.ts). */
+export { read as storeRead, write as storeWrite };
 async function names(prefix: string): Promise<string[]> {
   if (BLOB) {
     const all: string[] = [];
@@ -174,6 +176,28 @@ export async function adminReviewPhoto(id: string): Promise<Uint8Array | null> {
   if (!reviewsEnabled || !UUID.test(id)) return null;
   try {
     return await read(`${PHOTOS}${id}.jpg`);
+  } catch {
+    return null;
+  }
+}
+
+/* ---- Lo que el público puede ver (24-11-2026). El dueño: «que el contador aparezca en la landing… y un botón donde
+   les abra el mismo "presentar en vivo" que le sale a Henry». Solo las felicitaciones que él aprobó y cuyo autor dio
+   su permiso, que nombra «su página» (ShareStory). Nunca las pendientes ni las rechazadas, y nunca ejemplos. ---- */
+const PUBLIC_MAX = 40;
+const isPublic = (review: Review | null): review is Review => !!review && review.status === "approved" && review.consent === true;
+
+export async function publicReviews(): Promise<Review[] | null> {
+  const approved = await adminListReviews("approved");
+  return approved ? approved.filter(isPublic).slice(0, PUBLIC_MAX) : null;
+}
+
+/** La foto de una felicitación pública: solo si sigue aprobada y con permiso en el momento de pedirla. */
+export async function publicReviewPhoto(id: string): Promise<Uint8Array | null> {
+  if (!reviewsEnabled || !UUID.test(id)) return null;
+  try {
+    const record = await story(id);
+    return isPublic(record) && record.has_photo ? await read(`${PHOTOS}${id}.jpg`) : null;
   } catch {
     return null;
   }

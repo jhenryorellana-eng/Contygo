@@ -135,7 +135,9 @@ test('el cerebro elige qué fichas van al modelo: la tabla, y el estado y el con
   assert.deepEqual(findStates('DE LA CORTE ME DIJERON QUE NO'), []);
   assert.deepEqual(findStates('me dijo que en la corte de su ciudad'), []);
   assert.deepEqual(findCounties('condado de harris', 'TX'), ['Harris']);
-  assert.deepEqual(findCounties('vive en Los Angeles', 'CA'), ['Los Angeles']);
+  assert.deepEqual(findCounties('vive en Los Angeles County', 'CA'), ['Los Angeles']);
+  // «Houston» a secas es la ciudad (condado de Harris), y Texas tiene además un condado de Houston: no se adivina.
+  assert.deepEqual(findCounties('vive en Houston', 'TX'), []);
   const table = nationalTable();
   assert.equal((table.match(/^- /gm) || []).length, 51);
   assert.match(table, /- Utah \(UT\): hay vía hasta antes de los 21/);

@@ -55,15 +55,14 @@ export function findStates(question: string): string[] {
   return found.sort((a, b) => a.at - b.at).slice(0, 3).map(item => item.code);
 }
 
-/** The counties of a state that a question names: after «condado de …»/«… County», or a distinctive name on its own. */
+/** The counties of a state that a question names as counties: «condado de Harris», «Harris County». A bare name is not
+    enough — «vive en Houston» is the city (Harris County), and Texas also has a Houston County: placing a city is the model's job (lookup). */
 export function findCounties(question: string, code: string): string[] {
   const state = brainState(code); if (!state) return [];
-  const text = ` ${plain(question)} `, stateName = plain(state.name);
+  const text = ` ${plain(question)} `;
   return Object.keys(state.counties).filter(county => {
-    const name = plain(county); if (name === stateName) return new RegExp(`(condado|county)( de)? ${escape(name)}(?![a-z])|(?<![a-z])${escape(name)} county`).test(text);
-    const word = new RegExp(`(?<![a-z])${escape(name)}(?![a-z])`);
-    if (!word.test(text)) return false;
-    return name.length >= 6 || new RegExp(`(condado|county)( de)? ${escape(name)}(?![a-z])|(?<![a-z])${escape(name)} county`).test(text);
+    const name = escape(plain(county));
+    return new RegExp(`(condado|county)( de)? ${name}(?![a-z])|(?<![a-z])${name} county`).test(text);
   }).slice(0, 2);
 }
 

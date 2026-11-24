@@ -1,7 +1,7 @@
 /* ============================================================
    /api/admin/login
-   POST { password }            → dueño (ADMIN_PASSWORD)
-   POST { user, password }      → asesora (cuenta del equipo, bcrypt en BD)
+   POST { user: "henry", password } → dueño (ADMIN_PASSWORD; el usuario es «henry» o ADMIN_USER; sin usuario también vale)
+   POST { user, password }          → asesora (cuenta del equipo, bcrypt en BD)
    GET                          → quién soy (sesión actual)
    DELETE                       → cerrar sesión
    ============================================================ */
@@ -54,13 +54,15 @@ export async function POST(req: NextRequest) {
   let token: string | null = null;
   let who: { name: string; role: "owner" | "advisor" } | null = null;
 
-  if (!user) {
-    // Clave maestra de emergencia (variable ADMIN_PASSWORD en Vercel): entra como dueño.
-    if (!safeEqual(password, expected)) {
-      return NextResponse.json({ ok: false, error: "bad_password" }, { status: 401 });
-    }
+  // El dueño entra con su usuario («henry», o el de ADMIN_USER) y la contraseña de ADMIN_PASSWORD (24-11-2026: el
+  // formulario pide usuario, y sin base de datos de equipo ese usuario no llevaba a ningún sitio). Sin usuario, la
+  // misma contraseña sigue valiendo como clave maestra. Con otra contraseña, «henry» puede ser una cuenta del equipo.
+  const ownerUser = (process.env.ADMIN_USER ?? "henry").trim().toLowerCase();
+  if ((!user || user === ownerUser) && safeEqual(password, expected)) {
     token = encodeSession({ uid: "owner", name: "Henry", role: "owner", advisorId: null });
     who = { name: "Henry", role: "owner" };
+  } else if (!user || (user === ownerUser && !crmEnabled)) {
+    return NextResponse.json({ ok: false, error: "bad_password" }, { status: 401 });
   } else {
     // Cuenta del equipo (dueño o asesora), verificada en la BD.
     if (!crmEnabled) return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });

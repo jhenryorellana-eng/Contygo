@@ -97,7 +97,7 @@ export default function AdminPanel() {
       <LoginForm
         kicker="Panel del dueño"
         title="Entrar"
-        hint="Acceso exclusivo del dueño. Las asesoras entran en /equipo."
+        hint="Acceso exclusivo del dueño: usuario «henry» y tu contraseña. Las asesoras entran en /equipo."
         userPlaceholder="henry"
         onLogin={(s) => {
           setSession(s);

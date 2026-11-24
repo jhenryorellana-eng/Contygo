@@ -34,8 +34,11 @@ test('la página se dibuja sin precios inventados y no es para los buscadores', 
   const LinksMenu = require('../components/contygo/links/LinksMenu.tsx').default;
   const html = renderToStaticMarkup(React.createElement(LinksMenu));
   assert.match(html, /Carta de servicios/);
-  // Un botón por servicio, más la frase de la portada que lo nombra.
-  assert.equal((html.match(/Copiar mensaje/g) || []).length, items.length + 1);
+  // Un botón por servicio (más la línea del pie que lo explica), y el mismo mensaje directo a WhatsApp.
+  assert.equal((html.match(/>Copiar mensaje</g) || []).length, items.length);
+  assert.equal((html.match(/href="https:\/\/wa\.me\/\?text=/g) || []).length, items.length);
+  // Lo que el cliente pregunta después sale del catálogo, bajo «Qué incluye».
+  assert.equal((html.match(/>Qué incluye</g) || []).length, items.filter(item => item.slug).length);
   assert.equal((html.match(/Más pedido/g) || []).length, 3);
   // Sin los precios vivos solo se ven los del Club y la asesoría, que son productos aparte.
   assert.deepEqual([...new Set(html.match(/\$[\d,]+/g))].sort(), ['$150', '$25', '$250']);

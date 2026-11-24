@@ -28,6 +28,10 @@ export type LinkItem = {
   top?: boolean;
   /** The line before the link in the message for the client. */
   say: string;
+  /** What the team is asked next, from the catalogue: who it is for, what it includes and what it does not. */
+  who?: string;
+  includes?: readonly string[];
+  mind?: readonly string[];
 };
 export type LinkSection = { id: string; chip: string; title: string; note: string; items: LinkItem[] };
 
@@ -39,7 +43,7 @@ const TOP_IDS = new Set(LANDING_NEEDS.filter(need => need.top).map(need => need.
 const service = (id: string, path: string, art: string, name: string, about: string): LinkItem => {
   const found = CONTYGO_SERVICES.find(item => item.id === id);
   if (!found) throw new Error(`contygo-links: no service «${id}» in the catalogue`);
-  return { key: id, name, url: `${LINKS_HOST}/${path}`, art, about, slug: found.slug, top: TOP_IDS.has(id), say: CONTRACT };
+  return { key: id, name, url: `${LINKS_HOST}/${path}`, art, about, slug: found.slug, top: TOP_IDS.has(id), say: CONTRACT, who: found.audience, includes: found.includes, mind: found.exclusions };
 };
 
 export const LINK_SECTIONS: readonly LinkSection[] = [

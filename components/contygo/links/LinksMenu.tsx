@@ -1,8 +1,10 @@
 "use client";
 
-/* The team's menu (/links): the services by course, each with its clay picture, its live price, one line about it and
-   its link, plus two buttons — the message for the client's chat, or the link alone. Prices come from the platform
-   as on the rest of the site (useServicePrices): while they load or if they fail, no price is shown, never an old one. */
+/* The team's menu (/links), made for whoever answers clients all day: a short header so the list starts on the first
+   screen, the search at hand, and each service in a compact row — its clay picture, its live price, one line, and
+   three actions always in sight (the message for the client's chat, straight to WhatsApp, or the link alone). What a
+   client asks next (who it is for, what it includes) opens under the row. Prices come from the platform as on the rest
+   of the site (useServicePrices): while they load or if they fail, no price is shown, never an old one. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { EXTRAS_SEEN_ON, LINK_SECTIONS, type LinkItem, type LinkPlan } from "@/lib/contygo-links";
@@ -43,17 +45,19 @@ async function copyText(text: string) {
   }
 }
 
+const stroke = { fill: "none", stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round" } as const;
 const Icon = {
-  copy: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5" /></svg>,
-  chat: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5z" /></svg>,
-  done: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>,
-  out: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.500v-11A1.500 1.500 0 0 1 5.500 6H10" /></svg>,
-  find: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.800-3.800" /></svg>,
+  copy: <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.3" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5" /></svg>,
+  link: <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.4" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.400-6.400l-1.200 1.200" /><path d="M14 10a4.5 4.5 0 0 0-6.400 0l-3 3a4.500 4.500 0 0 0 6.400 6.400l1.200-1.200" /></svg>,
+  whatsapp: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2a9.800 9.800 0 0 0-8.400 14.800L2.300 21.800l4.900-1.300A9.800 9.800 0 1 0 12 2.200zm0 1.800a8 8 0 1 1-4.200 14.800l-.3-.2-2.700.7.700-2.600-.2-.3A8 8 0 0 1 12 4zm-3.300 3.900c-.2 0-.5.100-.7.400-.300.300-1 1-1 2.400s1 2.800 1.200 3c.100.200 2 3.200 5 4.300 2.500 1 3 .800 3.500.700.500 0 1.700-.700 2-1.400.200-.700.200-1.200.100-1.400l-.500-.300-1.800-.900c-.300-.100-.500-.100-.700.200l-.800 1c-.100.200-.300.200-.600.100-.300-.200-1.200-.500-2.300-1.400a8.500 8.500 0 0 1-1.600-2c-.200-.300 0-.400.100-.600l.400-.500.300-.500v-.500l-.800-2c-.200-.500-.400-.500-.600-.500h-.200z" /></svg>,
+  done: <svg viewBox="0 0 24 24" {...stroke} strokeWidth="3" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>,
+  find: <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.800-3.800" /></svg>,
+  more: <svg viewBox="0 0 24 24" {...stroke} strokeWidth="2.800" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>,
   seen: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#061b3d" /><path d="M6.800 12.400l3.400 3.400 7-7.400" fill="none" stroke="#25d366" strokeWidth="2.800" strokeLinecap="round" strokeLinejoin="round" /></svg>,
 };
 
 /** A button that copies and says so for a moment. */
-function Copy({ text, label, icon, main, className }: { text: () => string; label: string; icon: JSX.Element; main?: boolean; className?: string }) {
+function Copy({ text, label, icon, kind, className }: { text: () => string; label: string; icon: JSX.Element; kind?: "main"; className?: string }) {
   const [state, setState] = useState<"idle" | "done" | "failed">("idle");
   const timer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -62,10 +66,58 @@ function Copy({ text, label, icon, main, className }: { text: () => string; labe
     clearTimeout(timer.current); timer.current = setTimeout(() => setState("idle"), 1700);
   };
   return (
-    <button type="button" className={`${s.copy} ${main ? s.main : ""} ${className ?? ""}`} data-state={state} onClick={run}>
+    <button type="button" className={`${s.act} ${kind === "main" ? s.main : ""} ${className ?? ""}`} data-state={state} onClick={run}>
       {state === "done" ? Icon.done : icon}
-      <span aria-live="polite">{state === "done" ? "Copiado" : state === "failed" ? "No se pudo copiar" : label}</span>
+      <span aria-live="polite">{state === "done" ? "Copiado" : state === "failed" ? "No se pudo" : label}</span>
     </button>
+  );
+}
+
+function Dish({ item, prices }: { item: LinkItem; prices: PriceMap | null }) {
+  const [open, setOpen] = useState(false);
+  const plans = plansOf(item, prices);
+  const text = () => message(item, plans);
+  const details = Boolean(item.who || item.includes?.length);
+  return (
+    <article className={s.item}>
+      <Image src={`/contygo/v8/${item.art}.webp`} alt="" width={64} height={64} />
+      <div className={s.body}>
+        <div className={s.name}>
+          <h3>{item.name}</h3>
+          {plans !== undefined && <i className={s.dots} />}
+          {plans?.length ? (
+            <span className={s.price}>{plans.length > 1 && <small>desde</small>}{money(plans[0].dollars)}{plans.length === 1 && plans[0].per ? <sub>{plans[0].per}</sub> : null}</span>
+          ) : plans === null ? <span className={s.pending} aria-label="Cargando el precio" /> : null}
+        </div>
+        {item.top && <span className={s.top}>Más pedido</span>}
+        <p className={s.about}>{item.about}</p>
+        {plans && plans.length > 1 && (
+          <ul className={s.plans}>
+            {plans.map(plan => <li key={plan.name}><span>{plan.name}</span><i className={s.dots} /><b>{amount(plan)}</b></li>)}
+          </ul>
+        )}
+        <div className={s.meta}>
+          <a className={s.url} href={`https://${item.url}`} target="_blank" rel="noopener noreferrer">{item.url.split("/").map((part, index) => index ? <span key={index}>/<wbr />{part}</span> : part)}</a>
+          {details && (
+            <button type="button" className={s.more} aria-expanded={open} onClick={() => setOpen(value => !value)}>
+              {open ? "Ocultar" : "Qué incluye"}{Icon.more}
+            </button>
+          )}
+        </div>
+        {details && open && (
+          <div className={s.details}>
+            {item.who && <><h4>Para quién es</h4><p>{item.who}</p></>}
+            {item.includes?.length ? <><h4>Qué incluye</h4><ul>{item.includes.map(entry => <li key={entry}>{entry}</li>)}</ul></> : null}
+            {item.mind?.length ? <><h4>Ten en cuenta</h4><ul>{item.mind.map(entry => <li key={entry}>{entry}</li>)}</ul></> : null}
+          </div>
+        )}
+      </div>
+      <div className={s.acts}>
+        <Copy kind="main" text={text} label="Copiar mensaje" icon={Icon.copy} />
+        <a className={`${s.act} ${s.wa}`} href={`https://wa.me/?text=${encodeURIComponent(text())}`} target="_blank" rel="noopener noreferrer">{Icon.whatsapp}<span>WhatsApp</span></a>
+        <Copy text={() => `https://${item.url}`} label="Link" icon={Icon.link} />
+      </div>
+    </article>
   );
 }
 
@@ -75,10 +127,13 @@ export default function LinksMenu() {
   const [stuck, setStuck] = useState(false);
   const [late, setLate] = useState(false);
   const tools = useRef<HTMLDivElement>(null);
+  const field = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const check = () => setStuck((tools.current?.getBoundingClientRect().top ?? 1) <= 0);
     check(); window.addEventListener("scroll", check, { passive: true });
+    // At a desk the keyboard is already under the hands: start in the search. (On a phone that would raise the keyboard over the list.)
+    if (window.matchMedia("(hover:hover) and (min-width:900px)").matches) field.current?.focus({ preventScroll: true });
     return () => window.removeEventListener("scroll", check);
   }, []);
   // Prices that have not come after a while: say so instead of leaving the card silently without them.
@@ -97,10 +152,10 @@ export default function LinksMenu() {
       <header className={s.cover}>
         <div className={s.wrap}>
           <Image className={s.logo} src="/contygo/brand/logo-dark.png" alt="ContyGo" width={170} height={40} priority />
-          <Image className={s.hero} src="/contygo/v8/producto-servicios.webp" alt="" width={340} height={340} priority />
+          <Image className={s.hero} src="/contygo/v8/producto-servicios.webp" alt="" width={220} height={220} priority />
           <h1>Carta de servicios</h1>
-          <p>Cada servicio con su <b>precio</b> y su <b>link</b>. Toca «Copiar mensaje» y pégalo en el chat del cliente.</p>
-          <span className={s.seen}>{Icon.seen}Precios al día: los mismos de la página</span>
+          <p>El precio, el link y lo que incluye cada servicio, listos para enviar al cliente.</p>
+          <span className={s.seen}>{Icon.seen}Precios al día</span>
         </div>
       </header>
 
@@ -109,7 +164,7 @@ export default function LinksMenu() {
           <div className={s.wrap}>
             <label className={s.find}>
               {Icon.find}
-              <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Busca un servicio" aria-label="Busca un servicio" autoComplete="off" />
+              <input ref={field} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Busca: permiso, asilo, ITIN…" aria-label="Busca un servicio" autoComplete="off" enterKeyHint="search" />
             </label>
             <nav className={s.chips} aria-label="Secciones de la carta">
               {LINK_SECTIONS.map(section => <a key={section.id} href={`#${section.id}`} onClick={() => setQuery("")}>{section.chip}</a>)}
@@ -118,43 +173,14 @@ export default function LinksMenu() {
         </div>
 
         <div className={s.wrap}>
+          <p className={s.rule}>Precios en dólares. Son los <b>honorarios de ContyGo</b>: las tasas del gobierno se pagan aparte.</p>
           {!prices && late && <p className={s.wait} role="status"><b>Los precios no cargaron.</b>Revisa tu internet y recarga la página. Los links sí funcionan.</p>}
 
           {sections.map(section => (
             <section className={s.course} id={section.id} key={section.id}>
               <h2>{section.title}</h2>
               <p>{section.note}</p>
-              <div className={s.list}>
-                {section.items.map(item => {
-                  const plans = plansOf(item, prices);
-                  return (
-                    <article className={s.item} key={item.key}>
-                      <Image src={`/contygo/v8/${item.art}.webp`} alt="" width={76} height={76} />
-                      <div>
-                        <div className={s.name}>
-                          <h3>{item.name}</h3>
-                          {plans !== undefined && <i className={s.dots} />}
-                          {plans?.length ? (
-                            <span className={s.price}>{plans.length > 1 && <small>desde</small>}{money(plans[0].dollars)}{plans.length === 1 && plans[0].per ? <sub>{plans[0].per}</sub> : null}</span>
-                          ) : plans === null ? <span className={s.pending} aria-label="Cargando el precio" /> : null}
-                        </div>
-                        {item.top && <span className={s.top}>Más pedido</span>}
-                        <p className={s.about}>{item.about}</p>
-                        {plans && plans.length > 1 && (
-                          <ul className={s.plans}>
-                            {plans.map(plan => <li key={plan.name}><span>{plan.name}</span><i className={s.dots} /><b>{amount(plan)}</b></li>)}
-                          </ul>
-                        )}
-                      </div>
-                      <div className={s.acts}>
-                        <a className={s.url} href={`https://${item.url}`} target="_blank" rel="noopener noreferrer">{Icon.out}<span>{item.url}</span></a>
-                        <Copy main text={() => message(item, plans)} label="Copiar mensaje" icon={Icon.chat} />
-                        <Copy text={() => `https://${item.url}`} label="Copiar link" icon={Icon.copy} />
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+              <div className={s.list}>{section.items.map(item => <Dish key={item.key} item={item} prices={prices} />)}</div>
             </section>
           ))}
 
@@ -163,9 +189,9 @@ export default function LinksMenu() {
           <footer className={s.foot}>
             <h2>Antes de dar un precio</h2>
             <ul>
-              <li>Los precios son en dólares y son los <b>honorarios de ContyGo</b>. Las tasas del gobierno se pagan aparte.</li>
-              <li>Los de los servicios se leen de la plataforma cada vez que abres esta página: <b>siempre son los de hoy</b>.</li>
+              <li>Los precios de los servicios se leen de la plataforma cada vez que abres esta página: <b>siempre son los de hoy</b>.</li>
               <li>Los del Club y de la asesoría con Henry son los que mostraban sus páginas el {EXTRAS_SEEN_ON}.</li>
+              <li>«Copiar mensaje» copia el nombre, el precio y el link; «WhatsApp» abre el mismo mensaje para elegir el chat.</li>
               <li>Henry Orellana es consultor de inmigración registrado en Utah. <b>No es abogado</b> y no da asesoría legal.</li>
             </ul>
             <Copy className={s.all} text={everything} label="Copiar toda la carta" icon={Icon.copy} />

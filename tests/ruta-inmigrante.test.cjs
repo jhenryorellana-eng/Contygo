@@ -123,12 +123,16 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   // botón donde les abra el mismo "presentar en vivo" que le sale a Henry».
   const fs = require('node:fs');
   const { CONTYGO_RESULTS, RESULTS_SAMPLE, REVIEWS_SAMPLE, BOARD_FROM, resultsPublic } = require('../lib/contygo-results.ts');
-  // Sin cifras ni historias la sección no existe (así se dibuja en el servidor): ni un cero ni un dato de muestra.
-  assert.ok(!page.includes('id="casos"') && !page.includes('Aprobados, ') && !page.includes('de muestra'));
+  // La sección sale para todos desde el primer momento (el dueño, 24-11-2026: «esto debe salir para todos los usuarios, o
+  // sea los posibles clientes»). Sin cifras en el contador se apoya en la única cifra que el dueño confirmó, con sus
+  // palabras («clientes atendidos», nunca «casos ganados»); ni un cero ni un dato de muestra.
+  const casos = page.slice(page.indexOf('id="casos"'), page.indexOf('id="casos"') + 2600);
+  assert.ok(page.includes('id="casos"') && casos.includes('con Henry al frente') && casos.includes('>+500<') && casos.includes('>clientes atendidos<'));
+  assert.ok(casos.includes('no es una cuenta de casos aprobados') && !casos.includes('casos ganados') && !page.includes('Aprobados, ') && !page.includes('de muestra'));
   for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
   const landing = fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8'), board = fs.readFileSync('components/contygo/v7/TrustBoard.tsx', 'utf8');
   assert.ok(landing.includes('{fresh && <TrustBoard />}'));
-  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" })') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
+  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" })') && board.includes('if (!data) return SERVED ? (') && board.includes('un resultado anterior no garantiza el tuyo'));
   assert.ok(board.includes('<CongratsShow variant="public"') && !/SAMPLE/.test(board), 'la presentación pública nunca trae ejemplos');
   // Henry al frente (el dueño lo eligió entre cuatro maneras): su foto, su nombre y su título tal como es.
   assert.ok(board.includes('Consultor de inmigración registrado en Utah') && fs.existsSync('public/contygo/casos/henry-cruzados.webp'));

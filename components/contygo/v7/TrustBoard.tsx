@@ -16,8 +16,12 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import CongratsShow, { type PublicShow } from "./CongratsShow";
 import { openAssistant } from "./assistantBus";
+import { CONTYGO_CLAIMS, isPublic } from "@/lib/contygo-claims";
 import b from "./TrustBoard.module.css";
 
+/** While the counter has no figures: what the owner has confirmed (lib/contygo-claims.ts), in its own words. «Clientes
+    atendidos» is not a count of cases won and never reads as one. */
+const SERVED = isPublic(CONTYGO_CLAIMS.clientsServed) ? /^(\+?[\d.,]+)\s+(.+)$/.exec(CONTYGO_CLAIMS.clientsServed.text) : null;
 const FINE = "Cada caso es distinto: un resultado anterior no garantiza el tuyo. La decisión es de la autoridad.";
 /** Henry's photographs for this section (generated from his studio portraits, 24-11-2026). One is published; the others
     can be tried on the local page, to choose. */
@@ -81,7 +85,23 @@ export default function TrustBoard() {
     return () => { document.documentElement.style.overflow = before; opener?.focus({ preventScroll: true }); };
   }, [open]);
 
-  if (!data) return null;
+  // For every visitor, from the first paint: with no figures in the counter and no stories yet, the section stands on the
+  // one figure the owner has confirmed, and invites to start. The counter's figures take its place when they exist.
+  if (!data) return SERVED ? (
+    <section className={b.board} id="casos" ref={section} aria-labelledby="casos-titulo">
+      <div className={b.portrait}>
+        <Image src={`/contygo/casos/henry-${photo}.webp`} alt="Henry Orellana" width={1024} height={1280} sizes="(max-width:860px) 92vw, 520px" />
+        <p className={b.name}><b>Henry Orellana</b>Consultor de inmigración registrado en Utah</p>
+      </div>
+      <div className={b.copy}>
+        <h2 id="casos-titulo">Los casos de ContyGo, <em>con Henry al frente.</em></h2>
+        <p className={b.giant}><b>{SERVED[1]}</b><span>{SERVED[2]}</span></p>
+        <p>Familias que ya hicieron su trámite con ContyGo, acompañadas paso a paso por Henry y su equipo.</p>
+        <button type="button" className={b.open} onClick={() => openAssistant()}>Hacer mi contrato<Arrow /></button>
+        <p className={b.fine}>Clientes atendidos en todos los servicios; no es una cuenta de casos aprobados. {FINE}</p>
+      </div>
+    </section>
+  ) : null;
   const { score, stories } = data, totals = score?.totals ?? null;
   const asOf = score?.updatedAt ? new Date(score.updatedAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }) : null;
   const go = <button ref={button} type="button" className={b.open} onClick={() => setOpen(true)}>{stories.length ? "Ver los casos, uno por uno" : "Ver el marcador por servicio"}<Arrow /></button>;

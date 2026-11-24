@@ -44,6 +44,7 @@ function Count({ to, on }: { to: number; on: boolean }) {
 export default function TrustBoard() {
   const [data, setData] = useState<PublicShow | null>(null);
   const [seen, setSeen] = useState(false), [open, setOpen] = useState(false), [photo, setPhoto] = useState<Photo>(PUBLISHED);
+  const [pass, setPass] = useState<string | null>(null);
   const section = useRef<HTMLElement>(null), button = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -53,11 +54,13 @@ export default function TrustBoard() {
     // the landing straight away, marked as an example; «/?ejemplo=1» asks for it even when there are real figures.
     const read = (url: string, init?: RequestInit) => fetch(url, init).then(reply => reply.ok ? reply.json() as Promise<PublicShow> : null).catch(() => null);
     const filled = (body: PublicShow | null): body is PublicShow => !!body && (!!body.score || body.stories.length > 0);
-    const asked = new URLSearchParams(window.location.search).get("ejemplo") === "1";
+    // «/?ejemplo=<clave>» is the preview link (copied from the panel): the examples for whoever opens it, with no session.
+    const asked = new URLSearchParams(window.location.search).get("ejemplo");
     void (async () => {
       const real = asked ? null : await read("/api/felicitaciones");
-      const body = filled(real) ? real : await read("/api/felicitaciones?ejemplo=1", { cache: "no-store" });
-      if (alive && filled(body)) setData(body);
+      const pass = asked ?? "1";
+      const body = filled(real) ? real : await read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" });
+      if (alive && filled(body)) { setData(body); setPass(body.example ? pass : null); }
     })();
     return () => { alive = false; };
   }, []);
@@ -92,14 +95,14 @@ export default function TrustBoard() {
         <p className={b.name}><b>Henry Orellana</b>Consultor de inmigración registrado en Utah</p>
       </div>
       <div className={b.copy}>
-        {data.example && <p className={b.demo}><b>Modo ejemplo.</b> Cifras e historias de muestra: solo las ves tú, con tu sesión del panel. El público no ve esta sección hasta que el contador tenga cifras reales.</p>}
+        {data.example && <p className={b.demo}><b>Modo ejemplo.</b> Cifras e historias de muestra, para ver cómo queda. El público no ve esta sección hasta que el contador tenga cifras reales.</p>}
         <h2 id="casos-titulo">Los casos de ContyGo, <em>con Henry al frente.</em></h2>
         {totals ? <p className={b.giant}><b><Count to={totals.won} on={seen} /></b><span>casos ganados</span></p> : <p>Clientes de ContyGo que ya recibieron su respuesta, contado por ellos.</p>}
         {minor}
         {go}{fine}
         {DEV && <p className={b.pick}>Foto de Henry (solo en local): {PHOTOS.map(item => <button key={item.key} type="button" aria-pressed={photo === item.key} onClick={() => setPhoto(item.key)}>{item.label}</button>)}</p>}
       </div>
-      {open && createPortal(<CongratsShow variant="public" skin="henry" photo={photo} preview={data.example === true} onClose={() => setOpen(false)} onStart={() => { setOpen(false); openAssistant(); }} />, document.body)}
+      {open && createPortal(<CongratsShow variant="public" skin="henry" photo={photo} preview={pass ?? undefined} onClose={() => setOpen(false)} onStart={() => { setOpen(false); openAssistant(); }} />, document.body)}
     </section>
   );
 }

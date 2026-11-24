@@ -5,13 +5,14 @@
    Las cifras viven en lib/case-counter.ts; se editan en /contador. */
 import { useCallback, useEffect, useState } from "react";
 
-type Counter = { totals: { created: number; pending: number; won: number }; counter: { updatedAt: string | null; updatedBy: string | null }; editUrl?: string };
+type Counter = { totals: { created: number; pending: number; won: number }; counter: { updatedAt: string | null; updatedBy: string | null }; editUrl?: string; previewUrl?: string };
 const when = (iso: string | null) => iso ? new Date(iso).toLocaleString("es", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }) : null;
 
 export default function CaseCounterCard() {
   const [data, setData] = useState<Counter | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "off" | "error">("loading");
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/cases", { cache: "no-store" });
@@ -40,7 +41,12 @@ export default function CaseCounterCard() {
         </div>
         <div className="admin__toolbar-right">
           <a className="btn btn--primary" href="/contador" target="_blank" rel="noopener noreferrer">Actualizar contador</a>
-          <a className="btn btn--ghost admin__btn-sm" href="/?ejemplo=1#casos" target="_blank" rel="noopener noreferrer">Ver la landing con ejemplos</a>
+          <a className="btn btn--ghost admin__btn-sm" href={data?.previewUrl ?? "/?ejemplo=1#casos"} target="_blank" rel="noopener noreferrer">Ver la landing con ejemplos</a>
+          {data?.previewUrl && (
+            <button type="button" className="btn btn--ghost admin__btn-sm" onClick={() => { void navigator.clipboard?.writeText(data.previewUrl!).then(() => { setShared(true); window.setTimeout(() => setShared(false), 2200); }); }}>
+              {shared ? "Link copiado" : "Copiar link de la vista con ejemplos"}
+            </button>
+          )}
           {data?.editUrl && (
             <button type="button" className="btn btn--ghost admin__btn-sm" onClick={() => { void navigator.clipboard?.writeText(data.editUrl!).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 2200); }); }}>
               {copied ? "Link copiado" : "Copiar link para Andrium"}

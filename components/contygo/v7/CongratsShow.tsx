@@ -66,7 +66,7 @@ const toStory = (row: Row): PublicReview => ({ name: row.name, serviceId: row.se
 
 /** `variant="public"` (24-11-2026) is the same show opened from the landing, for a visitor: it reads only what the page
     may show, never examples, has no panel controls, closes like a window and ends in «Hacer mi contrato». */
-export default function CongratsShow({ variant = "panel", skin, photo, preview, onClose, onStart }: { /** The landing in the owner's preview: the public show asks for the examples too. */ preview?: boolean; variant?: "panel" | "public"; /** How the landing dresses it: Henry stands by its cover, as in the section that opens it (TrustBoard), in the same photograph. */ skin?: "henry"; photo?: string; onClose?: () => void; onStart?: () => void } = {}) {
+export default function CongratsShow({ variant = "panel", skin, photo, preview, onClose, onStart }: { /** The landing in preview: the public show asks for the examples too, with the same pass («1» for the owner's session, or the link's key). */ preview?: string; variant?: "panel" | "public"; /** How the landing dresses it: Henry stands by its cover, as in the section that opens it (TrustBoard), in the same photograph. */ skin?: "henry"; photo?: string; onClose?: () => void; onStart?: () => void } = {}) {
   const open = variant === "public";
   const [state, setState] = useState<"loading" | "ready" | "signin" | "off" | "error">("loading");
   const [approved, setApproved] = useState<PublicReview[]>([]);
@@ -81,7 +81,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
   const load = useCallback(async () => {
     try {
       if (open) {
-        const reply = await fetch(preview ? "/api/felicitaciones?ejemplo=1" : "/api/felicitaciones", preview ? { cache: "no-store" } : undefined);
+        const reply = await fetch(preview ? `/api/felicitaciones?ejemplo=${encodeURIComponent(preview)}` : "/api/felicitaciones", preview ? { cache: "no-store" } : undefined);
         if (!reply.ok) return setState("error");
         const body = await reply.json() as PublicShow;
         setApproved(body.stories.map(toStory));
@@ -197,7 +197,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, preview, 
         {open ? <button type="button" className={c.shut} onClick={onClose} autoFocus>Cerrar</button> : <a href="/admin">Panel</a>}
       </div>
     </header>
-    {demo && <p className={c.sample}><b>Modo ejemplo.</b> Cifras e historias de muestra: solo las ves tú, con tu sesión del panel.</p>}
+    {demo && <p className={c.sample}><b>Modo ejemplo.</b> Cifras e historias de muestra, para ver cómo queda.</p>}
     {sample && <p className={c.sample}><b>Modo ejemplo.</b> Estas felicitaciones, sus fotos y las cifras son de muestra: no son clientes reales. No lo muestres en un live.</p>}
 
     {mode === "one"

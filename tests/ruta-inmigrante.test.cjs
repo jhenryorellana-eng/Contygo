@@ -128,7 +128,7 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
   const landing = fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8'), board = fs.readFileSync('components/contygo/v7/TrustBoard.tsx', 'utf8');
   assert.ok(landing.includes('{fresh && <TrustBoard />}'));
-  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read("/api/felicitaciones?ejemplo=1", { cache: "no-store" })') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
+  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" })') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
   assert.ok(board.includes('<CongratsShow variant="public"') && !/SAMPLE/.test(board), 'la presentación pública nunca trae ejemplos');
   // Henry al frente (el dueño lo eligió entre cuatro maneras): su foto, su nombre y su título tal como es.
   assert.ok(board.includes('Consultor de inmigración registrado en Utah') && fs.existsSync('public/contygo/casos/henry-cruzados.webp'));
@@ -140,7 +140,7 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   assert.ok(/export async function GET/.test(open) && !/export async function (POST|PUT|DELETE)/.test(open));
   assert.ok(open.includes('publicReviews()') && !open.includes('updatedBy'));
   // Los ejemplos solo salen en la vista previa del dueño: con ?ejemplo=1 Y su sesión, marcados y sin guardarse en caché.
-  assert.ok(open.indexOf('if (isAdminRequest(req)) return NextResponse.json(example()') > open.indexOf('searchParams.get("ejemplo") === "1"'));
+  assert.ok(open.includes('const allowed = (asked === "1" && isAdminRequest(req)) || isPreviewKey(asked);') && open.includes('allowed ? example() : await build()'));
   assert.equal((open.match(/example\(\)/g) || []).length, 2, 'los ejemplos no se usan en ningún otro camino');
   assert.ok(open.includes('"Cache-Control": "private, no-store"') && board.includes('Modo ejemplo.'));
   assert.ok(photo.includes('publicReviewPhoto(params.id)'));

@@ -62,6 +62,14 @@ export function counterKey(): string | null {
   return secret ? createHmac("sha256", `contador-de-casos:${secret}`).update("link-del-encargado").digest("base64url").slice(0, 26) : null;
 }
 
+/** The key of the preview link (24-11-2026): the landing with the cases section filled with EXAMPLES, for whoever has the
+    link — Henry on his phone, without signing in. Marked as an example on screen; the public page never shows it. */
+export function previewKey(): string | null {
+  const secret = process.env.ADMIN_PASSWORD;
+  return secret ? createHmac("sha256", `contador-de-casos:${secret}`).update("vista-previa-de-la-landing").digest("base64url").slice(0, 14) : null;
+}
+export const isPreviewKey = (given: string | null) => { const key = previewKey(); return !!key && !!given && safeEqual(given, key); };
+
 /** The owner, by session; or the person in charge, by the key of their link (sent in a header, never kept in a cookie). */
 export function canEditCounter(req: NextRequest): "owner" | "keeper" | null {
   if (isAdminRequest(req)) return "owner";

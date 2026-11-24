@@ -4,7 +4,7 @@
    x-contador-llave). Sin almacén conectado, 503. */
 import { NextRequest, NextResponse } from "next/server";
 import { clientIp, rateLimit } from "@/lib/agent/server";
-import { COUNTER_SERVICES, canEditCounter, counterEnabled, counterKey, counterTotals, loadCounter, saveCounter } from "@/lib/case-counter";
+import { COUNTER_SERVICES, canEditCounter, counterEnabled, counterKey, counterTotals, loadCounter, previewKey, saveCounter } from "@/lib/case-counter";
 import { SITE_URL } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (!counterEnabled) return json({ ok: false, error: "not_configured" }, 503);
   try {
     const counter = await loadCounter(), key = counterKey();
-    return json({ ok: true, who, services: COUNTER_SERVICES, counter, totals: counterTotals(counter.rows), ...(who === "owner" && key ? { editUrl: `${SITE_URL}/contador?k=${key}` } : {}) });
+    return json({ ok: true, who, services: COUNTER_SERVICES, counter, totals: counterTotals(counter.rows), ...(who === "owner" && key ? { editUrl: `${SITE_URL}/contador?k=${key}`, previewUrl: `${SITE_URL}/?ejemplo=${previewKey()}#casos` } : {}) });
   } catch { return json({ ok: false, error: "upstream" }, 502); }
 }
 

@@ -8,8 +8,8 @@
    - «Muro»: todas juntas, para recorrerlas con el dedo, con el tablero por servicio.
    Vale para un live vertical (teléfono) y para compartir pantalla (apaisado). Los mandos se esconden solos.
    Sin datos inventados (lib/contygo-results.ts): las felicitaciones son las aprobadas; las cuentas, las que el dueño
-   confirme o, si no, las aprobaciones que los propios clientes compartieron (y lo dice). En desarrollo, y solo ahí,
-   se ve con datos de EJEMPLO bajo una marca que lo dice. Lo que se muestra en un live es publicidad: la pantalla
+   confirme o, si no, las aprobaciones que los propios clientes compartieron (y lo dice). Con «Ver ejemplos» (o en
+   desarrollo sin nada aprobado) se ve con datos de EJEMPLO, bajo un aviso que lo dice y nunca mezclados con los reales. Lo que se muestra en un live es publicidad: la pantalla
    lleva siempre que un resultado anterior no garantiza otro y que la decisión es de la autoridad. */
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -32,7 +32,7 @@ function Flaps({ value, pad }: { value: number; pad: number }) {
   </span>)}</span>;
 }
 
-function Story({ review, big }: { review: PublicReview; big?: boolean }) {
+function Story({ review, big, example }: { review: PublicReview; big?: boolean; example?: boolean }) {
   // A long story is set smaller, so it still fits the screen.
   const size = review.comment.length > 380 ? .62 : review.comment.length > 240 ? .74 : review.comment.length > 130 ? .88 : 1;
   return <article className={c.story} data-big={big || undefined} data-photo={review.image ? "" : undefined} style={big ? { "--s": size } as CSSProperties : undefined}>
@@ -40,6 +40,7 @@ function Story({ review, big }: { review: PublicReview; big?: boolean }) {
     {/* eslint-disable-next-line @next/next/no-img-element */}
     {review.image && <span className={c.photo} style={{ "--img": `url(${JSON.stringify(review.image)})` } as CSSProperties}><img src={review.image} alt={`Foto que compartió ${review.name}`} /></span>}
     <div className={c.said}>
+      {example && <span className={c.example}>Ejemplo</span>}
       {review.kind === "approval" && <span className={c.stamp}><Check />Aprobado</span>}
       <span className={c.stars} role="img" aria-label={`${review.rating} de 5 estrellas`}>{[1, 2, 3, 4, 5].map(n => <i key={n} data-on={n <= review.rating || undefined}><Star /></i>)}</span>
       <blockquote>{review.comment}</blockquote>
@@ -53,6 +54,9 @@ export default function CongratsShow() {
   const [approved, setApproved] = useState<PublicReview[]>([]);
   const [mode, setMode] = useState<"one" | "wall">("one"), [at, setAt] = useState(0), [held, setHeld] = useState(false), [quiet, setQuiet] = useState(false), [full, setFull] = useState(false);
   const idle = useRef<number>();
+  // «Ver ejemplos»: the owner asks to see how it would look. With ?ejemplos=1 the page opens that way.
+  const [example, setExample] = useState(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("ejemplos") === "1") setExample(true); }, []);
 
   const load = useCallback(async () => {
     try {
@@ -67,8 +71,9 @@ export default function CongratsShow() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  // In development, and only there, with nothing approved yet: an example, marked as one.
-  const sample = DEV && state !== "loading" && state !== "signin" && approved.length === 0;
+  // Examples, marked as such and never mixed with real stories: when the owner asks for them, or in development with
+  // nothing approved yet. Only inside the panel: someone not signed in sees the sign-in notice, not the examples.
+  const sample = state !== "loading" && state !== "signin" && (example || (DEV && approved.length === 0));
   const stories = sample ? REVIEWS_SAMPLE : approved;
   const real = resultsPublic();
   const rows = useMemo(() => {
@@ -124,7 +129,7 @@ export default function CongratsShow() {
     {state === "off" && <><p>Todavía no está conectado el almacén de las felicitaciones.</p><a href="/admin">Volver al panel</a></>}
     {state === "error" && <><p>No pudimos leer las felicitaciones. Inténtalo de nuevo.</p><button type="button" onClick={() => { setState("loading"); void load(); }}>Reintentar</button></>}
   </div></main>;
-  if (stories.length === 0) return <main className={c.show}><div className={c.notice}>{logo}<p>Aún no has aprobado ninguna felicitación. Apruébalas en tu panel y aparecerán aquí.</p><a href="/admin">Ir al panel</a></div></main>;
+  if (stories.length === 0) return <main className={c.show}><div className={c.notice}>{logo}<p>Aún no has aprobado ninguna felicitación. Apruébalas en tu panel y aparecerán aquí.</p><a href="/admin">Ir al panel</a><button type="button" onClick={() => { setAt(0); setExample(true); }}>Ver cómo quedaría, con ejemplos</button></div></main>;
 
   const story = at > 0 ? stories[at - 1] : null;
   return <main className={c.show} data-mode={mode} data-quiet={quiet || undefined}>
@@ -135,15 +140,16 @@ export default function CongratsShow() {
         <button type="button" aria-pressed={mode === "one"} onClick={() => setMode("one")}>Una por una</button>
         <button type="button" aria-pressed={mode === "wall"} onClick={() => setMode("wall")}>Muro</button>
         {canFull && <button type="button" onClick={fullscreen}><span className={c.long}>{full ? "Salir de pantalla completa" : "Pantalla completa"}</span><span className={c.short}>{full ? "Salir" : "Completa"}</span></button>}
+        <button type="button" aria-pressed={example} onClick={() => { setAt(0); setExample(value => !value); }}>{example ? "Quitar ejemplos" : "Ver ejemplos"}</button>
         <a href="/admin">Panel</a>
       </div>
     </header>
-    {sample && <p className={c.sample}>Ejemplo: cifras y felicitaciones de muestra, para ver el diseño.</p>}
+    {sample && <p className={c.sample}><b>Modo ejemplo.</b> Estas felicitaciones, sus fotos y las cifras son de muestra: no son clientes reales. No lo muestres en un live.</p>}
 
     {mode === "one"
       ? <section className={c.stage} aria-live="off" aria-label="Felicitaciones, una por una">
         <div className={c.slide} key={at} data-cover={story ? undefined : ""}>
-          {story ? <Story review={story} big /> : <div className={c.cover}>
+          {story ? <Story review={story} big example={sample} /> : <div className={c.cover}>
             <h1>Aprobados, <em>uno por uno.</em></h1>
             <p>Clientes de ContyGo que ya recibieron su aprobación, contado por ellos.</p>
             {total > 0 && <div className={c.total}><Flaps value={total} pad={String(total).length} /><span>{counts}</span></div>}
@@ -170,7 +176,7 @@ export default function CongratsShow() {
             <Flaps value={row.approved} pad={pad} />
           </li>)}</ul>
         </div>}
-        <ul className={c.cards}>{stories.map((review, n) => <li key={n}><Story review={review} /></li>)}</ul>
+        <ul className={c.cards}>{stories.map((review, n) => <li key={n}><Story review={review} example={sample} /></li>)}</ul>
       </section>}
 
     <footer className={c.foot}>{real && CONTYGO_RESULTS.updatedOn ? `Contado el ${CONTYGO_RESULTS.updatedOn.split("-").reverse().join("/")}. ` : ""}{FINE}</footer>

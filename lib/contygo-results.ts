@@ -10,7 +10,8 @@
  * Without confirmed figures, the board counts the approvals clients themselves have shared and the owner approved
  * (`reviews` of kind «approval»): a true count, and it says what it counts. It shows from FIVE on.
  *
- * `RESULTS_SAMPLE` and `REVIEWS_SAMPLE` exist only so the design can be judged on the local page: they render in
+ * `RESULTS_SAMPLE` and `REVIEWS_SAMPLE` exist only so the design can be judged: on the local page, and in the owner's
+ * panel when he asks to see examples (24-11-2026: «haz unos ejemplos… para que Henry pueda ver cómo quedaría»). They render in
  * development alone, under a mark that says they are examples.
  */
 export type ResultRow = { serviceId: string; label: string; approved: number };
@@ -32,11 +33,18 @@ export const RESULTS_SAMPLE: ResultRow[] = [
   { serviceId: "cambio-corte", label: "Cambio de corte", approved: 31 },
   { serviceId: "i-485", label: "Residencia (I-485)", approved: 17 },
 ];
-/* (Their pictures are drawings of the brand, standing in for the photo a client would send.) */
+/* Examples, never clients: the names, the stories and the people in the pictures are made up (the photos were generated
+   on 24-11-2026 and carry the word «EJEMPLO» across them). They are shown in development, and in the owner's panel only
+   when he asks for them («Ver ejemplos»), always under a notice that says so. Never mixed with real stories. */
 export const REVIEWS_SAMPLE: PublicReview[] = [
-  { name: "María G.", service: "Permiso de trabajo", rating: 5, kind: "approval", place: "Utah", image: "/contygo/v8/escena-medio.webp", comment: "¡Me llegó mi permiso de trabajo! Subí mis documentos desde el celular y siempre supe en qué paso iba." },
-  { name: "José L.", service: "Cambio de corte", rating: 5, kind: "approval", place: "Texas", image: "/contygo/v8/ruta-servicios.webp", comment: "Me mudé de estado y no sabía qué hacer. Me guiaron paso a paso y mi caso ya está en mi nueva corte." },
-  { name: "Ana R.", service: "Visa Juvenil", rating: 5, kind: "review", place: "Florida", comment: "Lo que más valoro es que me decían la verdad sobre los tiempos y qué dependía de ellos y qué no." },
+  { name: "María G.", service: "Permiso de Trabajo (I-765)", serviceId: "permiso-de-trabajo", rating: 5, kind: "approval", place: "Utah", image: "/contygo/ejemplos/permiso.webp", comment: "¡Me llegó mi permiso de trabajo! Subí mis documentos desde el celular y siempre supe en qué paso iba. Ya empecé en mi nuevo empleo." },
+  { name: "Rosa y Kevin M.", service: "Visa Juvenil Premium", serviceId: "visa-juvenil", rating: 5, kind: "approval", place: "Maryland", image: "/contygo/ejemplos/juvenil.webp", comment: "Aprobaron la petición de mi hijo. Pensé que iba a ser imposible entender tanto papel, pero nos explicaron cada paso con paciencia. Gracias, Henry." },
+  { name: "José L.", service: "Cambio de Corte", serviceId: "cambio-corte", rating: 5, kind: "approval", place: "Texas", image: "/contygo/ejemplos/corte.webp", comment: "Me mudé de estado y no sabía qué hacer con mi audiencia. Me guiaron paso a paso y mi caso ya está en mi nueva corte." },
+  { name: "Familia Ramírez", service: "Asilo Político", serviceId: "asilo", rating: 5, kind: "review", place: "Florida", image: "/contygo/ejemplos/asilo.webp", comment: "Lo que más valoramos es que nos dijeron la verdad sobre los tiempos, qué dependía de ellos y qué no. Presentamos nuestra solicitud completa y ordenada." },
+  { name: "Carlos V.", service: "Número ITIN", serviceId: "itin", rating: 5, kind: "approval", place: "Nevada", image: "/contygo/ejemplos/itin.webp", comment: "Ya tengo mi ITIN. Lo hice todo desde el celular, en los ratos libres del trabajo, y me avisaban cada vez que había una novedad." },
+  { name: "Lucía P.", service: "Creación de LLC", serviceId: "llc", rating: 5, kind: "approval", place: "Florida", image: "/contygo/ejemplos/llc.webp", comment: "¡Abrí mi panadería con mi propia empresa! Me dejaron la LLC y el EIN listos, y entendí por fin qué papel era cada cosa." },
+  { name: "Ana R.", service: "Reforzar Asilo", serviceId: "reforzar-asilo", rating: 5, kind: "review", place: "California", comment: "Ya había presentado mi asilo y sentía que le faltaba respaldo. Ordenaron mis pruebas y mi declaración, y llegué a mi audiencia mucho más tranquila." },
+  { name: "Miguel T.", service: "Apelación (BIA)", serviceId: "apelacion", rating: 4, kind: "review", place: "Nueva Jersey", comment: "El juez decidió en mi contra y tenía pocos días. Prepararon el paquete a tiempo y me explicaron qué seguía. Todavía espero respuesta, pero no me quedé sin apelar." },
 ];
 
 /** From this many shared approvals on, the board shows their count. */

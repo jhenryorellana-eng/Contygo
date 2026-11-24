@@ -122,10 +122,15 @@ test('las felicitaciones no salen en la página: las enseña el dueño desde su 
   const route = fs.readFileSync('app/api/reviews/route.ts', 'utf8'), admin = fs.readFileSync('app/api/admin/reviews/route.ts', 'utf8');
   assert.ok(!/export async function GET/.test(route) && /export async function POST/.test(route));
   assert.ok(admin.indexOf('isAdminRequest(req)') > 0 && admin.indexOf('isAdminRequest(req)') < admin.indexOf('adminListReviews('));
-  // La presentación lee de esa lista, dice siempre que nada está garantizado y solo usa los datos de muestra en desarrollo.
+  // La presentación lee de esa lista y dice siempre que nada está garantizado. Los datos de muestra solo salen dentro del
+  // panel, cuando el dueño los pide («Ver ejemplos», 24-11-2026) o en desarrollo, bajo un aviso de que no son clientes
+  // reales y con cada historia y cada foto marcada como ejemplo; nunca mezclados con las reales.
   const show = fs.readFileSync('components/contygo/v7/CongratsShow.tsx', 'utf8');
   assert.ok(show.includes('/api/admin/reviews?status=approved') && show.includes('un resultado anterior no garantiza el tuyo') && show.includes('La decisión es de la autoridad'));
-  assert.ok(/const sample = DEV && /.test(show) && show.includes('process.env.NODE_ENV === "development"'));
+  assert.ok(show.includes('const sample = state !== "loading" && state !== "signin" && (example || (DEV && approved.length === 0));') && show.includes('process.env.NODE_ENV === "development"'));
+  assert.ok(show.includes('const stories = sample ? REVIEWS_SAMPLE : approved;'), 'los ejemplos sustituyen a las reales, no se mezclan');
+  assert.ok(show.includes('no son clientes reales') && show.includes('example={sample}'));
+  for (const review of REVIEWS_SAMPLE) if (review.image) { assert.match(review.image, /^\/contygo\/ejemplos\//, review.name); assert.ok(fs.existsSync('public' + review.image), review.image); }
   if (resultsPublic()) assert.ok(CONTYGO_RESULTS.verified.by && CONTYGO_RESULTS.verified.on && CONTYGO_RESULTS.verified.evidence && CONTYGO_RESULTS.updatedOn, 'cifras confirmadas: constan quién y cuándo');
   assert.ok(RESULTS_SAMPLE.length > 0 && CONTYGO_RESULTS.rows.every(row => !RESULTS_SAMPLE.some(sample => sample === row)));
   assert.ok(BOARD_FROM >= 5, 'una cuenta de dos o tres no es un tablero');

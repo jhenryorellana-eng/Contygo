@@ -141,6 +141,9 @@ export default function ReviewsPanel({ onPending }: { onPending?: (n: number) =>
         <a className="btn btn--primary" href="/admin/felicitaciones" target="_blank" rel="noopener noreferrer">
           Presentar en vivo ({counts.approved})
         </a>
+        <a className="btn btn--ghost" href="/admin/felicitaciones?ejemplos=1" target="_blank" rel="noopener noreferrer">
+          Ver ejemplos
+        </a>
         <div className="admin__toolbar-right">
           <a className="btn btn--ghost admin__btn-sm" href="/califica" target="_blank" rel="noopener noreferrer">
             Subir una felicitación

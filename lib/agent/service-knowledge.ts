@@ -17,7 +17,7 @@ const list = (items: readonly string[]) => items.map(item => `- ${item}`).join("
 const MONEY = /\$|\b(tasas?|honorarios?|precios?|pagos?|cuotas?|dólares?)\b/i;
 const moneyless = (items: readonly string[]) => items.filter(item => !MONEY.test(item));
 
-function serviceBlock(local: ContygoService, remote?: CatalogService | null) {
+export function serviceBlock(local: ContygoService, remote?: CatalogService | null) {
   const deliverables = CONTYGO_DELIVERABLES[local.id];
   const plans = remote?.plans.map(plan => text(plan.name)).filter(Boolean) ?? [];
   return [

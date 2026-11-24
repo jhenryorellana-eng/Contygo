@@ -42,6 +42,9 @@ test('la página se dibuja sin precios inventados y no es para los buscadores', 
   assert.equal((html.match(/Más pedido/g) || []).length, 3);
   // Sin los precios vivos solo se ven los del Club y la asesoría, que son productos aparte.
   assert.deepEqual([...new Set(html.match(/\$[\d,]+/g))].sort(), ['$150', '$25', '$250']);
+  // El asistente del equipo está a un toque; su panel no se dibuja hasta abrirlo.
+  assert.match(html, />Pregunta al asistente</);
+  assert.doesNotMatch(html, /role="dialog"/);
   assert.match(fs.readFileSync(path.join(root, 'app/links/page.tsx'), 'utf8'), /robots: \{ index: false, follow: false \}/);
   assert.match(fs.readFileSync(path.join(root, 'app/robots.ts'), 'utf8'), /"\/links"/);
 });

@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { EXTRAS_SEEN_ON, LINK_SECTIONS, type LinkItem, type LinkPlan } from "@/lib/contygo-links";
 import { useServicePrices, type PriceMap } from "@/lib/contygo-api/prices-client";
+import { copyText } from "./copy";
+import TeamChat from "./TeamChat";
 import s from "./LinksMenu.module.css";
 
 const money = (dollars: number) => "$" + dollars.toLocaleString("en-US");
@@ -31,19 +33,6 @@ function message(item: LinkItem, plans: LinkPlan[] | null | undefined) {
   return `*${clean(item.name)}*\n${price}${item.say}\nhttps://${item.url}`;
 }
 const line = (item: LinkItem, plans: LinkPlan[] | null | undefined) => `${clean(item.name)}${plans?.length ? ": " + (plans.length > 1 ? each(plans) : amount(plans[0])) : ""}\nhttps://${item.url}`;
-
-async function copyText(text: string) {
-  try { await navigator.clipboard.writeText(text); return true; }
-  catch { // browsers that refuse the clipboard API: the old way, through a hidden field
-    const field = document.createElement("textarea");
-    field.value = text; field.setAttribute("readonly", ""); field.style.cssText = "position:fixed;opacity:0;font-size:16px";
-    document.body.appendChild(field); field.select(); field.setSelectionRange(0, text.length);
-    let done = false;
-    try { done = document.execCommand("copy"); } catch { done = false; }
-    field.remove();
-    return done;
-  }
-}
 
 const stroke = { fill: "none", stroke: "currentColor", strokeLinecap: "round", strokeLinejoin: "round" } as const;
 const Icon = {
@@ -73,13 +62,13 @@ function Copy({ text, label, icon, kind, className }: { text: () => string; labe
   );
 }
 
-function Dish({ item, prices }: { item: LinkItem; prices: PriceMap | null }) {
+function Dish({ item, prices, flash }: { item: LinkItem; prices: PriceMap | null; flash: boolean }) {
   const [open, setOpen] = useState(false);
   const plans = plansOf(item, prices);
   const text = () => message(item, plans);
   const details = Boolean(item.who || item.includes?.length);
   return (
-    <article className={s.item}>
+    <article className={s.item} id={`servicio-${item.key}`} data-flash={flash || undefined}>
       <Image src={`/contygo/v8/${item.art}.webp`} alt="" width={64} height={64} />
       <div className={s.body}>
         <div className={s.name}>
@@ -126,6 +115,7 @@ export default function LinksMenu() {
   const [query, setQuery] = useState("");
   const [stuck, setStuck] = useState(false);
   const [late, setLate] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
   const tools = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
 
@@ -138,6 +128,13 @@ export default function LinksMenu() {
   }, []);
   // Prices that have not come after a while: say so instead of leaving the card silently without them.
   useEffect(() => { if (prices) return; const wait = setTimeout(() => setLate(true), 6000); return () => clearTimeout(wait); }, [prices]);
+
+  // From the assistant: «Ver Permiso de Trabajo» clears the search, goes to that row and marks it for a moment.
+  const jump = (key: string) => {
+    setQuery(""); setFlash(key);
+    window.setTimeout(() => document.getElementById(`servicio-${key}`)?.scrollIntoView({ block: "center" }), 60);
+    window.setTimeout(() => setFlash(current => current === key ? null : current), 2600);
+  };
 
   const q = plain(query.trim());
   const sections = useMemo(() => LINK_SECTIONS.map(section => ({
@@ -180,7 +177,7 @@ export default function LinksMenu() {
             <section className={s.course} id={section.id} key={section.id}>
               <h2>{section.title}</h2>
               <p>{section.note}</p>
-              <div className={s.list}>{section.items.map(item => <Dish key={item.key} item={item} prices={prices} />)}</div>
+              <div className={s.list}>{section.items.map(item => <Dish key={item.key} item={item} prices={prices} flash={flash === item.key} />)}</div>
             </section>
           ))}
 
@@ -192,12 +189,14 @@ export default function LinksMenu() {
               <li>Los precios de los servicios se leen de la plataforma cada vez que abres esta página: <b>siempre son los de hoy</b>.</li>
               <li>Los del Club y de la asesoría con Henry son los que mostraban sus páginas el {EXTRAS_SEEN_ON}.</li>
               <li>«Copiar mensaje» copia el nombre, el precio y el link; «WhatsApp» abre el mismo mensaje para elegir el chat.</li>
+              <li>El asistente responde con lo que ContyGo tiene escrito de cada servicio. Si no tiene un dato, lo dice: confírmalo antes de responder.</li>
               <li>Henry Orellana es consultor de inmigración registrado en Utah. <b>No es abogado</b> y no da asesoría legal.</li>
             </ul>
             <Copy className={s.all} text={everything} label="Copiar toda la carta" icon={Icon.copy} />
           </footer>
         </div>
       </main>
+      <TeamChat onJump={jump} />
     </div>
   );
 }

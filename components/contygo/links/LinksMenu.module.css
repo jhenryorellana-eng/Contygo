@@ -18,7 +18,7 @@
 .hero{position:absolute;right:-8px;top:34px;width:104px;height:auto;max-width:none;filter:drop-shadow(0 14px 18px #0009);pointer-events:none}
 
 /* The sheet of paper over the header */
-.sheet{position:relative;margin-top:-26px;border-radius:26px 26px 0 0;background:var(--paper);padding-bottom:40px}
+.sheet{position:relative;margin-top:-26px;border-radius:26px 26px 0 0;background:var(--paper);padding-bottom:96px}
 .tools{position:sticky;top:0;z-index:5;padding:12px 0 9px;border-radius:26px 26px 0 0;background:#f3f7f4f2;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .tools[data-stuck]{border-radius:0;box-shadow:0 8px 20px #061b3d14}
 .find{position:relative;display:block}
@@ -41,6 +41,8 @@
 /* A dish */
 .item{display:grid;grid-template-columns:52px minmax(0,1fr);gap:0 12px;padding:14px 0;border-top:2px dashed var(--line)}
 .item:first-child{border-top:0}
+.item{scroll-margin-top:130px}
+.item[data-flash]{border-radius:14px;box-shadow:0 0 0 3px #fff,0 0 0 6px var(--green);border-top-color:#0000}
 .item>img{width:52px;height:52px;margin-top:-2px}
 .name{display:flex;align-items:baseline;gap:7px}
 .name h3{margin:0;font:800 17.5px/1.15 var(--head);letter-spacing:-.02em}

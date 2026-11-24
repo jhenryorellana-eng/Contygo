@@ -1,6 +1,6 @@
 /* The cases, on the landing: Henry in front, and beside him the cases won, large (the owner chose this among four).
    Brand colours only. On a phone the green thread runs down the left edge of the page: the board leaves it its lane. */
-.board{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);width:min(100% - 28px,1180px);margin:clamp(18px,4vw,44px) auto;border-radius:clamp(28px,4.4vw,44px);background:#010d33;color:#fff;box-shadow:inset 0 0 0 1px #ffffff24,0 30px 70px -30px #061b3d;overflow:hidden}
+.board{scroll-margin-top:84px;position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);width:min(100% - 28px,1180px);margin:clamp(18px,4vw,44px) auto;border-radius:clamp(28px,4.4vw,44px);background:#010d33;color:#fff;box-shadow:inset 0 0 0 1px #ffffff24,0 30px 70px -30px #061b3d;overflow:hidden}
 .portrait{position:relative;aspect-ratio:1/1.08;overflow:hidden}
 .portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;animation:enter .7s cubic-bezier(.2,.85,.2,1) both}
 @keyframes enter{from{opacity:0;scale:1.04}}

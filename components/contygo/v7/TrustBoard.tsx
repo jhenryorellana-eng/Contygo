@@ -48,11 +48,21 @@ export default function TrustBoard() {
 
   useEffect(() => {
     let alive = true;
-    // The owner's preview: «/?ejemplo=1» asks for the examples, which the route gives only to his session.
-    const preview = new URLSearchParams(window.location.search).get("ejemplo") === "1";
-    fetch(preview ? "/api/felicitaciones?ejemplo=1" : "/api/felicitaciones", preview ? { cache: "no-store" } : undefined).then(reply => reply.ok ? reply.json() as Promise<PublicShow> : null).then(body => { if (alive && body && (body.score || body.stories.length)) setData(body); }).catch(() => {});
+    // What the page may show; and, when there is nothing real yet, the owner's preview: the examples, which the route gives
+    // only to his session (anyone else gets the same empty answer). So Henry, signed in to his panel, sees the section on
+    // the landing straight away, marked as an example; «/?ejemplo=1» asks for it even when there are real figures.
+    const read = (url: string, init?: RequestInit) => fetch(url, init).then(reply => reply.ok ? reply.json() as Promise<PublicShow> : null).catch(() => null);
+    const filled = (body: PublicShow | null): body is PublicShow => !!body && (!!body.score || body.stories.length > 0);
+    const asked = new URLSearchParams(window.location.search).get("ejemplo") === "1";
+    void (async () => {
+      const real = asked ? null : await read("/api/felicitaciones");
+      const body = filled(real) ? real : await read("/api/felicitaciones?ejemplo=1", { cache: "no-store" });
+      if (alive && filled(body)) setData(body);
+    })();
     return () => { alive = false; };
   }, []);
+  // The section arrives after the page: a link that points at it («…#casos») finds it once it is there.
+  useEffect(() => { if (data && window.location.hash === "#casos") section.current?.scrollIntoView({ block: "start" }); }, [data]);
   // The figures move when the board comes into view, not before anyone can see them.
   useEffect(() => {
     const element = section.current; if (!element || seen) return;

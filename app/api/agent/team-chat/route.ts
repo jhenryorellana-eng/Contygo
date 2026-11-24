@@ -2,12 +2,17 @@
    Body: { question, history?, serviceId? }. Responde { ok, reply, covered, serviceIds? }. Con serviceId (la pregunta se
    escribió en la ficha de ese servicio) el asistente se alimenta de ese producto. Sabe lo mismo que la página enseña, más el
    precio y las formas de pago en vivo de cada paquete. Sin IA, o si falla, da la ficha del servicio que la pregunta
-   nombra; si no, lo dice. No guarda la conversación ni registra la pregunta. */
+   nombra; si no, lo dice. Lo que ContyGo no tiene escrito de un servicio lo lee en sus páginas oficiales y lo
+   entrega con sus enlaces (sources) para comprobarlo. No guarda la conversación ni registra la pregunta. */
 import { NextRequest, NextResponse } from "next/server";
 import { CHAT_MODEL, agentEnabled, clientIp, getGenAI, rateLimit, turnThinking } from "@/lib/agent/server";
 import { isSameOriginIntakeRequest } from "@/lib/agent/visa-intake";
 import { readTurnBody } from "@/lib/agent/request";
-import { TEAM_CHAT_RULES, TEAM_NO_ANSWER, isTeamService, localTeamReply, readTeamHistory, readTeamReply, teamFocusRule, teamKnowledge, type TeamReply } from "@/lib/agent/team-chat";
+import { TEAM_CHAT_RULES, TEAM_NO_ANSWER, isJuvenileQuestion, isTeamService, localTeamReply, readTeamHistory, readTeamLookup, readTeamReply, teamFocusRule, teamKnowledge, type TeamReply } from "@/lib/agent/team-chat";
+import { BRAIN_RULES, brainFor, brainState } from "@/lib/agent/sijs-brain";
+import { readOfficial } from "@/lib/agent/official-pages";
+import { loadEb4Bulletin, type Eb4Bulletin } from "@/lib/agent/visa-bulletin";
+import { VISIBLE_SERVICES } from "@/lib/contygo-catalog";
 import { loadCatalog } from "@/lib/contygo-api/catalog";
 import type { CatalogService } from "@/lib/contygo-api/types";
 
@@ -35,27 +40,57 @@ export async function POST(req: NextRequest) {
 
   let remotes: CatalogService[] = [];
   try { remotes = await loadCatalog(); } catch { /* Without the live catalogue the assistant answers the process and leaves prices to the page. */ }
+  let bulletin: Eb4Bulletin | null = null;
+  try { bulletin = await loadEb4Bulletin(); } catch { /* Without the bulletin the assistant says it has no cut-off date. */ }
   const fallback: TeamReply = localTeamReply(question, remotes, focusId) ?? { reply: TEAM_NO_ANSWER, covered: false };
+
+  // The brain's states (lib/agent/sijs-brain.ts): the national table and the sheet of the places the question names —
+  // or of the ones the last turns named, for a follow-up like «¿y en qué corte?».
+  const juvenile = isJuvenileQuestion(question, focusId);
+  const places = `${question} ${history.map(turn => turn.q).join(" ")}`;
+  const generate = async (brain: { text: string; states: string[] } | null) => {
+    const response = await getGenAI().models.generateContent({
+      model: CHAT_MODEL,
+      contents: [{ role: "user", parts: [{ text: JSON.stringify({ conversacionAnterior: history, pregunta: question }) }] }],
+      config: {
+        systemInstruction: `${TEAM_CHAT_RULES}${brain ? ` ${BRAIN_RULES}` : ""}${teamFocusRule(focusId)}\n\nCONOCIMIENTO:\n${teamKnowledge(remotes, focusId, bulletin, brain?.text)}`,
+        responseMimeType: "application/json",
+        responseJsonSchema: { type: "object", additionalProperties: false, properties: { reply: { type: "string" }, covered: { type: "boolean" }, serviceIds: { type: "array", items: { type: "string" } },
+          lookup: { type: "object", additionalProperties: false, properties: { state: { type: "string" }, county: { type: "string" } }, required: ["state"] } }, required: ["reply", "covered"] },
+        temperature: .2, maxOutputTokens: 1100, thinkingConfig: turnThinking(CHAT_MODEL), abortSignal: AbortSignal.timeout(25000),
+      },
+    });
+    return JSON.parse(response.text ?? "") as unknown;
+  };
 
   let answer: TeamReply = fallback;
   if (agentEnabled) {
     try {
-      const response = await getGenAI().models.generateContent({
-        model: CHAT_MODEL,
-        contents: [{ role: "user", parts: [{ text: JSON.stringify({ conversacionAnterior: history, pregunta: question }) }] }],
-        config: {
-          systemInstruction: `${TEAM_CHAT_RULES}${teamFocusRule(focusId)}\n\nCONOCIMIENTO:\n${teamKnowledge(remotes, focusId)}`,
-          responseMimeType: "application/json",
-          responseJsonSchema: { type: "object", additionalProperties: false, properties: { reply: { type: "string" }, covered: { type: "boolean" }, serviceIds: { type: "array", items: { type: "string" } } }, required: ["reply", "covered"] },
-          temperature: .2, maxOutputTokens: 900, thinkingConfig: turnThinking(CHAT_MODEL), abortSignal: AbortSignal.timeout(25000),
-        },
-      });
-      answer = readTeamReply(JSON.parse(response.text ?? "")) ?? fallback;
-      // On a service's row the answer is about that service: it needs no «Ver …» of itself.
-      if (focusId && answer.serviceIds) answer = { ...answer, serviceIds: answer.serviceIds.filter(id => id !== focusId) };
+      let brain = juvenile ? brainFor(places) : null;
+      let parsed = await generate(brain);
+      // The model placed the question in a state whose sheet it did not have (a city, a county): one more round, with it.
+      const lookup = juvenile ? readTeamLookup(parsed) : null;
+      if (lookup && brainState(lookup.state) && (!brain?.states.includes(lookup.state) || lookup.county)) {
+        brain = brainFor(places, lookup);
+        parsed = await generate(brain);
+      }
+      answer = readTeamReply(parsed) ?? fallback;
     } catch { /* No answer from the model: the service's sheet, or the honest «no pude». */ }
   }
+  // What ContyGo has not written, for a known service: read on that service's official pages and handed over only with
+  // their links (lib/agent/official-pages.ts). Which service: the row it was asked on, or the one the answer names.
+  if (agentEnabled && !answer.covered) {
+    const about = VISIBLE_SERVICES.find(service => service.id === (focusId ?? answer.serviceIds?.[0]));
+    if (about) {
+      try {
+        const found = await readOfficial({ serviceId: about.id, serviceName: about.name, question, ...(answer.reply !== TEAM_NO_ANSWER ? { known: answer.reply } : {}) });
+        if (found) answer = { ...answer, reply: found.reply, sources: found.sources };
+      } catch { /* The pages did not answer: the honest «no tengo ese dato» stays. */ }
+    }
+  }
+  // On a service's row the answer is about that service: it needs no «Ver …» of itself.
+  if (focusId && answer.serviceIds) answer = { ...answer, serviceIds: answer.serviceIds.filter(id => id !== focusId) };
   // Only that it happened, never the question.
-  if (!answer.covered) console.info("[chat-equipo:sin-respuesta]");
+  if (!answer.covered) console.info(answer.sources ? "[chat-equipo:fuente-oficial]" : "[chat-equipo:sin-respuesta]");
   return json({ ok: true, ...answer });
 }

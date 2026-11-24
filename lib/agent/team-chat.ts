@@ -14,8 +14,11 @@ import { GENERAL_FACTS, SERVICE_FACTS } from "./service-faq";
 import { serviceScript } from "./service-scripts";
 import { serviceBlock } from "./service-knowledge";
 import { contentWords } from "./doubts";
+import { FEDERAL_SIJ_SOURCE, UNREVIEWED_STATE_DETAIL, VISA_STATE_RULES_REVIEWED_ON, reviewedVisaStates } from "./visa-state-rules";
+import { USCIS_PRIORITY_DATES_URL, type Eb4Bulletin } from "./visa-bulletin";
 
-export type TeamReply = { reply: string; covered: boolean; serviceIds?: string[] };
+/** `sources`: the answer was read on the service's official pages just now; the screen shows them to be checked. */
+export type TeamReply = { reply: string; covered: boolean; serviceIds?: string[]; sources?: { site: string; url: string }[] };
 export type TeamTurn = { q: string; a: string };
 
 const list = (items: readonly string[]) => items.map(item => `- ${item}`).join("\n");
@@ -30,7 +33,34 @@ function planLine(plan: CatalogPlan) {
   return `- Paquete «${text(plan.name)}»: ${formatMoney(plan.priceCents)}.${ways.length ? ` Formas de pago: ${ways.join("; ")}.` : " Las formas de pago aparecen en el contrato antes de firmar."}${extra}`;
 }
 
-function serviceSheet(service: ContygoService, remotes: CatalogService[]) {
+/** What ContyGo has researched about the age and the state court for the juvenile visa, with its sources: the question the team hears most. */
+function juvenileStates() {
+  const states = reviewedVisaStates();
+  const until21 = states.filter(state => state.adultPathwayReviewed).map(state => state.name), until18 = states.filter(state => !state.adultPathwayReviewed).map(state => state.name);
+  return [
+    `Edad y estado (revisado por ContyGo el ${VISA_STATE_RULES_REVIEWED_ON}; NO es la lista completa de estados):`,
+    `- Regla federal: la petición I-360 se presenta antes de cumplir 21 años y estando soltero. Fuente: ${FEDERAL_SIJ_SOURCE.url}`,
+    "- Aparte de la regla federal, primero hace falta la orden de una corte estatal, y cada estado decide hasta qué edad su corte puede darla. Por eso el estado donde vive el joven importa.",
+    `- Estados revisados donde hay una vía para jóvenes de 18 a 20 años (antes de cumplir 21): ${until21.join(", ")}.`,
+    ...(until18.length ? [`- Estados revisados donde la corte estatal ordinaria solo llega hasta los 18 años: ${until18.join(", ")}.`] : []),
+    ...states.map(state => `- ${state.name}: ${state.detail} Fuente: ${state.sources.map(source => source.url).join(" ")}`),
+    `- Cualquier otro estado: ${UNREVIEWED_STATE_DETAIL} No digas que acepta ni que no acepta: di que ese estado todavía no está revisado y que lo confirma Henry.`,
+  ].join("\n");
+}
+
+/** The EB-4 row of the visa bulletin, the one the adjustment of a juvenile case waits for, as USCIS publishes it. */
+function bulletinBlock(bulletin: Eb4Bulletin) {
+  const cell = (cutoff: string) => cutoff === "C" ? "al día (sin espera)" : cutoff === "U" ? "sin visas disponibles" : `fecha de corte ${cutoff}`;
+  return [`Boletín de visas, categoría EB-4 (la de la Visa Juvenil), mes ${bulletin.month}${bulletin.source === "snapshot" ? " (última copia verificada; puede haber uno más nuevo)" : ""}. El ajuste I-485 se puede presentar cuando la fecha de prioridad del joven es anterior a la fecha de corte:`,
+    ...bulletin.columns.map(column => `- ${column.header}: ${cell(column.cutoff)}`),
+    `Fuente (USCIS): ${bulletin.chartUrl || USCIS_PRIORITY_DATES_URL}`].join("\n");
+}
+const JUVENILE = new Set(["visa-juvenil", "i-360", "i-485"]);
+/** Whether a question is about the juvenile visa, its state court or a place: then the brain's states go with it. */
+export const isJuvenileQuestion = (question: string, focusId?: string) => (focusId ? JUVENILE.has(focusId) : /juvenil|sijs|i-?360|i-?485|custodia|tutela|menor|joven|hij[oa]|estado|condado|corte|a[nñ]os/i.test(question));
+
+/** `juvenile` adds the states table and the bulletin: in the whole catalogue they go once, on the juvenile visa's sheet. */
+function serviceSheet(service: ContygoService, remotes: CatalogService[], juvenile?: { bulletin?: Eb4Bulletin | null; brain?: boolean }) {
   const family = serviceVariants(service.id);
   const sheets = (family.length ? family : [service]).map(local => {
     const remote = remotes.find(item => item.slug === local.slug) ?? null;
@@ -38,11 +68,16 @@ function serviceSheet(service: ContygoService, remotes: CatalogService[]) {
     return [serviceBlock(local, remote), plans.length ? `Precio (honorarios de ContyGo, en dólares; las tasas del gobierno se pagan aparte):\n${plans.map(planLine).join("\n")}` : "Precio: no disponible ahora; se ve en la página del servicio."].join("\n");
   });
   const facts = SERVICE_FACTS[service.id] ?? [], checked = serviceScript(service.id)?.doubts ?? [], link = linkOf(service.id);
+  // The questions the platform itself asks before the contract: the service's real requirements.
+  const asks = (family.length ? family : [service]).flatMap(local => remotes.find(item => item.slug === local.slug)?.eligibilityQuestions ?? []).map(question => text(question.prompt)).filter(Boolean);
   return [
     `### ${service.name} (id: ${service.id})`,
     ...sheets,
     ...(link ? [`Link para el cliente: https://${link}`] : []),
     ...(facts.length ? [`Hechos comprobados:\n${list(facts)}`] : []),
+    ...(asks.length ? [`Preguntas con las que la plataforma revisa el caso antes del contrato (son sus requisitos):\n${list(Array.from(new Set(asks)))}`] : []),
+    ...(juvenile && !juvenile.brain ? [juvenileStates()] : []),
+    ...(juvenile?.bulletin ? [bulletinBlock(juvenile.bulletin)] : []),
     ...(checked.length ? [`Respuestas aprobadas:\n${checked.map(item => `P: ${item.question}\nR: ${item.answer}`).join("\n")}`] : []),
   ].join("\n");
 }
@@ -60,18 +95,20 @@ function serviceLine(service: ContygoService, remotes: CatalogService[]) {
  * Everything the team's assistant may say, as text for the model. With `focusId` (the question was written on that
  * service's row of the card) the assistant feeds on that product: its whole sheet, and the rest only as one line each.
  */
-export function teamKnowledge(remotes: CatalogService[], focusId?: string) {
+export function teamKnowledge(remotes: CatalogService[], focusId?: string, bulletin?: Eb4Bulletin | null, brain?: string) {
   const focus = focusId ? VISIBLE_SERVICES.find(service => service.id === focusId) : undefined;
   if (focus) return [
     "SOBRE CONTYGO:", list(GENERAL_FACTS), ABOUT_LINKS,
-    "\nEL SERVICIO DE LA PREGUNTA:", serviceSheet(focus, remotes),
+    "\nEL SERVICIO DE LA PREGUNTA:", serviceSheet(focus, remotes, JUVENILE.has(focus.id) ? { bulletin, brain: Boolean(brain) } : undefined),
     "\nLOS DEMÁS SERVICIOS (solo para orientar si la pregunta es de otro):", ...VISIBLE_SERVICES.filter(service => service.id !== focus.id).map(service => serviceLine(service, remotes)),
     "\nOTROS PRODUCTOS Y LINKS:", ...extras(),
+    ...(brain ? [`\n${brain}`] : []),
   ].join("\n");
   return [
     "SOBRE CONTYGO:", list(GENERAL_FACTS), ABOUT_LINKS,
-    "\nSERVICIOS:", ...VISIBLE_SERVICES.map(service => serviceSheet(service, remotes)),
+    "\nSERVICIOS:", ...VISIBLE_SERVICES.map(service => serviceSheet(service, remotes, service.id === "visa-juvenil" ? { bulletin, brain: Boolean(brain) } : undefined)),
     "\nOTROS PRODUCTOS Y LINKS:", ...extras(),
+    ...(brain ? [`\n${brain}`] : []),
   ].join("\n");
 }
 
@@ -87,6 +124,7 @@ export const TEAM_CHAT_RULES = [
   "Responde directo y completo, en español sencillo: primero el dato que pidió y después lo que el cliente suele preguntar enseguida. Como máximo seis frases cortas, o una lista breve con guiones si son pasos, documentos o paquetes. Sin saludos ni relleno.",
   "Escribe de modo que la asesora pueda leerlo o copiarlo tal cual para el cliente: afirmaciones claras, sin dirigirte a ella ni hablar de «la asesora».",
   "Los precios y las formas de pago son EXACTAMENTE los del CONOCIMIENTO: son honorarios de ContyGo en dólares y las tasas del gobierno se pagan aparte; dilo cuando hables de un precio. Nunca calcules descuentos, promociones ni totales que no estén escritos.",
+  "Cuando un dato del CONOCIMIENTO trae «Fuente:», pon ese enlace al final de la respuesta para que se pueda comprobar.",
   "No inventes precios, plazos, requisitos, documentos, probabilidades ni pasos. Si el CONOCIMIENTO no tiene el dato, covered es false y reply dice qué es lo que no tienes y que se confirme con Henry o con la oficina antes de responder al cliente; si sabes una parte, dila.",
   "No des asesoría legal ni digas si un cliente califica, si ganará su caso o qué le conviene: Henry Orellana es consultor de inmigración registrado en Utah, no abogado, y eso lo revisa la evaluación del servicio. Si la pregunta es sobre el caso concreto de un cliente, explica lo general que sí está en el CONOCIMIENTO y di que el caso lo revisa la evaluación del servicio o Henry.",
   "serviceIds son los ids de los servicios del CONOCIMIENTO de los que habla tu respuesta (hasta tres, el principal primero); vacío si no habla de ninguno.",
@@ -107,6 +145,14 @@ export function readTeamReply(value: unknown): TeamReply | null {
 }
 
 /** Earlier turns, cleaned: at most the last four, short. */
+/** A state's sheet the model asks for before answering (a city it placed in a state, a county's court). */
+export function readTeamLookup(value: unknown): { state: string; county?: string } | null {
+  const lookup = isRecord(value) ? value.lookup : null;
+  if (!isRecord(lookup) || typeof lookup.state !== "string" || !/^[A-Za-z]{2}$/.test(lookup.state.trim())) return null;
+  const county = typeof lookup.county === "string" ? lookup.county.replace(/\s+(county|condado)$/i, "").trim().slice(0, 60) : "";
+  return { state: lookup.state.trim().toUpperCase(), ...(county ? { county } : {}) };
+}
+
 export function readTeamHistory(value: unknown): TeamTurn[] {
   if (!Array.isArray(value)) return [];
   return value.filter((turn): turn is TeamTurn => isRecord(turn) && typeof turn.q === "string" && typeof turn.a === "string")

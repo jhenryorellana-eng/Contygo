@@ -11,7 +11,8 @@ import { LINK_SECTIONS } from "@/lib/contygo-links";
 import { copyText } from "./copy";
 import s from "./TeamChat.module.css";
 
-type Turn = { q: string; a?: string; covered?: boolean; serviceIds?: string[]; failed?: string };
+type Source = { site: string; url: string };
+type Turn = { q: string; a?: string; covered?: boolean; serviceIds?: string[]; sources?: Source[]; failed?: string };
 const NAMES = new Map(LINK_SECTIONS.flatMap(section => section.items).map(item => [item.key, item.name.split(" · ")[0]]));
 const STARTERS = [
   "¿Cuánto cuesta el permiso de trabajo y cómo se paga?",
@@ -43,14 +44,14 @@ function CopyAnswer({ text }: { text: string }) {
   );
 }
 
-type Asked = Pick<Turn, "a" | "covered" | "serviceIds" | "failed">;
+type Asked = Pick<Turn, "a" | "covered" | "serviceIds" | "sources" | "failed">;
 /** One question to the assistant; `serviceId` when it is written on that service's row. */
 async function askTeam(question: string, turns: Turn[], serviceId?: string): Promise<Asked> {
   const history = turns.filter(turn => turn.a).slice(-4).map(turn => ({ q: turn.q, a: turn.a }));
   try {
     const response = await fetch("/api/agent/team-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: question.slice(0, 600), history, ...(serviceId ? { serviceId } : {}) }) });
-    const data = await response.json().catch(() => null) as { ok?: boolean; error?: string; reply?: string; covered?: boolean; serviceIds?: string[] } | null;
-    return data?.ok && data.reply ? { a: data.reply, covered: data.covered !== false, serviceIds: data.serviceIds ?? [] } : { failed: FAILED[data?.error ?? ""] ?? NO_LINE };
+    const data = await response.json().catch(() => null) as { ok?: boolean; error?: string; reply?: string; covered?: boolean; serviceIds?: string[]; sources?: Source[] } | null;
+    return data?.ok && data.reply ? { a: data.reply, covered: data.covered !== false, serviceIds: data.serviceIds ?? [], ...(data.sources?.length ? { sources: data.sources } : {}) } : { failed: FAILED[data?.error ?? ""] ?? NO_LINE };
   } catch { return { failed: NO_LINE }; }
 }
 
@@ -78,9 +79,14 @@ function Thread({ turns, busy, retry, onJump }: { turns: Turn[]; busy: boolean; 
         <div key={index} className={s.turn}>
           <p className={s.asked}>{turn.q}</p>
           {turn.a && (
-            <div className={s.answer} data-unsure={turn.covered === false || undefined}>
+            <div className={s.answer} data-unsure={(turn.covered === false && !turn.sources) || undefined} data-official={turn.sources ? true : undefined}>
               <p>{turn.a}</p>
-              {turn.covered === false && <p className={s.unsure}>Confírmalo con Henry o con la oficina antes de responder al cliente.</p>}
+              {turn.sources ? (
+                <div className={s.official}>
+                  <b>Leído ahora en la página oficial.</b> Ábrela y compruébalo antes de decírselo al cliente.
+                  <ul>{turn.sources.map(source => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.site}</a></li>)}</ul>
+                </div>
+              ) : turn.covered === false && <p className={s.unsure}>Confírmalo con Henry o con la oficina antes de responder al cliente.</p>}
               <div className={s.after}>
                 <CopyAnswer text={turn.a} />
                 {(turn.serviceIds ?? []).filter(id => NAMES.has(id)).map(id => <button key={id} type="button" className={s.jump} onClick={() => onJump(id)}>Ver {NAMES.get(id)}</button>)}

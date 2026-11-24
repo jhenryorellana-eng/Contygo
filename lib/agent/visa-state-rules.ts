@@ -65,6 +65,12 @@ const UNREVIEWED_STATE: VisaStateRule = {
   sources: [],
 };
 
+/** The states reviewed so far, with their names: for whoever needs the whole table (the team's assistant). */
+const STATE_NAMES: Readonly<Record<string, string>> = { CA: "California", NY: "Nueva York", MD: "Maryland", MA: "Massachusetts", CO: "Colorado", WA: "Washington", NJ: "Nueva Jersey", NC: "Carolina del Norte" };
+export const VISA_STATE_RULES_REVIEWED_ON = "17 de septiembre de 2026";
+export const reviewedVisaStates = () => Object.entries(STATE_RULES).map(([code, rule]) => ({ code, name: STATE_NAMES[code] ?? code, ...rule }));
+export const UNREVIEWED_STATE_DETAIL = UNREVIEWED_STATE.detail;
+
 export function getVisaStateRule(state: string | undefined): VisaStateRule {
   return state && Object.prototype.hasOwnProperty.call(STATE_RULES, state) ? STATE_RULES[state] : UNREVIEWED_STATE;
 }

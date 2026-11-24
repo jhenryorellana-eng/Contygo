@@ -70,6 +70,102 @@ test('desde la fila de un servicio se alimenta de ese producto: su ficha entera,
   assert.deepEqual(localTeamReply('y el itin?', LIVE, 'permiso-de-trabajo').serviceIds, ['itin']);
 });
 
+test('sabe lo que ContyGo ya investigó de la Visa Juvenil: la edad por estado, con sus fuentes, y el boletín', () => {
+  const { reviewedVisaStates } = require('../lib/agent/visa-state-rules.ts');
+  const { EB4_SNAPSHOT } = require('../lib/agent/visa-bulletin.ts');
+  const focused = teamKnowledge(LIVE, 'visa-juvenil', EB4_SNAPSHOT);
+  assert.match(focused, /Estados revisados donde hay una vía para jóvenes de 18 a 20 años \(antes de cumplir 21\): California, Nueva York, Maryland, Massachusetts, Colorado, Washington, Nueva Jersey\./);
+  assert.match(focused, /solo llega hasta los 18 años: Carolina del Norte\./);
+  assert.match(focused, /NO es la lista completa de estados/);
+  assert.match(focused, /Cualquier otro estado: .*No digas que acepta ni que no acepta/);
+  for (const state of reviewedVisaStates()) for (const source of state.sources) assert.ok(focused.includes(source.url), state.name);
+  assert.match(focused, /Boletín de visas, categoría EB-4 .*mes 2026-10/);
+  // En el catálogo entero la tabla va una sola vez (en la Visa Juvenil), no repetida en la I-360 y la I-485.
+  assert.equal((teamKnowledge(LIVE, undefined, EB4_SNAPSHOT).match(/Edad y estado \(revisado/g) || []).length, 1);
+  assert.match(teamKnowledge(LIVE, 'i-485', EB4_SNAPSHOT), /Edad y estado \(revisado/);
+  assert.doesNotMatch(teamKnowledge(LIVE, 'itin', EB4_SNAPSHOT), /Edad y estado|Boletín de visas, categoría/);
+  assert.match(TEAM_CHAT_RULES, /«Fuente:», pon ese enlace/);
+});
+
+test('lo que no está escrito se lee en páginas oficiales fijas de cada servicio, nunca en una búsqueda libre', () => {
+  const { OFFICIAL_PAGES, readPages } = require('../lib/agent/official-pages.ts');
+  for (const service of VISIBLE_SERVICES) {
+    const pages = OFFICIAL_PAGES[service.id];
+    assert.ok(pages && pages.length >= 1 && pages.length <= 3, service.id);
+    for (const url of pages) assert.match(new URL(url).hostname, /(^|\.)(uscis\.gov|justice\.gov|ecfr\.gov|irs\.gov|dos\.fl\.gov)$/, url);
+  }
+  const given = OFFICIAL_PAGES.itin;
+  // Solo cuentan las páginas que se le dieron y que de verdad leyó.
+  assert.deepEqual(readPages([{ retrievedUrl: given[0], urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_SUCCESS' }, { retrievedUrl: given[1], urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_ERROR' }, { retrievedUrl: 'https://bufete.example/itin', urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_SUCCESS' }], given), [{ site: 'irs.gov', url: given[0] }]);
+  assert.deepEqual(readPages(undefined, given), []);
+  const source = fs.readFileSync(path.join(__dirname, '../lib/agent/official-pages.ts'), 'utf8');
+  assert.match(source, /tools: \[\{ urlContext: \{\} \}\]/);
+  assert.doesNotMatch(source, /googleSearch: \{/);
+  assert.match(source, /no las sumes, no las calcules/);
+  const route = fs.readFileSync(path.join(__dirname, '../app/api/agent/team-chat/route.ts'), 'utf8');
+  assert.match(route, /if \(agentEnabled && !answer\.covered\)/);
+});
+
+test('el cerebro SIJS: los 51 estados con sus vías, edades, leyes y fuentes oficiales, sin nada de clientes', () => {
+  const { brainStates } = require('../lib/agent/sijs-brain.ts');
+  const states = brainStates();
+  assert.equal(Object.keys(states).length, 51);
+  for (const [code, state] of Object.entries(states)) {
+    for (const route of state.routes) {
+      assert.ok(route.name && (route.age === null || (route.age >= 18 && route.age <= 21)), `${code}: ${route.name} ${route.age}`);
+      assert.ok(route.src.length >= 1, `${code}: ${route.name} sin fuente`);
+      for (const source of route.src) assert.match(source.u, /^https:\/\//, source.u);
+    }
+  }
+  assert.equal(states.UT.routes.some(route => route.age === 21), true);
+  assert.equal(states.TX.routes.every(route => route.age === 18), true);
+  assert.equal(Object.keys(states.TX.counties).length, 254);
+  // Solo datos de fuentes oficiales: ni correos, ni teléfonos de personas, ni números A o de Seguro Social.
+  const raw = fs.readFileSync(path.join(__dirname, '../lib/agent/data/sijs-brain.json'), 'utf8');
+  assert.doesNotMatch(raw, /\b\d{3}-\d{2}-\d{4}\b|\bA-?\d{8,9}\b|[\w.+-]+@(gmail|hotmail|yahoo|outlook)\./i);
+});
+
+test('el cerebro elige qué fichas van al modelo: la tabla, y el estado y el condado que la pregunta nombra', () => {
+  const { findStates, findCounties, nationalTable, stateSheet, brainFor, BRAIN_RULES } = require('../lib/agent/sijs-brain.ts');
+  assert.deepEqual(findStates('mi cliente vive en Houston, Texas y su hijo tiene 19'), ['TX']);
+  assert.deepEqual(findStates('en nueva york o en Virginia Occidental?'), ['NY', 'WV']);
+  assert.deepEqual(findStates('me mudé de la Florida a Carolina del Norte'), ['FL', 'NC']);
+  assert.deepEqual(findStates('vive en TX'), ['TX']);
+  // «de», «la», «me» no son Delaware, Luisiana ni Maine; y un texto todo en mayúsculas no trae siglas.
+  assert.deepEqual(findStates('DE LA CORTE ME DIJERON QUE NO'), []);
+  assert.deepEqual(findStates('me dijo que en la corte de su ciudad'), []);
+  assert.deepEqual(findCounties('condado de harris', 'TX'), ['Harris']);
+  assert.deepEqual(findCounties('vive en Los Angeles', 'CA'), ['Los Angeles']);
+  const table = nationalTable();
+  assert.equal((table.match(/^- /gm) || []).length, 51);
+  assert.match(table, /- Utah \(UT\): hay vía hasta antes de los 21/);
+  assert.match(table, /- Texas \(TX\): las vías recopiladas llegan solo hasta antes de los 18/);
+  // Una vía que solo alcanza a quien ya está bajo custodia del estado no se anuncia como vía general.
+  assert.match(table, /- Florida \(FL\): solo para jóvenes que ya están bajo custodia del estado hay vía hasta antes de los 21/);
+  assert.match(table, /- Arkansas \(AR\): sin vías recopiladas todavía\./);
+  assert.match(table, /- Alabama \(AL\): .*corrida nacional de septiembre.*confirmar con Henry/);
+  const sheet = stateSheet('TX', ['Harris']);
+  assert.match(sheet, /FICHA DE TEXAS \(TX\)/);
+  assert.match(sheet, /Tex\. Fam\. Code/);
+  assert.match(sheet, /Corte del condado de Harris:/);
+  assert.match(sheet, /Fuente: https:\/\/statutes\.capitol\.texas\.gov/);
+  assert.equal(stateSheet('XX'), '');
+  const picked = brainFor('vive en Houston y tiene 17', { state: 'TX', county: 'Harris' });
+  assert.deepEqual(picked.states, ['TX']);
+  assert.match(picked.text, /TABLA POR ESTADO[\s\S]*FICHA DE TEXAS[\s\S]*Corte del condado de Harris/);
+  assert.match(BRAIN_RULES, /NO es una vía general/);
+  assert.match(BRAIN_RULES, /devuelve lookup/);
+  const { readTeamLookup, isJuvenileQuestion } = require('../lib/agent/team-chat.ts');
+  assert.deepEqual(readTeamLookup({ reply: 'x', covered: true, lookup: { state: 'tx', county: 'Harris County' } }), { state: 'TX', county: 'Harris' });
+  assert.equal(readTeamLookup({ lookup: { state: 'Texas' } }), null);
+  assert.equal(isJuvenileQuestion('cuanto cuesta?', 'itin'), false);
+  assert.equal(isJuvenileQuestion('cuanto cuesta?', 'visa-juvenil'), true);
+  // Con el cerebro, su tabla nacional sustituye a la de ocho estados revisados a mano.
+  const withBrain = teamKnowledge(LIVE, 'visa-juvenil', null, picked.text);
+  assert.match(withBrain, /TABLA POR ESTADO/);
+  assert.doesNotMatch(withBrain, /Edad y estado \(revisado por ContyGo/);
+});
+
 test('la ruta tiene techo por IP, pide mismo origen y no registra la pregunta', () => {
   const route = fs.readFileSync(path.join(__dirname, '../app/api/agent/team-chat/route.ts'), 'utf8');
   assert.match(route, /isSameOriginIntakeRequest\(req\)/);

@@ -31,6 +31,12 @@
 .answer[data-unsure]{box-shadow:inset 0 0 0 2px var(--navy)}
 .answer p{margin:0;font-size:15.5px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
 .answer .unsure{margin-top:8px;padding-top:8px;border-top:2px dashed var(--line);font-weight:800;font-size:14px;white-space:normal}
+.answer[data-official]{box-shadow:inset 0 0 0 2px var(--blue)}
+.official{margin-top:9px;padding-top:9px;border-top:2px dashed var(--line);font-size:14px;line-height:1.35}
+.official b{font-weight:800}
+.official ul{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0;list-style:none}
+.official a{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:40px;background:#eaf1fd;color:#1c4fb8!important;font:800 13.5px/1 var(--head);text-decoration:none}
+.official a:hover{background:#d9e6fb}
 .after{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .copy,.jump{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 13px;border-radius:40px;font:800 13.5px/1 var(--head);white-space:nowrap;cursor:pointer}
 .copy{background:var(--green);color:var(--navy)}

@@ -48,7 +48,9 @@ export default function TrustBoard() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/felicitaciones").then(reply => reply.ok ? reply.json() as Promise<PublicShow> : null).then(body => { if (alive && body && (body.score || body.stories.length)) setData(body); }).catch(() => {});
+    // The owner's preview: «/?ejemplo=1» asks for the examples, which the route gives only to his session.
+    const preview = new URLSearchParams(window.location.search).get("ejemplo") === "1";
+    fetch(preview ? "/api/felicitaciones?ejemplo=1" : "/api/felicitaciones", preview ? { cache: "no-store" } : undefined).then(reply => reply.ok ? reply.json() as Promise<PublicShow> : null).then(body => { if (alive && body && (body.score || body.stories.length)) setData(body); }).catch(() => {});
     return () => { alive = false; };
   }, []);
   // The figures move when the board comes into view, not before anyone can see them.
@@ -80,13 +82,14 @@ export default function TrustBoard() {
         <p className={b.name}><b>Henry Orellana</b>Consultor de inmigración registrado en Utah</p>
       </div>
       <div className={b.copy}>
+        {data.example && <p className={b.demo}><b>Modo ejemplo.</b> Cifras e historias de muestra: solo las ves tú, con tu sesión del panel. El público no ve esta sección hasta que el contador tenga cifras reales.</p>}
         <h2 id="casos-titulo">Los casos de ContyGo, <em>con Henry al frente.</em></h2>
         {totals ? <p className={b.giant}><b><Count to={totals.won} on={seen} /></b><span>casos ganados</span></p> : <p>Clientes de ContyGo que ya recibieron su respuesta, contado por ellos.</p>}
         {minor}
         {go}{fine}
         {DEV && <p className={b.pick}>Foto de Henry (solo en local): {PHOTOS.map(item => <button key={item.key} type="button" aria-pressed={photo === item.key} onClick={() => setPhoto(item.key)}>{item.label}</button>)}</p>}
       </div>
-      {open && createPortal(<CongratsShow variant="public" skin="henry" photo={photo} onClose={() => setOpen(false)} onStart={() => { setOpen(false); openAssistant(); }} />, document.body)}
+      {open && createPortal(<CongratsShow variant="public" skin="henry" photo={photo} preview={data.example === true} onClose={() => setOpen(false)} onStart={() => { setOpen(false); openAssistant(); }} />, document.body)}
     </section>
   );
 }

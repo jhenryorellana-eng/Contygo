@@ -61,16 +61,17 @@ export function ScoreTrio({ totals, style }: { totals: Score["totals"]; style?: 
 }
 
 /** What the page gives the public (GET /api/felicitaciones): the scoreboard and the stories approved to be shown there. */
-export type PublicShow = { score: { totals: Score["totals"]; rows: Score["rows"]; updatedAt: string | null } | null; stories: (Row & { id: string })[] };
+export type PublicShow = { /** The owner's preview: examples, marked as such. */ example?: boolean; score: { totals: Score["totals"]; rows: Score["rows"]; updatedAt: string | null } | null; stories: (Row & { id: string })[] };
 const toStory = (row: Row): PublicReview => ({ name: row.name, serviceId: row.service_id, service: CONTYGO_SERVICES.find(item => item.id === row.service_id)?.name ?? null, rating: row.rating, comment: row.comment, kind: row.kind === "approval" ? "approval" : "review", place: row.place ?? null, image: row.image_url ?? null });
 
 /** `variant="public"` (24-11-2026) is the same show opened from the landing, for a visitor: it reads only what the page
     may show, never examples, has no panel controls, closes like a window and ends in «Hacer mi contrato». */
-export default function CongratsShow({ variant = "panel", skin, photo, onClose, onStart }: { variant?: "panel" | "public"; /** How the landing dresses it: Henry stands by its cover, as in the section that opens it (TrustBoard), in the same photograph. */ skin?: "henry"; photo?: string; onClose?: () => void; onStart?: () => void } = {}) {
+export default function CongratsShow({ variant = "panel", skin, photo, preview, onClose, onStart }: { /** The landing in the owner's preview: the public show asks for the examples too. */ preview?: boolean; variant?: "panel" | "public"; /** How the landing dresses it: Henry stands by its cover, as in the section that opens it (TrustBoard), in the same photograph. */ skin?: "henry"; photo?: string; onClose?: () => void; onStart?: () => void } = {}) {
   const open = variant === "public";
   const [state, setState] = useState<"loading" | "ready" | "signin" | "off" | "error">("loading");
   const [approved, setApproved] = useState<PublicReview[]>([]);
   const [score, setScore] = useState<Score | null>(null);
+  const [demo, setDemo] = useState(false);
   const [mode, setMode] = useState<"one" | "wall">("one"), [at, setAt] = useState(0), [held, setHeld] = useState(false), [quiet, setQuiet] = useState(false), [full, setFull] = useState(false);
   const idle = useRef<number>();
   // «Ver ejemplos»: the owner asks to see how it would look. With ?ejemplos=1 the page opens that way.
@@ -80,11 +81,12 @@ export default function CongratsShow({ variant = "panel", skin, photo, onClose, 
   const load = useCallback(async () => {
     try {
       if (open) {
-        const reply = await fetch("/api/felicitaciones");
+        const reply = await fetch(preview ? "/api/felicitaciones?ejemplo=1" : "/api/felicitaciones", preview ? { cache: "no-store" } : undefined);
         if (!reply.ok) return setState("error");
         const body = await reply.json() as PublicShow;
         setApproved(body.stories.map(toStory));
         setScore(body.score ? { ...body.score, updatedBy: null } : null);
+        setDemo(body.example === true);
         return setState("ready");
       }
       const response = await fetch("/api/admin/reviews?status=approved", { cache: "no-store" });
@@ -99,7 +101,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, onClose, 
       if (counted) setScore({ totals: counted.totals, updatedAt: counted.counter.updatedAt, updatedBy: counted.counter.updatedBy,
         rows: counted.services.map(service => ({ serviceId: service.id, label: service.name, ...counted.counter.rows[service.id] })).filter(row => row.created > 0 || row.pending > 0 || row.won > 0).sort((x, y) => y.created - x.created) });
     } catch { setState("error"); }
-  }, [open]);
+  }, [open, preview]);
   useEffect(() => { void load(); }, [load]);
 
   // Examples, marked as such and never mixed with real stories: when the owner asks for them, or in development with
@@ -195,12 +197,13 @@ export default function CongratsShow({ variant = "panel", skin, photo, onClose, 
         {open ? <button type="button" className={c.shut} onClick={onClose} autoFocus>Cerrar</button> : <a href="/admin">Panel</a>}
       </div>
     </header>
+    {demo && <p className={c.sample}><b>Modo ejemplo.</b> Cifras e historias de muestra: solo las ves tú, con tu sesión del panel.</p>}
     {sample && <p className={c.sample}><b>Modo ejemplo.</b> Estas felicitaciones, sus fotos y las cifras son de muestra: no son clientes reales. No lo muestres en un live.</p>}
 
     {mode === "one"
       ? <section className={c.stage} aria-live="off" aria-label="Felicitaciones, una por una">
         <div className={c.slide} key={at} data-cover={story ? undefined : ""}>
-          {story ? <Story review={story} big example={sample} /> : at === 1 && board ? <div className={c.board}>
+          {story ? <Story review={story} big example={sample || demo} /> : at === 1 && board ? <div className={c.board}>
             <h1>El marcador, <em>servicio por servicio.</em></h1>
             {table(7)}
             {asOf && <p className={c.asof}>Cifras del registro de ContyGo al {asOf}.</p>}
@@ -236,7 +239,7 @@ export default function CongratsShow({ variant = "panel", skin, photo, onClose, 
           </li>)}</ul>
         </div>}
         {open ? start : qr}
-        <ul className={c.cards}>{stories.map((review, n) => <li key={n}><Story review={review} example={sample} /></li>)}</ul>
+        <ul className={c.cards}>{stories.map((review, n) => <li key={n}><Story review={review} example={sample || demo} /></li>)}</ul>
       </section>}
 
     <footer className={c.foot}>{real && CONTYGO_RESULTS.updatedOn ? `Contado el ${CONTYGO_RESULTS.updatedOn.split("-").reverse().join("/")}. ` : ""}{FINE}</footer>

@@ -128,7 +128,7 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
   const landing = fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8'), board = fs.readFileSync('components/contygo/v7/TrustBoard.tsx', 'utf8');
   assert.ok(landing.includes('{fresh && <TrustBoard />}'));
-  assert.ok(board.includes('fetch("/api/felicitaciones")') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
+  assert.ok(board.includes('fetch(preview ? "/api/felicitaciones?ejemplo=1" : "/api/felicitaciones"') && board.includes('if (!data) return null;') && board.includes('un resultado anterior no garantiza el tuyo'));
   assert.ok(board.includes('<CongratsShow variant="public"') && !/SAMPLE/.test(board), 'la presentación pública nunca trae ejemplos');
   // Henry al frente (el dueño lo eligió entre cuatro maneras): su foto, su nombre y su título tal como es.
   assert.ok(board.includes('Consultor de inmigración registrado en Utah') && fs.existsSync('public/contygo/casos/henry-cruzados.webp'));
@@ -138,7 +138,11 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   assert.ok(admin.indexOf('isAdminRequest(req)') > 0 && admin.indexOf('isAdminRequest(req)') < admin.indexOf('adminListReviews('));
   const open = fs.readFileSync('app/api/felicitaciones/route.ts', 'utf8'), photo = fs.readFileSync('app/api/felicitaciones/[id]/foto/route.ts', 'utf8'), reviews = fs.readFileSync('lib/reviews.ts', 'utf8');
   assert.ok(/export async function GET/.test(open) && !/export async function (POST|PUT|DELETE)/.test(open));
-  assert.ok(open.includes('publicReviews()') && !open.includes('updatedBy') && !/SAMPLE/.test(open));
+  assert.ok(open.includes('publicReviews()') && !open.includes('updatedBy'));
+  // Los ejemplos solo salen en la vista previa del dueño: con ?ejemplo=1 Y su sesión, marcados y sin guardarse en caché.
+  assert.ok(open.indexOf('if (isAdminRequest(req)) return NextResponse.json(example()') > open.indexOf('searchParams.get("ejemplo") === "1"'));
+  assert.equal((open.match(/example\(\)/g) || []).length, 2, 'los ejemplos no se usan en ningún otro camino');
+  assert.ok(open.includes('"Cache-Control": "private, no-store"') && board.includes('Modo ejemplo.'));
   assert.ok(photo.includes('publicReviewPhoto(params.id)'));
   assert.ok(reviews.includes('review.status === "approved" && review.consent === true'));
   assert.ok(fs.readFileSync('components/contygo/v7/ShareStory.tsx', 'utf8').includes('su página'), 'el permiso que firma el cliente nombra la página');
@@ -149,7 +153,8 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   assert.ok(show.includes('/api/admin/reviews?status=approved') && show.includes('un resultado anterior no garantiza el tuyo') && show.includes('La decisión es de la autoridad'));
   assert.ok(show.includes('const sample = !open && state !== "loading" && state !== "signin" && (example || (DEV && approved.length === 0));') && show.includes('process.env.NODE_ENV === "development"'), 'los ejemplos, nunca en la variante pública');
   assert.ok(show.includes('const stories = sample ? REVIEWS_SAMPLE : approved;'), 'los ejemplos sustituyen a las reales, no se mezclan');
-  assert.ok(show.includes('no son clientes reales') && show.includes('example={sample}'));
+  // (En la vista previa del dueño sobre la landing, `demo`, las historias llevan la misma etiqueta «Ejemplo».)
+  assert.ok(show.includes('no son clientes reales') && show.includes('example={sample || demo}') && show.includes('setDemo(body.example === true)'));
   for (const review of REVIEWS_SAMPLE) if (review.image) { assert.match(review.image, /^\/contygo\/ejemplos\//, review.name); assert.ok(fs.existsSync('public' + review.image), review.image); }
   if (resultsPublic()) assert.ok(CONTYGO_RESULTS.verified.by && CONTYGO_RESULTS.verified.on && CONTYGO_RESULTS.verified.evidence && CONTYGO_RESULTS.updatedOn, 'cifras confirmadas: constan quién y cuándo');
   assert.ok(RESULTS_SAMPLE.length > 0 && CONTYGO_RESULTS.rows.every(row => !RESULTS_SAMPLE.some(sample => sample === row)));

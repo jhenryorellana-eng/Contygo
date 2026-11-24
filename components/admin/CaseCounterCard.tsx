@@ -40,6 +40,7 @@ export default function CaseCounterCard() {
         </div>
         <div className="admin__toolbar-right">
           <a className="btn btn--primary" href="/contador" target="_blank" rel="noopener noreferrer">Actualizar contador</a>
+          <a className="btn btn--ghost admin__btn-sm" href="/?ejemplo=1#casos" target="_blank" rel="noopener noreferrer">Ver la landing con ejemplos</a>
           {data?.editUrl && (
             <button type="button" className="btn btn--ghost admin__btn-sm" onClick={() => { void navigator.clipboard?.writeText(data.editUrl!).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 2200); }); }}>
               {copied ? "Link copiado" : "Copiar link para Andrium"}

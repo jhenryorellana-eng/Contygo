@@ -23,6 +23,8 @@
 .open:hover svg{translate:4px 0}
 .open:focus-visible{outline:3px solid #fff;outline-offset:4px}
 .fine{margin:0;max-width:46em;color:#a9b8ca!important;font:500 clamp(12px,1.5vw,14px)/1.4 var(--font-contygo-body),sans-serif!important}
+.demo{padding:10px 14px;border-radius:14px;background:#fff;color:#061b3d!important;font:700 13.5px/1.35 var(--font-contygo-body),sans-serif!important;box-shadow:0 0 0 2px #25d366}
+.demo b{font-weight:800}
 /* The choice of photograph, on the local page only */
 .pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:9px 12px;border-radius:16px;background:#ffffff14;color:#c9d7ee!important;font:700 12.5px/1.3 var(--font-contygo-body),sans-serif!important}
 .pick button{padding:8px 12px;border:0;border-radius:40px;background:#ffffff1f;color:#fff;font:800 12.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}

@@ -1,7 +1,7 @@
 "use client";
 
 /* El contador de casos, para quien lo lleva al día (24-11-2026). Arriba, los tres totales como en un marcador; debajo,
-   cada servicio con sus tres números —creados, pendientes, ganados— que se cambian con los botones o escribiendo.
+   cada servicio con sus tres números —creados, pendientes, terminados— que se cambian con los botones o escribiendo.
    «Guardar» deja escrito quién lo hizo y cuándo; lo que se guarda es lo que la presentación en vivo enseña.
    Entra el dueño con su sesión, o el encargado con su link (la llave va en ?k= y se manda en una cabecera). */
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -14,7 +14,7 @@ type Data = { services: { id: string; name: string }[]; counter: { example?: boo
 const FIELDS: { key: Field; label: string; hint: string }[] = [
   { key: "created", label: "Creados", hint: "Todos los casos abiertos de este servicio" },
   { key: "pending", label: "Pendientes", hint: "En proceso, todavía sin respuesta" },
-  { key: "won", label: "Ganados", hint: "Aprobados por la autoridad" },
+  { key: "won", label: "Terminados", hint: "Casos que ContyGo ya terminó" },
 ];
 const MAX = 99999;
 const when = (iso: string | null) => iso ? new Date(iso).toLocaleString("es", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }) : null;
@@ -104,7 +104,7 @@ export default function CaseCounterEditor() {
                   </label>
                 ))}
               </div>
-              {over && <p className={s.warn}>Revisa esta fila: ganados más pendientes ({row.won + row.pending}) es más que creados ({row.created}).</p>}
+              {over && <p className={s.warn}>Revisa esta fila: terminados más pendientes ({row.won + row.pending}) es más que creados ({row.created}).</p>}
             </li>
           );
         })}

@@ -24,7 +24,12 @@ export type CaseCounter = { updatedAt: string | null; updatedBy: string | null; 
 const FILE = "contador/casos.json";
 export const MAX_CASES = 99_999;
 export const counterEnabled = reviewsEnabled;
-export const COUNTER_SERVICES = VISIBLE_SERVICES.map(service => ({ id: service.id, name: service.name }));
+/** The services the counter carries, as the owner set them on 24-11-2026: «Visa Juvenil» is one row (the platform's Premium
+    and Básico, added together), and «Evaluación de Asilo» is not counted. The third figure, `won`, is shown as «terminados»:
+    the owner's word, because «no todos los procesos se ganan». */
+const NOT_COUNTED = new Set(["evaluacion-asilo"]);
+const ROW_NAMES: Record<string, string> = { "visa-juvenil": "Visa Juvenil" };
+export const COUNTER_SERVICES = VISIBLE_SERVICES.filter(service => !NOT_COUNTED.has(service.id)).map(service => ({ id: service.id, name: ROW_NAMES[service.id] ?? service.name }));
 
 const whole = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? Math.min(MAX_CASES, Math.max(0, Math.round(value))) : 0);
 const empty = (): CaseCounter => ({ updatedAt: null, updatedBy: null, rows: Object.fromEntries(COUNTER_SERVICES.map(service => [service.id, { created: 0, pending: 0, won: 0 }])), log: [] });

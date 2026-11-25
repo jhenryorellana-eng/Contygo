@@ -58,7 +58,7 @@ export default function CaseCounterCard() {
         <div className="admin__stats" aria-label="Totales del contador">
           <div className="stat"><span className="stat__n">{data.totals.created.toLocaleString("en-US")}</span><span className="stat__l">Casos creados</span></div>
           <div className="stat stat--pending"><span className="stat__n">{data.totals.pending.toLocaleString("en-US")}</span><span className="stat__l">Casos pendientes</span></div>
-          <div className="stat stat--approved"><span className="stat__n">{data.totals.won.toLocaleString("en-US")}</span><span className="stat__l">Casos ganados</span></div>
+          <div className="stat stat--approved"><span className="stat__n">{data.totals.won.toLocaleString("en-US")}</span><span className="stat__l">Casos terminados</span></div>
         </div>
       )}
     </section>

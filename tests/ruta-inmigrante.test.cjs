@@ -134,7 +134,7 @@ test('los casos en la página: solo el contador y las historias aprobadas con pe
   for (const review of REVIEWS_SAMPLE) assert.ok(!page.includes(review.comment), review.name);
   const landing = fs.readFileSync('components/contygo/v7/ContygoLanding.tsx', 'utf8'), board = fs.readFileSync('components/contygo/v7/TrustBoard.tsx', 'utf8');
   assert.ok(landing.includes('{fresh && <TrustBoard />}'));
-  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" })') && board.includes('if (!data) return SERVED ? (') && board.includes('un resultado anterior no garantiza el tuyo'));
+  assert.ok(board.includes('await read("/api/felicitaciones")') && board.includes('read(`/api/felicitaciones?ejemplo=${encodeURIComponent(pass)}`, { cache: "no-store" })') && board.includes('if (!data) return SERVED ? (') && board.includes('const PUBLISHED_LOOK: Look = "suma"') && board.includes('<i>casos terminados</i>') && !board.includes('casos ganados<') && board.includes('un resultado anterior no garantiza el tuyo'));
   assert.ok(board.includes('<CongratsShow variant="public"') && !/SAMPLE/.test(board), 'la presentación pública nunca trae ejemplos');
   // Henry al frente (el dueño lo eligió entre cuatro maneras): su foto, su nombre y su título tal como es.
   assert.ok(board.includes('Consultor de inmigración registrado en Utah') && fs.existsSync('public/contygo/casos/henry-cruzados.webp'));

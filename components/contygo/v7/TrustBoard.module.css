@@ -30,7 +30,62 @@
 .pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:9px 12px;border-radius:16px;background:#ffffff14;color:#c9d7ee!important;font:700 12.5px/1.3 var(--font-contygo-body),sans-serif!important}
 .pick button{padding:8px 12px;border:0;border-radius:40px;background:#ffffff1f;color:#fff;font:800 12.5px/1 var(--font-contygo-heading),sans-serif;cursor:pointer}
 .pick button[aria-pressed=true]{background:#25d366;color:#061b3d}
+/* ---- The presentations to choose (TrustBoard.tsx: LOOKS). One layout: Henry's photograph whole and clean, the cases
+   finished very large with their name marked in green, and under them the piece that moves. ---- */
+.card{scroll-margin-top:84px;position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr);width:min(100% - 28px,1180px);margin:clamp(18px,4vw,44px) auto;border-radius:clamp(26px,4vw,40px);background:#010d33;color:#fff;text-align:left;box-shadow:inset 0 0 0 1px #ffffff24,0 30px 70px -30px #061b3d;overflow:hidden}
+.card h2{margin:0;font:800 clamp(23px,5.9vw,40px)/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.04em;color:#fff;text-wrap:balance}
+.card h2 em{font-style:normal;color:#25d366}
+.dev{display:grid;gap:8px;padding:0 12px 12px}
+/* Henry: nothing over him but his name, in a corner, and the fade where the photograph meets the board. */
+.hxPhoto{position:relative;height:clamp(262px,73vw,330px);overflow:hidden}
+.hxPhoto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 4%;animation:enter .7s cubic-bezier(.2,.85,.2,1) both}
+.hxPhoto:after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,#0000,#010d33);pointer-events:none}
+.hxCopy{position:relative;display:grid;justify-items:start;gap:12px;margin-top:-18px;padding:0 20px 22px}
+/* The cases finished: the largest thing on the board. */
+.hxNum{display:grid;justify-items:start;gap:6px;margin:2px 0 0;max-width:none}
+.hxNum b{position:relative;width:fit-content;color:#25d366;font:800 clamp(122px,38.5vw,226px)/.8 var(--font-contygo-heading),sans-serif;letter-spacing:-.065em;font-variant-numeric:tabular-nums;text-shadow:0 0 70px #25d36680}
+.hxNum span{font:800 clamp(25px,6.9vw,42px)/1.08 var(--font-contygo-heading),sans-serif;letter-spacing:-.035em}
+/* Its name is marked with a stroke of green once the count ends. */
+.hxNum i{display:inline-block;margin-left:-.06em;padding:.06em .3em .1em;border-radius:.3em;font-style:normal;color:#fff;background:linear-gradient(#25d366,#25d366) 0 0/0% 100% no-repeat;transition:background-size .55s cubic-bezier(.65,0,.35,1),color .2s .2s}
+.hx[data-done=true] .hxNum i{background-size:100% 100%;color:#061b3d}
+.hx .minor li{padding:7px 13px;font-size:14px}.hx .minor b{font-size:19px}
+
+/* 1 · Suma: each service lands with its figure and adds its cases to the total. */
+.sum{display:grid;gap:8px;width:100%}
+.sum ul{display:flex;width:100%;margin:0;padding:6px 0 0;list-style:none}
+.sum li{position:relative;flex:1 1 0;min-width:0;aspect-ratio:1}
+.sum li span{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:132%;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #010d33,0 6px 12px -6px #000;translate:-50% -50%;scale:.3;opacity:0;transition:scale .4s cubic-bezier(.2,1.5,.4,1),opacity .2s,box-shadow .3s}
+.sum li[data-in=true] span{scale:1;opacity:1}
+.sum li[data-now=true]{z-index:2}
+.sum li[data-now=true] span{scale:1.5;box-shadow:0 0 0 3px #25d366,0 10px 18px -6px #000}
+.sum img{width:76%;height:76%;object-fit:contain}
+.sumNote{display:flex;min-height:30px;margin:0;max-width:none;overflow:hidden}
+.sumNote span{display:flex;align-items:baseline;gap:8px;color:#fff;font:800 16.5px/1.15 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em;animation:note .32s cubic-bezier(.2,.9,.2,1) both}
+.sumNote b{color:#25d366;font:800 24px/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+@keyframes note{from{translate:0 70%;opacity:0}}
+
+/* 2 · Hilo y check: the page's green thread underlines the figure and ends in the check of «terminado». */
+.hx[data-look=hilo] .hxNum b{color:#fff;text-shadow:none;margin-bottom:.1em}
+.hxNum svg{position:absolute;left:-1%;bottom:-.19em;width:132%;height:auto;overflow:visible;pointer-events:none}
+.hxNum path{fill:none;stroke:#25d366;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 10px #25d366b3)}
+.hx[data-on=true] .hxNum path{animation:thread 1.25s .95s cubic-bezier(.6,0,.3,1) forwards}
+@keyframes thread{to{stroke-dashoffset:0}}
+
+/* 3 · Cada caso: a point for each case. The pills become its legend. */
+.dots{display:block;width:100%}
+.hx[data-look=puntos] .minor li:before{content:"";align-self:center;width:10px;height:10px;border-radius:50%;background:#ffffff59}
+.hx[data-look=puntos] .minor li[data-kind=pending]:before{background:#4f8dff}
+
+/* 4 · Rodillo: one service at a time on a drum. */
+.roller{position:relative;width:100%;height:92px;margin:0;max-width:none;border-radius:24px;background:linear-gradient(180deg,#061b3d,#12356f 50%,#061b3d);box-shadow:inset 0 0 0 1px #ffffff38,inset 0 14px 18px -12px #000,inset 0 -14px 18px -12px #000;overflow:hidden}
+.turn{position:absolute;inset:0;display:grid;grid-template-columns:80px auto minmax(0,1fr);align-items:center;gap:10px;padding:0 16px 0 8px;animation:turn .55s cubic-bezier(.2,.9,.2,1) both}
+@keyframes turn{from{translate:0 100%;opacity:.2}}
+.turn img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 8px 8px #00000080)}
+.turn b{color:#25d366;font:800 46px/1 var(--font-contygo-heading),sans-serif;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.turn span{color:#fff;font:800 15.5px/1.12 var(--font-contygo-heading),sans-serif;letter-spacing:-.015em;text-wrap:balance}
+
 @media (max-width:759px){.board{width:auto;margin-left:40px;margin-right:12px}.open{min-height:54px;padding:0 20px}}
+@media (max-width:375px){.open{padding:0 16px;gap:8px;font-size:15px;white-space:nowrap}}
 @media (min-width:860px){
   .board{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);align-items:stretch}
   .portrait{aspect-ratio:auto;min-height:560px}
@@ -38,4 +93,19 @@
   .name{left:22px;top:22px}
   .copy{margin:0;padding:48px 48px 40px 16px;align-content:center;gap:18px}
 }
-@media (prefers-reduced-motion:reduce){.open,.open svg{transition:none}.portrait img{animation:none}}
+@media (max-width:759px){.card{width:auto;margin-left:40px;margin-right:12px}}
+@media (min-width:860px){
+  .card{grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);align-items:stretch}
+  .dev{grid-column:1/-1;padding:0 22px 18px}
+  .hxPhoto{height:auto;min-height:520px}
+  .hxPhoto:after{left:auto;top:0;width:30%;height:auto;background:linear-gradient(90deg,#0000,#010d33)}
+  .hxCopy{margin:0;align-content:center;gap:16px;padding:40px 48px 36px 12px}
+  .hxNum b{font-size:clamp(170px,17vw,226px)}
+  .sum{max-width:560px}
+  .sumNote span{font-size:20px}.sumNote b{font-size:30px}
+  .dots{max-width:560px}
+  .roller{max-width:520px;height:112px}
+  .turn{grid-template-columns:100px auto minmax(0,1fr);gap:14px}
+  .turn img{width:100px;height:100px}.turn b{font-size:58px}.turn span{font-size:18.5px}
+}
+@media (prefers-reduced-motion:reduce){.open,.open svg{transition:none}.portrait img,.hxPhoto img{animation:none}.turn,.sumNote span{animation:none}.sum li span,.hxNum i{transition:none}.hx[data-on=true] .hxNum path{animation:none;stroke-dashoffset:0}}

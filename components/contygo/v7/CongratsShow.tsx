@@ -7,7 +7,7 @@
      su trámite y desde dónde) y pasa sola a la siguiente; abre una portada con la cuenta en cifras de paletas.
    - «Muro»: todas juntas, para recorrerlas con el dedo, con el tablero por servicio.
    - El marcador (24-11-2026): si el contador de casos tiene cifras (lib/case-counter.ts, las lleva el encargado), la
-     portada abre con sus tres totales —creados, en proceso, ganados— y la segunda pantalla los da servicio por servicio.
+     portada abre con sus tres totales —creados, en proceso, terminados— y la segunda pantalla los da servicio por servicio.
      Un código QR lleva a quien mira el live a la página.
    Vale para un live vertical (teléfono) y para compartir pantalla (apaisado). Los mandos se esconden solos.
    Sin datos inventados (lib/contygo-results.ts): las felicitaciones son las aprobadas; las cuentas, las que el dueño
@@ -25,7 +25,7 @@ const HOLD = 9000, IDLE = 2800;
 const FINE = "Cada caso es distinto: un resultado anterior no garantiza el tuyo. La decisión es de la autoridad.";
 type Row = { name: string; service_id: string | null; rating: number; comment: string; kind?: string; place?: string | null; image_url?: string | null };
 /** The three figures of the scoreboard, as the audience of a live reads them. */
-const TRIO = [{ key: "created", label: "Casos creados" }, { key: "pending", label: "En proceso" }, { key: "won", label: "Ganados" }] as const;
+const TRIO = [{ key: "created", label: "Casos creados" }, { key: "pending", label: "En proceso" }, { key: "won", label: "Terminados" }] as const;
 type Counted = { services: { id: string; name: string }[]; counter: { example?: boolean; updatedAt: string | null; updatedBy: string | null; rows: Record<string, { created: number; pending: number; won: number }> }; totals: Score["totals"] };
 const Star = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.5 6 .9-4.35 4.2 1.03 6L12 16.9l-5.38 2.9 1.03-6L3.3 9.6l6-.9Z" fill="currentColor" /></svg>;
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-8" /></svg>;

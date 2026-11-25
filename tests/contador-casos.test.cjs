@@ -9,9 +9,13 @@ const { VISIBLE_SERVICES } = require('../lib/contygo-catalog.ts');
 
 test('las cifras se limpian: solo los servicios del catálogo, números enteros y dentro de rango', () => {
   const { cleanRows, counterTotals, COUNTER_SERVICES, MAX_CASES } = require('../lib/case-counter.ts');
-  assert.deepEqual(COUNTER_SERVICES.map(service => service.id), VISIBLE_SERVICES.map(service => service.id));
+  // Los servicios del catálogo, menos «Evaluación de Asilo» (el dueño lo quitó del contador el 24-11-2026); y «Visa Juvenil»
+  // es una sola fila, sin «Premium».
+  assert.deepEqual(COUNTER_SERVICES.map(service => service.id), VISIBLE_SERVICES.map(service => service.id).filter(id => id !== 'evaluacion-asilo'));
+  assert.equal(COUNTER_SERVICES.find(service => service.id === 'visa-juvenil').name, 'Visa Juvenil');
   const rows = cleanRows({ 'permiso-de-trabajo': { created: 212.4, pending: '64', won: 141 }, llc: { created: -4, pending: 2.6, won: null }, inventado: { created: 9, pending: 9, won: 9 }, asilo: { created: 1e9, pending: NaN, won: Infinity } });
-  assert.deepEqual(Object.keys(rows), VISIBLE_SERVICES.map(service => service.id));
+  assert.deepEqual(Object.keys(rows), COUNTER_SERVICES.map(service => service.id));
+  assert.equal('evaluacion-asilo' in cleanRows({ 'evaluacion-asilo': { created: 7, pending: 3, won: 0 } }), false);
   assert.deepEqual(rows['permiso-de-trabajo'], { created: 212, pending: 0, won: 141 });
   assert.deepEqual(rows.llc, { created: 0, pending: 3, won: 0 });
   assert.deepEqual(rows.asilo, { created: MAX_CASES, pending: 0, won: 0 });
@@ -60,7 +64,7 @@ test('el marcador en vivo sale del contador; las cifras de muestra, solo en modo
   const show = fs.readFileSync('components/contygo/v7/CongratsShow.tsx', 'utf8');
   assert.match(show, /fetch\("\/api\/admin\/cases"/);
   assert.ok(show.includes('const board: Score | null = sample ? SCORE_SAMPLE : score &&'));
-  assert.match(show, /Casos creados[\s\S]*En proceso[\s\S]*Ganados/);
+  assert.match(show, /Casos creados[\s\S]*En proceso[\s\S]*Terminados/);
   assert.match(show, /qr-landing\.png/);
   assert.ok(fs.existsSync('public/contygo/qr-landing.png'));
   const { SCORE_SAMPLE } = require('../lib/contygo-results.ts');

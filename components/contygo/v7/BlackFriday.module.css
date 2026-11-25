@@ -22,9 +22,12 @@
 /* The photo has a black margin round the sign: the plaque crops it. The sign flickers on once the plaque has settled. */
 .hero .heroPhoto img{display:block;width:100%;height:auto;scale:1.16;animation:neonOn 1.5s 2.2s backwards}
 @keyframes neonOn{0%{opacity:.12}9%{opacity:1}14%{opacity:.25}21%{opacity:1}30%{opacity:.5}36%,100%{opacity:1}}
-/* The wait («Faltan 8 días») sits on the plaque's top corner: below it is the face in the photo. */
+/* The wait («Quedan solo 8 días») sits on the plaque's top corner: below it is the face in the photo. */
 .heroWait{position:absolute;left:-10px;top:-13px;padding:5px 12px 6px;border-radius:20px;background:#04122b;color:#3ee886;font:800 12.5px/1.2 var(--font-contygo-heading),sans-serif;white-space:nowrap;box-shadow:0 0 0 2.5px var(--bg),0 8px 14px -6px #04122b99}
 :global([data-contygo-theme=dark]) .heroWait{box-shadow:0 0 0 1.5px #25d366,0 8px 14px -6px #000}
+/* On a phone the plaque is small and by the edge of the screen: «Quedan solo 3 días» is wider than it, so it hangs from the
+   plaque's right corner and grows towards the page. */
+@media(max-width:760px){.heroWait{left:auto;right:8px;font-size:11.5px;padding:4px 10px 5px}}
 .hero:focus-visible{outline:3px solid var(--accent);outline-offset:6px;border-radius:18px}
 
 /* ---- El cartel grande: en el celular va de lado a lado; el letrero ilumina la pared y parpadea al entrar en pantalla ---- */

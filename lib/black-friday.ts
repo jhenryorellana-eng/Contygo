@@ -16,10 +16,10 @@ export function blackFridayPhase(now: Date): BlackFridayPhase {
   return today < BLACK_FRIDAY.day ? "antes" : today === BLACK_FRIDAY.day ? "hoy" : "fuera";
 }
 
-/** «Faltan 8 días», «Es mañana», «Solo hoy»: los días de calendario que faltan, en la hora de Utah. */
+/** «Quedan solo 8 días», «Es mañana», «Solo hoy»: los días de calendario que faltan, en la hora de Utah. */
 export function blackFridayWait(now: Date): string {
   const phase = blackFridayPhase(now);
   if (phase !== "antes") return phase === "hoy" ? "Solo hoy" : "";
   const days = Math.ceil((Date.parse(BLACK_FRIDAY.startsAt) - now.getTime()) / 86_400_000);
-  return days > 1 ? `Faltan ${days} días` : "Es mañana";
+  return days > 1 ? `Quedan solo ${days} días` : "Es mañana";
 }

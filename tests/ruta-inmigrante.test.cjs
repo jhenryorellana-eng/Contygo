@@ -39,7 +39,9 @@ test('la portada dice lo del brief: la promesa, las tres formas, la ruta, los al
   }
   // El titular, con las mismas palabras (cada línea es una pieza, para entrar una tras otra).
   assert.equal(/<h1[^>]*>(.*?)<\/h1>/.exec(page)[1].replace(/<[^>]+>/g, ''), 'La ruta del inmigrante, paso a paso, ContyGo.');
-  assert.ok(page.includes('href="#ruta"') && page.includes('Empezar mi ruta'));
+  assert.ok(page.includes('href="#ruta"') && page.includes('Ver todos los servicios') && page.includes('Únete a la comunidad de ContyGo'));
+  // El banner de Black Friday salió de la página (dueño, 24-11-2026); su franja y su letrero llevan a la ruta.
+  assert.ok(!page.includes('id="black-friday"') && !page.includes('href="#black-friday"'));
 });
 
 test('los cinco tramos reparten todos los servicios migratorios: ninguno queda fuera ni está dos veces', () => {

@@ -14,7 +14,7 @@ import { CONTENT_CATEGORY } from "@/lib/meta/events";
 import { trackBrowserWhenReady } from "@/lib/meta/pixel-client";
 import themeStyles from "../v6/ExperienceTheme.module.css";
 import GreenThread from "./GreenThread";
-import { BlackFridayBanner, BlackFridayHero, BlackFridayStrip } from "./BlackFriday";
+import { BlackFridayHero, BlackFridayStrip } from "./BlackFriday";
 import AppPhone from "./AppPhone";
 import RegistryStage from "./RegistryStage";
 import { PUBLIC_REGISTER } from "../rebuild/CertificateShowcase";
@@ -282,7 +282,13 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
             : <h1>La ruta del<br />inmigrante,<br />paso a paso,<br /><em>ContyGo.</em></h1>}
           <p className={s.lead}>Haz tu trámite en la app, aprende cada paso en comunidad y habla con Henry cuando necesites una respuesta para ti.</p>
           <div className={s.heroActions}>
-            <a ref={heroCta} className={s.primary} href="#ruta" data-sound="">Empezar mi ruta <span><Icon /></span></a>
+            {/* The two doors of the hero, as a pair (24-11-2026): the services, with three of their figures; and the community,
+                with its people. The owner's words: «Ver todos los servicios» and «Únete a la comunidad de ContyGo». */}
+            <a ref={heroCta} className={s.primary} href="#ruta" data-sound="">
+              <span className={s.stack} aria-hidden="true">{["servicio-visa-juvenil", "servicio-permiso-de-trabajo", "servicio-apelacion"].map(art => <i key={art}><Image src={`/contygo/v8/${art}.webp`} alt="" width={80} height={80} sizes="40px" /></i>)}</span>
+              <span className={s.doorCopy}><strong>Ver todos los servicios</strong><small>Migración, corte e impuestos</small></span>
+              <span className={s.go}><Icon /></span>
+            </a>
             <CommunityButton />
           </div>
           {lottery && <button type="button" className={s.promo} onClick={event => open(lottery, event.currentTarget)}><b>En pausa · Gratis</b><span>Lotería de Visas 2027: prepárate por si abre</span><Icon /></button>}
@@ -310,7 +316,7 @@ export default function ContygoLanding({ initialServiceId }: { initialServiceId?
       {/* The cases, where a visitor arrives: the scoreboard and the way into the stories (only when there are figures or stories). */}
       {fresh && <TrustBoard />}
 
-      <BlackFridayBanner />
+      {/* The Black Friday banner stood here until 24-11-2026: the owner took it out. Its strip and its sign now lead to the route. */}
 
       {/* The assistant's promise, right under the hero: where a visitor decides. */}
       {fresh && <AssistantDoor />}

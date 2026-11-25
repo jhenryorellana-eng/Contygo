@@ -65,7 +65,7 @@ export default function CommunityButton() {
         <i ref={seat} className={s.yours} data-loop><b>+</b></i>
       </span>
       <span className={s.copy}>
-        <strong>Únete a ContyGo Club</strong>
+        <strong>Únete a la comunidad de ContyGo</strong>
         <small>Sesiones en vivo con Henry</small>
       </span>
       <svg className={s.arrow} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>

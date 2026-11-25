@@ -41,7 +41,7 @@ function useCountdown(phase: BlackFridayPhase) {
   }, [phase]);
   return left;
 }
-/** «Faltan 8 días», «Es mañana», «Solo hoy». */
+/** «Quedan solo 8 días», «Es mañana», «Solo hoy». */
 function useWait(phase: BlackFridayPhase) {
   const [text, setText] = useState("");
   useEffect(() => { setText(blackFridayWait(new Date())); }, [phase]);
@@ -69,7 +69,7 @@ export function BlackFridayStrip() {
   const phase = useBlackFriday();
   if (phase === "fuera") return null;
   const when = phase === "hoy" ? "solo hoy" : `solo el ${BLACK_FRIDAY.short}`;
-  return <a className={b.strip} href="#black-friday" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% en nuestros honorarios, ${when}. Ver la oferta`}>
+  return <a className={b.strip} href="#ruta" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% en nuestros honorarios, ${when}. Ver la oferta`}>
     <span className={b.stripLine} aria-hidden="true"><b>Black Friday</b><span><strong>{BLACK_FRIDAY.percent}%</strong> {when}</span><Arrow /></span>
   </a>;
 }
@@ -79,7 +79,7 @@ export function BlackFridayStrip() {
 export function BlackFridayHero({ className }: { /** The hero's story makes it smaller on a phone, so it stays off her face. */ className?: string }) {
   const phase = useBlackFriday(), wait = useWait(phase);
   if (phase === "fuera") return null;
-  return <a className={className ? `${b.hero} ${className}` : b.hero} href="#black-friday" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% de descuento. ${wait}. Ver la oferta`}>
+  return <a className={className ? `${b.hero} ${className}` : b.hero} href="#ruta" aria-label={`Black Friday: ${BLACK_FRIDAY.percent}% de descuento. ${wait}. Ver la oferta`}>
     <span className={b.heroPiece}>
       <span className={b.heroPhoto}><Image src={SIGN.src} alt="" width={SIGN.width} height={SIGN.height} sizes="(max-width:760px) 52vw, 300px" priority /></span>
       <span className={b.heroWait} aria-hidden="true">{wait}</span>

@@ -31,10 +31,10 @@ test('la cuenta atrás apunta al primer y al último instante de ese viernes en 
   assert.equal(blackFridayPhase(new Date(end)), 'fuera');
 });
 
-test('«Faltan N días» cuenta días de calendario en Utah', () => {
+test('«Quedan solo N días» cuenta días de calendario en Utah', () => {
   const wait = iso => blackFridayWait(new Date(iso));
-  assert.equal(wait('2026-11-19T19:00:00Z'), 'Faltan 8 días', 'jueves 19 a mediodía');
-  assert.equal(wait('2026-11-26T06:00:00Z'), 'Faltan 2 días', 'miércoles 25 a las 23:00');
+  assert.equal(wait('2026-11-19T19:00:00Z'), 'Quedan solo 8 días', 'jueves 19 a mediodía');
+  assert.equal(wait('2026-11-26T06:00:00Z'), 'Quedan solo 2 días', 'miércoles 25 a las 23:00');
   assert.equal(wait('2026-11-26T07:30:00Z'), 'Es mañana', 'jueves 26 a las 00:30');
   assert.equal(wait('2026-11-27T06:59:00Z'), 'Es mañana', 'jueves 26 a las 23:59');
   assert.equal(wait('2026-11-27T15:00:00Z'), 'Solo hoy');

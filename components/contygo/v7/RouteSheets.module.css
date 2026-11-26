@@ -37,7 +37,27 @@
 .map li:nth-child(even):before{right:42px;border-width:3.5px 3.5px 0 0;border-top-right-radius:16px}
 .map li:nth-child(odd):not(:first-child):before{left:42px;border-width:3.5px 0 0 3.5px;border-top-left-radius:16px}
 .poster .map a:focus-visible{outline:3px solid #25d366;outline-offset:4px;border-radius:20px}
-@media(hover:hover){.map a:hover .mapArt{translate:0 -4px}}
+/* The stops are buttons: a hand travels the route and taps each in turn (7.5 s the five of them; each stop's turn is its
+   first fifth, delayed by its place). The stop dips, a ring opens from it and its «Ver» lights up. */
+.mapArt{animation:stopDip 7.5s calc(var(--n,0) * 1.5s) infinite}
+.mapArt:after{content:"";position:absolute;inset:-5px;border-radius:50%;border:4px solid #25d366;box-shadow:0 0 18px #25d366b3;opacity:0;pointer-events:none;animation:stopRing 7.5s calc(var(--n,0) * 1.5s) infinite}
+.mapHand{position:absolute;z-index:2;right:-16px;bottom:-18px;width:48px;height:48px;opacity:0;transform-origin:30% 10%;pointer-events:none;animation:stopHand 7.5s calc(var(--n,0) * 1.5s) infinite}
+.map li:nth-child(even) .mapHand{right:auto;left:-16px;scale:-1 1}
+.mapHand svg{display:block;width:100%;height:100%;fill:#fff;stroke:#061b3d;stroke-width:1.5;stroke-linejoin:round;filter:drop-shadow(0 6px 6px #000000a6)}
+@keyframes stopHand{0%{opacity:0;transform:translate(16px,18px)}3%{opacity:1}6.5%{transform:translate(0,0)}8.5%{transform:translate(-2px,-3px) scale(.84)}11.5%{transform:translate(0,0)}17%{opacity:1;transform:translate(0,0)}20%,100%{opacity:0;transform:translate(10px,12px)}}
+@keyframes stopDip{0%,7%{transform:none}8.5%{transform:scale(.92)}12%,100%{transform:none}}
+@keyframes stopRing{0%,8%{opacity:0;transform:scale(.94)}9.5%{opacity:1}20%,100%{opacity:0;transform:scale(1.55)}}
+.mapFoot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:5px;font-style:normal}
+.map li:nth-child(even) .mapFoot{justify-content:flex-end}
+.mapFoot small{margin-top:0}
+.mapGo{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 11px 0 13px;border-radius:30px;background:#ffffff14;box-shadow:inset 0 0 0 1.5px #ffffff73;color:#fff;font:800 13.5px/1 var(--font-contygo-heading),sans-serif;font-style:normal;animation:stopGo 7.5s calc(var(--n,0) * 1.5s) infinite}
+.mapGo[data-live=true]{background:#25d366;box-shadow:0 8px 14px -8px #25d366;color:#061b3d}
+.mapGo svg{width:14px;height:14px}
+@keyframes stopGo{0%,8%{transform:none;filter:none}10%{transform:scale(1.14);filter:brightness(1.25)}14%,100%{transform:none;filter:none}}
+.poster .map a:active .mapArt{animation:none;transform:scale(.93)}
+.poster .map a:active .mapGo{animation:none;transform:scale(.95)}
+@media(prefers-reduced-motion:reduce){.mapArt,.mapArt:after,.mapHand,.mapGo{animation:none}}
+@media(hover:hover){.map a:hover .mapArt{translate:0 -4px}.map a:hover .mapGo svg{translate:0 2px}}
 
 /* ================= Las paradas: cada paso, sobre la línea punteada de la ruta ================= */
 /* The colour of each step's stop: its place on the route. */
@@ -100,6 +120,8 @@
   .map li:nth-child(even) .mapCopy,.mapCopy{justify-items:center}
   .mapArt{width:108px;height:108px}
   .map li:nth-child(even) .mapArt b{right:auto;left:-4px}
+  .map li:nth-child(even) .mapHand{left:auto;right:-16px;scale:1}
+  .mapFoot,.map li:nth-child(even) .mapFoot{flex-direction:column;justify-content:center;gap:8px}
   .mapCopy strong{font-size:clamp(17px,1.55vw,21px)}
   .stations{--gap:84px}
   .station{padding:58px 0 44px}

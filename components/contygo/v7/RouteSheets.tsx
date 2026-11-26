@@ -44,6 +44,11 @@ const status = (step: RouteStep) => stepOpen(step) ? "Disponible" : "Próximamen
 const clubLink = COMMUNITY_URL ? via(COMMUNITY_URL, "ruta") : null;
 const LEAD = "ContyGo nace para ser la primera aplicación del inmigrante. Hoy empieza por tu proceso migratorio, y cada nueva versión suma un paso.";
 
+/* The stops of the map are buttons (they take to their step, below), and nothing said so. The owner, 25-11-2026: «que los
+   usuarios sepan que deben presionarlo… hazlo creativo y que se note». So a hand travels the route and taps each stop in
+   turn —the stop dips, a ring opens from it, its «Ver» lights up—, and every stop carries that «Ver ↓» at rest. */
+const Hand = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12.6V4.6a1.6 1.6 0 0 1 3.2 0v5.1a1.55 1.55 0 0 1 3.05.3 1.5 1.5 0 0 1 2.9.55 1.5 1.5 0 0 1 2.65 1v4.95a6 6 0 0 1-6 6h-1.7a6 6 0 0 1-4.6-2.15l-4.1-4.9a1.55 1.55 0 0 1 2.3-2.05z" /></svg>;
+const Down = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" /></svg>;
 const Arrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>;
 const Bell = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15l1.5-2ZM10 21h4" /></svg>;
 const Hourglass = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9" /></svg>;
@@ -76,8 +81,8 @@ export function RouteIntro() {
       <p>{LEAD}</p>
     </div>
     <nav aria-label="Los cinco pasos"><ol className={s.map}>{ROUTE_STEPS.map((step, i) => <li key={step.id} data-tone={TONE[step.id]} style={{ "--n": i } as CSSProperties}><a href={`#${step.id}`}>
-      <span className={s.mapArt} aria-hidden="true"><Image src={scene(step.id)} alt="" width={320} height={320} sizes="120px" /><b>{i + 1}</b></span>
-      <span className={s.mapCopy}><strong>{step.name}</strong><span>{step.line}</span><small data-live={stepOpen(step)}>{status(step)}</small></span>
+      <span className={s.mapArt} aria-hidden="true" data-loop><Image src={scene(step.id)} alt="" width={320} height={320} sizes="120px" /><b>{i + 1}</b><i className={s.mapHand} data-loop><Hand /></i></span>
+      <span className={s.mapCopy}><strong>{step.name}</strong><span>{step.line}</span><i className={s.mapFoot}><small data-live={stepOpen(step)}>{status(step)}</small><em className={s.mapGo} data-live={stepOpen(step)} data-loop>Ver <Down /></em></i></span>
     </a></li>)}</ol></nav>
   </div>;
 }
